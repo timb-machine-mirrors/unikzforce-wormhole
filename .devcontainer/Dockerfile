@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/go:1-1.21-bookworm
+FROM mcr.microsoft.com/vscode/devcontainers/go:bullseye
 
 RUN apt-get update && \
     echo "wireshark-common wireshark-common/install-setuid boolean true" | debconf-set-selections && \
@@ -25,15 +25,43 @@ RUN ln -sf /usr/include/asm-generic/ /usr/include/asm
 RUN apt install -y libcap-dev
 RUN sudo ln -sf /usr/local/go/bin/go /bin/go
 
-RUN mkdir /sources/
+RUN mkdir /tools/
 
-WORKDIR /sources/
+WORKDIR /tools/
 
-RUN git clone --recurse-submodules https://github.com/libbpf/bpftool.git
+#RUN git clone --recurse-submodules https://github.com/libbpf/bpftool.git
 
-RUN make -C bpftool/src/ install
+#RUN make -C bpftool/src/ install
 
 RUN git clone --recurse-submodules https://github.com/xdp-project/xdp-tools.git
 
 RUN make -C xdp-tools/ install
 
+workdir /
+
+
+
+# install CLAB
+# containelab version will be set in devcontainer.json
+ARG _CLAB_VERSION
+
+# Set permissions for mounts in devcontainer.json
+RUN mkdir -p /home/vscode/.vscode-server/bin
+RUN chown -R vscode:vscode /home/vscode/.vscode-server
+
+# install some basic tools inside the container
+# adjust this list based on your demands
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    sshpass \
+    curl \
+    iputils-ping \
+    htop \
+    yamllint \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -Rf /usr/share/doc && rm -Rf /usr/share/man \
+    && apt-get clean
+
+# install preferred version of the containerlab
+RUN bash -c "$(curl -sL https://get.containerlab.dev)" -- -v ${_CLAB_VERSION}

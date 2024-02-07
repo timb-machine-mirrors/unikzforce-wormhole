@@ -4,9 +4,15 @@
 	"name": "wormhole",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"build": {
-		"dockerfile": "Dockerfile"
+		"dockerfile": "Dockerfile",
+		"args": {
+			"_CLAB_VERSION": "0.50.0"
+		}
 	},
 	"features": {
+		"ghcr.io/devcontainers/features/docker-in-docker:latest": {
+			"version": "latest"
+		},
 		"ghcr.io/devcontainers/features/go:1": {},
 		"ghcr.io/guiyomh/features/golangci-lint:0": {},
 		"ghcr.io/guiyomh/features/goreleaser:0": {},
@@ -16,7 +22,25 @@
 		"ghcr.io/marcozac/devcontainer-features/gofumpt:1": {}
 	},
 	"runArgs": ["--privileged"],
-	"privileged": true
+	"privileged": true,
+
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				// various tools
+				"ms-azuretools.vscode-docker",
+				"tuxtina.json2yaml",
+				"vscode-icons-team.vscode-icons",
+				"mutantdino.resourcemonitor"
+			]
+		}
+	},
+	"mounts": [
+		"source=clab-vscode-home-dir,target=/home/vscode,type=volume",
+		"source=clab-docker-root-config,target=/root/.docker,type=volume",
+		"target=/home/vscode/.vscode-server,type=volume"
+	]
+
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
