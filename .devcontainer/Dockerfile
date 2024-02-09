@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/vscode/devcontainers/go:bullseye
+FROM mcr.microsoft.com/vscode/devcontainers/go:dev-1.22-bullseye
 
 RUN apt-get update && \
     echo "wireshark-common wireshark-common/install-setuid boolean true" | debconf-set-selections && \
@@ -24,6 +24,7 @@ RUN apt install -y libbfd-dev
 RUN ln -sf /usr/include/asm-generic/ /usr/include/asm
 RUN apt install -y libcap-dev
 RUN sudo ln -sf /usr/local/go/bin/go /bin/go
+RUN sudo ln -sf /usr/bin/containerlab /usr/bin/clab
 
 RUN mkdir /tools/
 
