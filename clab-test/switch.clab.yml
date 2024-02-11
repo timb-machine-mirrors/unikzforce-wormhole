@@ -13,4 +13,4 @@ topology:
       image: alpine:latest
   links:
     - endpoints: [src:eth1, sw:eth1]
-    - endpoints: [dst:eth1, scmd.Execute()w:eth2]
+    - endpoints: [dst:eth1, sw:eth2]
