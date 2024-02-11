@@ -1,0 +1,16 @@
+name: ebpf
+
+topology:
+  nodes:
+    src:
+      kind: linux
+      image: alpine:latest
+    sw:
+      kind: linux
+      image: alpine:latest
+    dst:
+      kind: linux
+      image: alpine:latest
+  links:
+    - endpoints: [src:eth1, sw:eth1]
+    - endpoints: [dst:eth1, scmd.Execute()w:eth2]

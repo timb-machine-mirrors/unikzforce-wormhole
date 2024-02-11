@@ -1,65 +1,26 @@
 package main
 
 import (
-	"log"
-	"net"
+	"context"
+	"fmt"
+	"github.com/janog-netcon/netcon-problem-management-subsystem/pkg/containerlab"
 	"os"
-	"os/signal"
-	"time"
-	"wormhole/ebpf"
-
-	"github.com/cilium/ebpf/link"
-	"github.com/cilium/ebpf/rlimit"
 )
 
 func main() {
-	// Remove resource limits for kernels <5.11.
-	if err := rlimit.RemoveMemlock(); err != nil {
-		log.Fatal("Removing memlock:", err)
-	}
-
-	// Load the compiled eBPF ELF and load it into the kernel.
-	var objs ebpf.CounterObjects
-	if err := ebpf.LoadCounterObjects(&objs, nil); err != nil {
-		log.Fatal("Loading eBPF objects:", err)
-	}
-	defer objs.Close()
-
-	ifname := "eth0" // Change this to an interface on your machine.
-	iface, err := net.InterfaceByName(ifname)
+	wd, err := os.Getwd()
 	if err != nil {
-		log.Fatalf("Getting interface %s: %s", ifname, err)
+		fmt.Printf("Error getting current working directory: %v\n", err)
+		return
 	}
+	fmt.Println("Current working directory:", wd)
 
-	// Attach count_packets to the network interface.
-	link, err := link.AttachXDP(link.XDPOptions{
-		Program:   objs.CountPackets,
-		Interface: iface.Index,
-	})
-	if err != nil {
-		log.Fatal("Attaching XDP:", err)
-	}
-	defer link.Close()
+	clabclient := containerlab.NewContainerLabClient("./clab-test/switch.clab.yml")
 
-	log.Printf("Counting incoming packets on %s..", ifname)
+	ctx := context.Background()
 
-	// Periodically fetch the packet counter from PktCount,
-	// exit the program when interrupted.
-	tick := time.Tick(time.Second)
-	stop := make(chan os.Signal, 5)
-	signal.Notify(stop, os.Interrupt)
-	for {
-		select {
-		case <-tick:
-			var count uint64
-			err := objs.PktCount.Lookup(uint32(0), &count)
-			if err != nil {
-				log.Fatal("Map lookup:", err)
-			}
-			log.Printf("Received %d packets", count)
-		case <-stop:
-			log.Print("Received signal, exiting..")
-			return
-		}
+	err2 := clabclient.Deploy(ctx)
+	if err2 != nil {
+		fmt.Println("error happened " + err2.Error())
 	}
 }
