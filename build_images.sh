@@ -1,5 +1,5 @@
 #!/bin/bash
 
 
-# build switch image
-docker build -f switch.Dockerfile -t wormhole/switch:latest .
+# build switch_agent image
+docker build -f switch_agent.Dockerfile -t wormhole/switch_agent:latest .

@@ -28,9 +28,9 @@ RUN mkdir /tools/
 
 WORKDIR /tools/
 
-#RUN git clone --recurse-submodules https://github.com/libbpf/bpftool.git
+RUN git clone --recurse-submodules https://github.com/libbpf/bpftool.git
 
-#RUN make -C bpftool/src/ install
+RUN make -C bpftool/src/ install
 
 RUN git clone --recurse-submodules https://github.com/xdp-project/xdp-tools.git
 
@@ -41,12 +41,12 @@ RUN mkdir /switch-source/
 COPY go.mod /switch-source
 COPY go.sum /switch-source
 COPY ./ebpf/ /switch-source/ebpf/
-COPY ./cmd/switch/ /switch-source/cmd/switch/
+COPY ./cmd/switch_agent/ /switch-source/cmd/switch_agent/
 
 WORKDIR /switch-source/
 
 RUN go mod download
 RUN go generate ./ebpf/
-RUN go build -o /switch-build/switch ./cmd/switch/main.go
+RUN go build -o /switch-build/switch_agent ./cmd/switch_agent/main.go
 
 ENTRYPOINT ["sh", "-c", "trap 'exit 0' SIGTERM SIGINT; while true; do echo 'Container is running...'; sleep 10; done"]

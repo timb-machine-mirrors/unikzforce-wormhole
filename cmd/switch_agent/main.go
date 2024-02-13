@@ -3,8 +3,9 @@ package main
 import (
 	"github.com/cilium/ebpf/link"
 	"github.com/cilium/ebpf/rlimit"
+	"github.com/urfave/cli"
+	"github.com/vishvananda/netlink"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"time"
@@ -12,6 +13,29 @@ import (
 )
 
 func main() {
+
+	app := &cli.App{
+		Name:  "switch_agent",
+		Usage: "switch_agent, is the program that will reside in each network and facilitate forwarding packets to other networks and also will report to controller",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "iface",
+				Value: "eth0",
+				Usage: "the name of the network interface",
+			},
+		},
+		Action: capturePackets,
+	}
+
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func capturePackets(cCtx *cli.Context) {
+
+	ifname := cCtx.String("iface")
+
 	// Remove resource limits for kernels <5.11.
 	if err := rlimit.RemoveMemlock(); err != nil {
 		log.Fatal("Removing memlock:", err)
@@ -24,18 +48,17 @@ func main() {
 	}
 	defer objs.Close()
 
-	ifname := "eth1" // Change this to an interface on your machine.
-	iface, err := net.InterfaceByName(ifname)
+	iface, err := netlink.LinkByName(ifname)
 	if err != nil {
 		log.Fatalf("Getting interface %s: %s", ifname, err)
 	}
 
-	log.Print("Interface index:", iface.Index)
+	log.Print("Interface index:", iface.Attrs().Index)
 
 	// Attach count_packets to the network interface.
 	link, err := link.AttachXDP(link.XDPOptions{
 		Program:   objs.CountPackets,
-		Interface: iface.Index,
+		Interface: iface.Attrs().Index,
 	})
 	if err != nil {
 		log.Fatal("Attaching XDP:", err)

@@ -7,8 +7,8 @@ topology:
       image: alpine:latest
     sw:
       kind: linux
-      image: wormhole/switch:latest
-#      cmd: "sh -c /switch-build/switch"
+      image: wormhole/switch_agent:latest
+#      cmd: "sh -c /switch-build/switch_agent eth1"
     dst:
       kind: linux
       image: alpine:latest
