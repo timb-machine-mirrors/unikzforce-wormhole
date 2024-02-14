@@ -8,7 +8,7 @@ topology:
     sw:
       kind: linux
       image: wormhole/switch_agent:latest
-#      cmd: "sh -c /switch-build/switch_agent eth1"
+#      entrypoint: "sh -c /switch-build/switch_agent --ifname eth1"
     dst:
       kind: linux
       image: alpine:latest

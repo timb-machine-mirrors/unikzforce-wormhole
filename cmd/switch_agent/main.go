@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 	"wormhole/ebpf"
 )
@@ -19,9 +20,14 @@ func main() {
 		Usage: "switch_agent, is the program that will reside in each network and facilitate forwarding packets to other networks and also will report to controller",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "iface",
-				Value: "eth0",
+				Name:  "if-name",
+				Value: "",
 				Usage: "the name of the network interface",
+			},
+			&cli.IntFlag{
+				Name:  "if-index",
+				Value: -1,
+				Usage: "the index of the network interface",
 			},
 		},
 		Action: capturePackets,
@@ -33,8 +39,6 @@ func main() {
 }
 
 func capturePackets(cCtx *cli.Context) {
-
-	ifname := cCtx.String("iface")
 
 	// Remove resource limits for kernels <5.11.
 	if err := rlimit.RemoveMemlock(); err != nil {
@@ -48,12 +52,34 @@ func capturePackets(cCtx *cli.Context) {
 	}
 	defer objs.Close()
 
-	iface, err := netlink.LinkByName(ifname)
-	if err != nil {
-		log.Fatalf("Getting interface %s: %s", ifname, err)
+	ifname := cCtx.String("if-name")
+	ifIndex := cCtx.Int("if-index")
+
+	if ifname == "" && ifIndex == -1 {
+		ifname = "eth0"
+	}
+
+	var iface netlink.Link
+	var err error
+
+	if ifname != "" {
+		iface, err = netlink.LinkByName(ifname)
+		if err != nil {
+			log.Fatalf("Getting interface %d: %s", ifIndex, err)
+		}
+	} else {
+		iface, err = netlink.LinkByIndex(ifIndex)
+		if err != nil {
+			log.Fatalf("Getting interface %d: %s", ifIndex, err)
+		}
 	}
 
 	log.Print("Interface index:", iface.Attrs().Index)
+
+	_, err = strconv.Atoi(strconv.Itoa(iface.Attrs().Index))
+	if err != nil {
+		log.Fatal("Cannot parse network interface index")
+	}
 
 	// Attach count_packets to the network interface.
 	link, err := link.AttachXDP(link.XDPOptions{
@@ -65,7 +91,7 @@ func capturePackets(cCtx *cli.Context) {
 	}
 	defer link.Close()
 
-	log.Printf("Counting incoming packets on %s..", ifname)
+	log.Printf("Counting incoming packets on %s..", iface.Attrs().Name)
 
 	// Periodically fetch the packet counter from PktCount,
 	// exit the program when interrupted.
