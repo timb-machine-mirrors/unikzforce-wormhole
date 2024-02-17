@@ -1,0 +1,23 @@
+name: switch
+
+topology:
+  nodes:
+    src:
+      kind: linux
+      image: alpine:latest
+    sw:
+      kind: linux
+      image: wormhole/switch_agent:latest
+#      entrypoint: "sh -c /switch-build/switch_agent --ifname eth1"
+    dst:
+      kind: linux
+      image: alpine:latest
+  links:
+    - endpoints: [src:eth1, sw:eth1]
+      # sometimes by default the containerlab would set MTU to 9500.
+      # if the MTU is high the libbpf would complain like this:
+      #   libbpf: Kernel error message: veth: Peer MTU is too large to set XDP
+      #   Error: interface xdp attach failed: Numerical result out of range
+      mtu: 1500
+    - endpoints: [dst:eth1, sw:eth2]
+      mtu: 1500

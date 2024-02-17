@@ -45,8 +45,19 @@ COPY ./cmd/switch_agent/ /switch-source/cmd/switch_agent/
 
 WORKDIR /switch-source/
 
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
 RUN go mod download
 RUN go generate ./ebpf/
+
 RUN go build -o /switch-build/switch_agent ./cmd/switch_agent/main.go
+# for debuging comment above and uncomment below 2 commands & comment above
+#RUN go build -gcflags="all=-N -l" -o /switch-build/switch_agent ./cmd/switch_agent/main.go
+#EXPOSE 40000
+
+
+
+#ENTRYPOINT ["dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/switch-build/switch_agent", "--", "--if-name", "eth1"]
 
 ENTRYPOINT ["sh", "-c", "trap 'exit 0' SIGTERM SIGINT; while true; do echo 'Container is running...'; sleep 10; done"]
+
+#ENTRYPOINT ["/switch-build/switch_agent", "--if-name", "eth1"]

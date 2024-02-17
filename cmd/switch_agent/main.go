@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strconv"
 	"time"
 	"wormhole/ebpf"
 )
@@ -34,11 +33,11 @@ func main() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }
 
-func capturePackets(cCtx *cli.Context) {
+func capturePackets(cCtx *cli.Context) error {
 
 	// Remove resource limits for kernels <5.11.
 	if err := rlimit.RemoveMemlock(); err != nil {
@@ -76,18 +75,15 @@ func capturePackets(cCtx *cli.Context) {
 
 	log.Print("Interface index:", iface.Attrs().Index)
 
-	_, err = strconv.Atoi(strconv.Itoa(iface.Attrs().Index))
-	if err != nil {
-		log.Fatal("Cannot parse network interface index")
-	}
-
 	// Attach count_packets to the network interface.
 	link, err := link.AttachXDP(link.XDPOptions{
 		Program:   objs.CountPackets,
 		Interface: iface.Attrs().Index,
+		Flags:     link.XDPGenericMode,
 	})
 	if err != nil {
 		log.Fatal("Attaching XDP:", err)
+		return err
 	}
 	defer link.Close()
 
@@ -109,7 +105,7 @@ func capturePackets(cCtx *cli.Context) {
 			log.Printf("Received %d packets", count)
 		case <-stop:
 			log.Print("Received signal, exiting..")
-			return
+			return nil
 		}
 	}
 }

@@ -15,7 +15,7 @@ func main() {
 	}
 	fmt.Println("Current working directory:", wd)
 
-	clabclient := containerlab.NewContainerLabClient("./clab-test/switch.clab.yml")
+	clabclient := containerlab.NewContainerLabClient("./clab-topologies/switch.clab.yml")
 
 	ctx := context.Background()
 
