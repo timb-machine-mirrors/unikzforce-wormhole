@@ -8,7 +8,13 @@ topology:
     sw:
       kind: linux
       image: wormhole/switch_agent:latest
-#      entrypoint: "sh -c /switch-build/switch_agent --ifname eth1"
+      # we cannot run program using entrypoint
+      # or cmd here cause the network interface
+      # at this point is not created by containerlab
+      # yet. so we should run our commands with
+      # docker exec programmatically in our tests,
+      # so this won't work:
+      #      cmd:  "sh -c '/switch-build/switch_agent --if-name eth1'"
     dst:
       kind: linux
       image: alpine:latest

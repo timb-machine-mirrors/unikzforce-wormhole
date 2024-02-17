@@ -51,20 +51,20 @@ func capturePackets(cCtx *cli.Context) error {
 	}
 	defer objs.Close()
 
-	ifname := cCtx.String("if-name")
+	ifName := cCtx.String("if-name")
 	ifIndex := cCtx.Int("if-index")
 
-	if ifname == "" && ifIndex == -1 {
-		ifname = "eth0"
+	if ifName == "" && ifIndex == -1 {
+		log.Fatal("either --if-name or --if-index should be used")
 	}
 
 	var iface netlink.Link
 	var err error
 
-	if ifname != "" {
-		iface, err = netlink.LinkByName(ifname)
+	if ifName != "" {
+		iface, err = netlink.LinkByName(ifName)
 		if err != nil {
-			log.Fatalf("Getting interface %d: %s", ifIndex, err)
+			log.Fatalf("Getting interface %s %d: %s", ifName, ifIndex, err)
 		}
 	} else {
 		iface, err = netlink.LinkByIndex(ifIndex)
