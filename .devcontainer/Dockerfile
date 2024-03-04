@@ -29,6 +29,8 @@ RUN sudo ln -sf /usr/bin/containerlab /usr/bin/clab
 RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
 RUN ~/.fzf/install
 
+RUN echo 'alias ll="ls -al"' >> ~/.bashrc
+
 RUN mkdir /tools/
 
 WORKDIR /tools/

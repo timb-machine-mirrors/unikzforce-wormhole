@@ -23,6 +23,7 @@ RUN apt install -y libcap-ng-dev
 RUN apt install -y libbfd-dev
 RUN ln -sf /usr/include/asm-generic/ /usr/include/asm
 RUN apt install -y libcap-dev
+RUN echo 'alias ll="ls -al"' >> ~/.bashrc
 
 RUN mkdir /tools/
 
