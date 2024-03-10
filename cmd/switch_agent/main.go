@@ -70,25 +70,22 @@ func activateSwitchAgent(cCtx *cli.Context) error {
 	defer objs.Close()
 
 	networkInterfaces := findNetworkInterfaces(cCtx)
-	kernelspaceMacTable := objs.MacTable
-	userspaceMacTableReInsertChannel := make(chan switch_agent.SwitchAgentXDPMacAddressIfaceEntry)
-
-	onRemoveCallback := userspaceMacTableEvictionCallback(kernelspaceMacTable, userspaceMacTableReInsertChannel)
 
 	// create userspaceMacTable: Cache<MacAddress, IfaceIndex>
-	userspaceMacTable := createUserspaceMacTable(onRemoveCallback)
+	userspaceMacTableReInsertChannel := make(chan switch_agent.SwitchAgentXDPMacAddressIfaceEntry)
+	userspaceMacTableEvictionCallback := createUserspaceMacTableEvictionCallback(objs.MacTable, userspaceMacTableReInsertChannel)
+	userspaceMacTable := createUserspaceMacTable(userspaceMacTableEvictionCallback)
 
 	go reInsertIntoUserspaceMacTable(userspaceMacTableReInsertChannel, userspaceMacTable)
 
 	attachedLinks, err := attachToInterfaces(networkInterfaces, objs.SwitchAgentXdp)
-
 	if err != nil {
 		return err
 	}
 
 	defer closeAttachedLinks(attachedLinks)
 
-	go handleNewDiscoveredEntries(userspaceMacTable, objs.NewDiscoveredEntriesRb)
+	go handleNewDiscoveredEntriesRingBuffer(userspaceMacTable, objs.NewDiscoveredEntriesRb)
 
 	return waitForCtrlC(objs)
 }
@@ -112,7 +109,7 @@ func createUserspaceMacTable(onRemove func(string, []byte)) *bigcache.BigCache {
 	return userspaceMacTable
 }
 
-func userspaceMacTableEvictionCallback(kernelspaceMacTable *ebpf.Map, userspaceMacTableReInsertChannel chan switch_agent.SwitchAgentXDPMacAddressIfaceEntry) func(string, []byte) {
+func createUserspaceMacTableEvictionCallback(kernelspaceMacTable *ebpf.Map, userspaceMacTableReInsertChannel chan switch_agent.SwitchAgentXDPMacAddressIfaceEntry) func(string, []byte) {
 	return func(key string, entry []byte) {
 		macKey := convertStringToMac(key)
 		ifaceIndexInKernel := switch_agent.SwitchAgentXDPIfaceIndex{}
@@ -205,7 +202,7 @@ func attachToInterfaces(networkInterfaces []netlink.Link, switchAgentXdp *ebpf.P
 	return attachedLinks, nil
 }
 
-func handleNewDiscoveredEntries(userspaceMacTable *bigcache.BigCache, newDiscoveredEntriesRb *ebpf.Map) {
+func handleNewDiscoveredEntriesRingBuffer(userspaceMacTable *bigcache.BigCache, newDiscoveredEntriesRb *ebpf.Map) {
 
 	for {
 		rd, err := ringbuf.NewReader(newDiscoveredEntriesRb)
