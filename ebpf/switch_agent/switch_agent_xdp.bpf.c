@@ -3,8 +3,6 @@
 
 #include <bpf/bpf_helpers.h>
 
-//#include "switch_agent_xdp.h"
-
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
 
 struct mac_address {

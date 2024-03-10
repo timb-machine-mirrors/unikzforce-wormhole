@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
+	"encoding/hex"
 	"fmt"
 	"github.com/allegro/bigcache/v3"
 	"github.com/cilium/ebpf"
@@ -43,7 +44,7 @@ func main() {
 			&cli.StringFlag{
 				Name:  "interface-names",
 				Value: "",
-				Usage: "the name of the network interface",
+				Usage: "the name of the network interfaces to attach",
 			},
 		},
 		Action: activateSwitchAgent,
@@ -68,52 +69,98 @@ func activateSwitchAgent(cCtx *cli.Context) error {
 	}
 	defer objs.Close()
 
-	ifaces := networkInterfaces(cCtx)
+	networkInterfaces := findNetworkInterfaces(cCtx)
+	kernelspaceMacTable := objs.MacTable
+	userspaceMacTableReInsertChannel := make(chan switch_agent.SwitchAgentXDPMacAddressIfaceEntry)
 
-	userMacTable, _ := bigcache.New(context.Background(), bigcache.DefaultConfig(5*time.Minute))
+	onRemoveCallback := userspaceMacTableEvictionCallback(kernelspaceMacTable, userspaceMacTableReInsertChannel)
 
-	for _, iface := range ifaces {
-		var err error
+	// create userspaceMacTable: Cache<MacAddress, IfaceIndex>
+	userspaceMacTable := createUserspaceMacTable(onRemoveCallback)
 
-		// Attach count_packets to the network interface.
-		link, err := link.AttachXDP(link.XDPOptions{
-			Program:   objs.SwitchAgentXdp,
-			Interface: iface.Attrs().Index,
-			Flags:     link.XDPGenericMode,
-		})
+	go reInsertIntoUserspaceMacTable(userspaceMacTableReInsertChannel, userspaceMacTable)
 
-		if err != nil {
-			log.Fatal("Attaching XDP:", err)
-			return err
-		}
+	attachedLinks, err := attachToInterfaces(networkInterfaces, objs.SwitchAgentXdp)
 
-		defer link.Close()
+	if err != nil {
+		return err
 	}
 
-	go handleNewDiscoveredEntries(userMacTable, objs.NewDiscoveredEntriesRb)
+	defer closeAttachedLinks(attachedLinks)
 
-	// Periodically fetch the packet counter from PktCount,
-	// exit the program when interrupted.
-	tick := time.Tick(time.Second)
-	stop := make(chan os.Signal, 5)
-	signal.Notify(stop, os.Interrupt)
-	for {
-		select {
-		case <-tick:
-			var count uint64
-			err := objs.MacTable.Lookup(uint32(0), &count)
-			if err != nil {
-				log.Fatal("Map lookup:", err)
+	go handleNewDiscoveredEntries(userspaceMacTable, objs.NewDiscoveredEntriesRb)
+
+	return waitForCtrlC(objs)
+}
+
+func createUserspaceMacTable(onRemove func(string, []byte)) *bigcache.BigCache {
+	defaultCacheConfig := bigcache.DefaultConfig(5 * time.Minute)
+	userspaceMacTable, _ := bigcache.New(
+		context.Background(),
+		bigcache.Config{
+			Shards:             defaultCacheConfig.Shards,
+			LifeWindow:         defaultCacheConfig.LifeWindow,
+			CleanWindow:        1 * time.Second,
+			MaxEntriesInWindow: defaultCacheConfig.MaxEntriesInWindow,
+			MaxEntrySize:       defaultCacheConfig.MaxEntrySize,
+			StatsEnabled:       defaultCacheConfig.StatsEnabled,
+			Verbose:            defaultCacheConfig.Verbose,
+			HardMaxCacheSize:   defaultCacheConfig.HardMaxCacheSize,
+			OnRemove:           onRemove,
+			Hasher:             defaultCacheConfig.Hasher,
+		})
+	return userspaceMacTable
+}
+
+func userspaceMacTableEvictionCallback(kernelspaceMacTable *ebpf.Map, userspaceMacTableReInsertChannel chan switch_agent.SwitchAgentXDPMacAddressIfaceEntry) func(string, []byte) {
+	return func(key string, entry []byte) {
+		macKey := convertStringToMac(key)
+		ifaceIndexInKernel := switch_agent.SwitchAgentXDPIfaceIndex{}
+		err := kernelspaceMacTable.Lookup(macKey, ifaceIndexInKernel)
+		if err != nil {
+			log.Fatalf("Error parsing value in kernel for mac %s, err: %s", key, err)
+			return
+		}
+
+		currentTimeSeconds := time.Now().Unix()
+		timestampSecondsInKernel := int64(ifaceIndexInKernel.Timestamp / 1_000_000_000) // convert timestamp to seconds
+
+		timeDifferenceSeconds := currentTimeSeconds - timestampSecondsInKernel
+
+		if timeDifferenceSeconds < 300 {
+			// if upon removal of the key in userspace Mac Table we realized that
+			// the kernel space equivalent of that item is _not_ older than 5 minutes
+			// we will realize that this Mac address have been visible to the switch
+			// in tha last 5 minutes, so we will re-insert the key/value for that mac
+			// address again in the userspace table, with the latest value obtained
+			// from the kernel space mac table.
+			userspaceMacTableReInsertChannel <- switch_agent.SwitchAgentXDPMacAddressIfaceEntry{
+				Mac:   macKey,
+				Iface: ifaceIndexInKernel,
 			}
-			log.Printf("Received %d packets", count)
-		case <-stop:
-			log.Print("Received signal, exiting..")
-			return nil
+		} else {
+			err := kernelspaceMacTable.Delete(key)
+			if err != nil {
+				return
+			}
 		}
 	}
 }
 
-func networkInterfaces(cCtx *cli.Context) []netlink.Link {
+func reInsertIntoUserspaceMacTable(userspaceMacTableReInsertChannel chan switch_agent.SwitchAgentXDPMacAddressIfaceEntry, userspaceMacTable *bigcache.BigCache) {
+	for entry := range userspaceMacTableReInsertChannel {
+
+		key := convertMacToString(entry.Mac)
+		value, _ := encodeIfaceIndex(entry.Iface)
+
+		err := userspaceMacTable.Set(key, value)
+		if err != nil {
+			log.Fatalln("cannot reinsert evicted into userspaceMacTable")
+		}
+	}
+}
+
+func findNetworkInterfaces(cCtx *cli.Context) []netlink.Link {
 	cliInterfaceNames := strings.TrimSpace(cCtx.String("interface-names"))
 	if cliInterfaceNames == "" {
 		log.Fatal("--interface-names should be present and not empty")
@@ -134,7 +181,31 @@ func networkInterfaces(cCtx *cli.Context) []netlink.Link {
 	return ifaces
 }
 
-func handleNewDiscoveredEntries(userMacTable *bigcache.BigCache, newDiscoveredEntriesRb *ebpf.Map) {
+func attachToInterfaces(networkInterfaces []netlink.Link, switchAgentXdp *ebpf.Program) ([]*link.Link, error) {
+	var attachedLinks []*link.Link
+
+	for _, iface := range networkInterfaces {
+		var err error
+
+		// Attach count_packets to the network interface.
+		attachedLink, err := link.AttachXDP(link.XDPOptions{
+			Program:   switchAgentXdp,
+			Interface: iface.Attrs().Index,
+			Flags:     link.XDPGenericMode,
+		})
+
+		if err != nil {
+			log.Fatal("Attaching XDP:", err)
+			return nil, err
+		}
+
+		attachedLinks = append(attachedLinks, &attachedLink)
+	}
+
+	return attachedLinks, nil
+}
+
+func handleNewDiscoveredEntries(userspaceMacTable *bigcache.BigCache, newDiscoveredEntriesRb *ebpf.Map) {
 
 	for {
 		rd, err := ringbuf.NewReader(newDiscoveredEntriesRb)
@@ -151,19 +222,37 @@ func handleNewDiscoveredEntries(userMacTable *bigcache.BigCache, newDiscoveredEn
 			continue
 		}
 
-		key := convertToString(entry.Mac)
-		value, _ := encodeStruct(entry.Iface)
+		key := convertMacToString(entry.Mac)
+		value, _ := encodeIfaceIndex(entry.Iface)
 
-		userMacTable.Set(key, value)
+		userspaceMacTable.Set(key, value)
 	}
 }
 
-func convertToString(mac switch_agent.SwitchAgentXDPMacAddress) string {
-	return fmt.Sprintf("%02X:%02X:%02X:%02X:%02X:%02X",
+func closeAttachedLinks(links []*link.Link) {
+	for _, l := range links {
+		(*l).Close()
+	}
+}
+
+func convertMacToString(mac switch_agent.SwitchAgentXDPMacAddress) string {
+	return fmt.Sprintf("%02X%02X%02X%02X%02X%02X",
 		mac.Mac[0], mac.Mac[1], mac.Mac[2], mac.Mac[3], mac.Mac[4], mac.Mac[5])
 }
 
-func encodeStruct(s switch_agent.SwitchAgentXDPIfaceIndex) ([]byte, error) {
+func convertStringToMac(macStr string) switch_agent.SwitchAgentXDPMacAddress {
+	macBytes, err := hex.DecodeString(macStr)
+	if err != nil {
+		log.Fatalln("Error decoding MAC address:", err)
+	}
+
+	var mac [6]uint8
+	copy(mac[:], macBytes)
+
+	return switch_agent.SwitchAgentXDPMacAddress{Mac: mac}
+}
+
+func encodeIfaceIndex(s switch_agent.SwitchAgentXDPIfaceIndex) ([]byte, error) {
 	// Get a buffer from the pool
 	buf := gobPool.Get().(*bytes.Buffer)
 	defer gobPool.Put(buf)
@@ -178,25 +267,47 @@ func encodeStruct(s switch_agent.SwitchAgentXDPIfaceIndex) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-//// Function to decode a byte slice into a struct
-//func decodeStruct(data []byte) (MyStruct, error) {
-//	// Get a buffer from the pool
-//	buf := gobPool.Get().(*bytes.Buffer)
-//	defer gobPool.Put(buf)
-//	buf.Reset() // Reset buffer before decoding
-//
-//	// Write data to buffer
-//	_, err := buf.Write(data)
-//	if err != nil {
-//		return MyStruct{}, err
-//	}
-//
-//	// Decode the buffer into a struct
-//	var decodedStruct MyStruct
-//	decoder := gob.NewDecoder(buf)
-//	err = decoder.Decode(&decodedStruct)
-//	if err != nil {
-//		return MyStruct{}, err
-//	}
-//	return decodedStruct, nil
-//}
+// Function to decode a byte slice into a struct
+func decodeMacIfaceEntry(data []byte) (switch_agent.SwitchAgentXDPMacAddressIfaceEntry, error) {
+	// Get a buffer from the pool
+	buf := gobPool.Get().(*bytes.Buffer)
+	defer gobPool.Put(buf)
+	buf.Reset() // Reset buffer before decoding
+
+	// Write data to buffer
+	_, err := buf.Write(data)
+	if err != nil {
+		return switch_agent.SwitchAgentXDPMacAddressIfaceEntry{}, err
+	}
+
+	// Decode the buffer into a struct
+	var decodedStruct switch_agent.SwitchAgentXDPMacAddressIfaceEntry
+	decoder := gob.NewDecoder(buf)
+	err = decoder.Decode(&decodedStruct)
+	if err != nil {
+		return switch_agent.SwitchAgentXDPMacAddressIfaceEntry{}, err
+	}
+	return decodedStruct, nil
+}
+
+func waitForCtrlC(objs switch_agent.SwitchAgentXDPObjects) error {
+	// Periodically fetch the packet counter from PktCount,
+	// exit the program when interrupted.
+	tick := time.Tick(time.Second)
+	stop := make(chan os.Signal, 5)
+	signal.Notify(stop, os.Interrupt)
+	for {
+		select {
+		case <-tick:
+			var count uint64
+			err := objs.MacTable.Lookup(uint32(0), &count)
+			if err != nil {
+				log.Fatal("Map lookup:", err)
+			}
+			log.Printf("Received %d packets", count)
+		case <-stop:
+			log.Print("Received signal, exiting..")
+			return nil
+		}
+	}
+}

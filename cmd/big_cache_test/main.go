@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/allegro/bigcache/v3"
 	"sync"
+	"time"
 )
 
 type MyStruct struct {
@@ -32,7 +33,7 @@ var (
 	}
 )
 
-func encodeStruct(s MyStruct) ([]byte, error) {
+func encodeStruct(s interface{}) ([]byte, error) {
 	// Get a buffer from the pool
 	buf := gobPool.Get().(*bytes.Buffer)
 	defer gobPool.Put(buf)
@@ -72,10 +73,30 @@ func decodeStruct(data []byte) (MyStruct, error) {
 
 func main() {
 	mac := MacAddress{0x00, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E}
+	//secondMac := MacAddress{0x00, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E}
+
+	theChannel := make(chan MyStruct)
+
+	onRemove := func(key string, entry []byte) {
+		fmt.Println("SOMETHING HAS BEEN REMOVED")
+		theChannel <- MyStruct{"BOB", 50}
+	}
 
 	// Configure cache (adjust settings as needed)
-	ctx := context.Background()                        // Use context for potential future graceful shutdown
-	config := bigcache.DefaultConfig(10 * 1024 * 1024) // 10MB capacity
+	ctx := context.Background()                     // Use context for potential future graceful shutdown
+	old := bigcache.DefaultConfig(10 * 1024 * 1024) // 10MB capacity
+	config := bigcache.Config{
+		Shards:             1024,
+		LifeWindow:         3 * time.Second,
+		CleanWindow:        1 * time.Second,
+		MaxEntriesInWindow: 1000 * 10 * 60,
+		MaxEntrySize:       500,
+		StatsEnabled:       false,
+		Verbose:            true,
+		HardMaxCacheSize:   0,
+		OnRemove:           onRemove,
+		Hasher:             old.Hasher,
+	}
 	cache, err := bigcache.New(ctx, config)
 	if err != nil {
 		panic(err)
@@ -96,6 +117,39 @@ func main() {
 		panic(err)
 	}
 
+	go func() {
+		for message := range theChannel {
+			fmt.Println("Received:", message)
+
+			dataReplaced, err := encodeStruct(message)
+			if err != nil {
+				panic(err)
+			}
+			cache.Set(mac.String(), dataReplaced)
+			fmt.Println("Replaced")
+			//
+			//// Retrieve the data later...
+			//fmt.Println("getting from map")
+			//entry, err := cache.Get(mac.String())
+			//if err != nil {
+			//	fmt.Println("Entry not found")
+			//	return
+			//}
+			//fmt.Println("fucking problem")
+			//
+			//// Decode the retrieved data back to MyStruct
+			//decodedStruct, err := decodeStruct(entry)
+			//if err != nil {
+			//	fmt.Println("fucking problem")
+			//	panic(err)
+			//}
+			//
+			//fmt.Printf("Retrieved struct: Name: %s, Age: %d\n", decodedStruct.Name, decodedStruct.Age)
+		}
+	}()
+
+	time.Sleep(10 * time.Second)
+
 	// Retrieve the data later...
 	entry, err := cache.Get(mac.String())
 	if err != nil {
@@ -106,7 +160,7 @@ func main() {
 		}
 		return
 	}
-
+	//
 	// Decode the retrieved data back to MyStruct
 	decodedStruct, err := decodeStruct(entry)
 	if err != nil {
@@ -114,4 +168,6 @@ func main() {
 	}
 
 	fmt.Printf("Retrieved struct: Name: %s, Age: %d\n", decodedStruct.Name, decodedStruct.Age)
+	fmt.Println("end of world")
+
 }
