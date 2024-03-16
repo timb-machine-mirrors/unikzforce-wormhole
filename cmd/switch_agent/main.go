@@ -62,32 +62,58 @@ func activateSwitchAgent(cCtx *cli.Context) error {
 		log.Fatal("Removing memlock:", err)
 	}
 
-	// Load the compiled eBPF ELF and load it into the kernel.
-	var objs switch_agent.SwitchAgentXDPObjects
-	if err := switch_agent.LoadSwitchAgentXDPObjects(&objs, nil); err != nil {
-		log.Fatal("Loading eBPF objects:", err)
-	}
-	defer objs.Close()
-
 	networkInterfaces := findNetworkInterfaces(cCtx)
 
-	// create userspaceMacTable: Cache<MacAddress, IfaceIndex>
-	userspaceMacTableReInsertChannel := make(chan switch_agent.SwitchAgentXDPMacAddressIfaceEntry)
-	userspaceMacTableEvictionCallback := createUserspaceMacTableEvictionCallback(objs.MacTable, userspaceMacTableReInsertChannel)
-	userspaceMacTable := createUserspaceMacTable(userspaceMacTableEvictionCallback)
+	// Load the compiled eBPF ELF and load it into the kernel.
+	var xdpObjects switch_agent.SwitchAgentXDPObjects
+	if err := switch_agent.LoadSwitchAgentXDPObjects(&xdpObjects, nil); err != nil {
+		log.Fatal("Loading XDP eBPF objects:", err)
+	}
+	defer xdpObjects.Close()
 
-	go reInsertIntoUserspaceMacTable(userspaceMacTableReInsertChannel, userspaceMacTable)
+	var tcObjects switch_agent.SwitchAgentUnknownUnicastFloodingObjects
+	if err := switch_agent.LoadSwitchAgentUnknownUnicastFloodingObjects(&tcObjects, nil); err != nil {
+		log.Fatal("Loading TC ebpf objects:", err)
+	}
+	defer tcObjects.Close()
 
-	attachedLinks, err := attachToInterfaces(networkInterfaces, objs.SwitchAgentXdp)
+	err := addNetworkInterfacesToUnknownUnicastFloodingMaps(tcObjects, networkInterfaces)
 	if err != nil {
 		return err
 	}
 
+	// create userspaceMacTable: Cache<MacAddress, IfaceIndex>
+	// attention the in allegro bigcache, each entry has string key and byte[] value
+	userspaceMacTableReInsertChannel := make(chan switch_agent.SwitchAgentXDPMacAddressIfaceEntry)
+	userspaceMacTableEvictionCallback := createUserspaceMacTableEvictionCallback(xdpObjects.MacTable, userspaceMacTableReInsertChannel)
+	userspaceMacTable := createUserspaceMacTable(userspaceMacTableEvictionCallback)
+
+	go reInsertIntoUserspaceMacTable(userspaceMacTableReInsertChannel, userspaceMacTable)
+
+	attachedLinks, err := attachToInterfaces(networkInterfaces, xdpObjects, tcObjects)
 	defer closeAttachedLinks(attachedLinks)
+	if err != nil {
+		return err
+	}
 
-	go handleNewDiscoveredEntriesRingBuffer(userspaceMacTable, objs.NewDiscoveredEntriesRb)
+	go handleNewDiscoveredEntriesRingBuffer(userspaceMacTable, xdpObjects.NewDiscoveredEntriesRb)
 
-	return waitForCtrlC(objs)
+	return waitForCtrlC(xdpObjects)
+}
+
+func addNetworkInterfacesToUnknownUnicastFloodingMaps(tcObjects switch_agent.SwitchAgentUnknownUnicastFloodingObjects, networkInterfaces []netlink.Link) error {
+	err := tcObjects.InterfacesArrayLength.Put(0, len(networkInterfaces))
+	if err != nil {
+		return err
+	}
+
+	for i, networkInterface := range networkInterfaces {
+		err = tcObjects.InterfacesArray.Put(i, networkInterface.Attrs().Index)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func createUserspaceMacTable(onRemove func(string, []byte)) *bigcache.BigCache {
@@ -178,25 +204,38 @@ func findNetworkInterfaces(cCtx *cli.Context) []netlink.Link {
 	return ifaces
 }
 
-func attachToInterfaces(networkInterfaces []netlink.Link, switchAgentXdp *ebpf.Program) ([]*link.Link, error) {
+func attachToInterfaces(networkInterfaces []netlink.Link, xdpObjects switch_agent.SwitchAgentXDPObjects, tcObjects switch_agent.SwitchAgentUnknownUnicastFloodingObjects) ([]*link.Link, error) {
 	var attachedLinks []*link.Link
 
 	for _, iface := range networkInterfaces {
 		var err error
 
-		// Attach count_packets to the network interface.
-		attachedLink, err := link.AttachXDP(link.XDPOptions{
-			Program:   switchAgentXdp,
+		// Attach switchAgentXdp to the network interface.
+		attachedXdpLink, err := link.AttachXDP(link.XDPOptions{
+			Program:   xdpObjects.SwitchAgentXdp,
 			Interface: iface.Attrs().Index,
 			Flags:     link.XDPGenericMode,
 		})
 
 		if err != nil {
 			log.Fatal("Attaching XDP:", err)
-			return nil, err
+			return attachedLinks, err
 		}
 
-		attachedLinks = append(attachedLinks, &attachedLink)
+		// attach switchAgentUnknownUnicastFlooding to the network interface
+		attachedTcLink, err := link.AttachTCX(link.TCXOptions{
+			Interface: iface.Attrs().Index,
+			Program:   tcObjects.SwitchAgentUnknownUnicastFlooding,
+			Attach:    ebpf.AttachTCXIngress,
+			Anchor:    link.ReplaceProgram(tcObjects.SwitchAgentUnknownUnicastFlooding),
+		})
+
+		if err != nil {
+			log.Fatal("Attaching TCX:", err)
+			return attachedLinks, err
+		}
+
+		attachedLinks = append(attachedLinks, &attachedXdpLink, &attachedTcLink)
 	}
 
 	return attachedLinks, nil
