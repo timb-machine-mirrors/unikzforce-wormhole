@@ -53,7 +53,7 @@ type SwitchAgentUnknownUnicastFloodingSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type SwitchAgentUnknownUnicastFloodingProgramSpecs struct {
-	UnknownUnicastFlooding *ebpf.ProgramSpec `ebpf:"unknown_unicast_flooding"`
+	SwitchAgentUnknownUnicastFlooding *ebpf.ProgramSpec `ebpf:"switch_agent_unknown_unicast_flooding"`
 }
 
 // SwitchAgentUnknownUnicastFloodingMapSpecs contains maps before they are loaded into the kernel.
@@ -98,12 +98,12 @@ func (m *SwitchAgentUnknownUnicastFloodingMaps) Close() error {
 //
 // It can be passed to LoadSwitchAgentUnknownUnicastFloodingObjects or ebpf.CollectionSpec.LoadAndAssign.
 type SwitchAgentUnknownUnicastFloodingPrograms struct {
-	UnknownUnicastFlooding *ebpf.Program `ebpf:"unknown_unicast_flooding"`
+	SwitchAgentUnknownUnicastFlooding *ebpf.Program `ebpf:"switch_agent_unknown_unicast_flooding"`
 }
 
 func (p *SwitchAgentUnknownUnicastFloodingPrograms) Close() error {
 	return _SwitchAgentUnknownUnicastFloodingClose(
-		p.UnknownUnicastFlooding,
+		p.SwitchAgentUnknownUnicastFlooding,
 	)
 }
 

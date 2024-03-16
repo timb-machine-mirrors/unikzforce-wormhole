@@ -20,7 +20,7 @@ struct {
 } interfaces_array_length SEC("maps");
 
 SEC("tc")
-int unknown_unicast_flooding(struct __sk_buff *skb)
+int switch_agent_unknown_unicast_flooding(struct __sk_buff *skb)
 {
 	bpf_printk(
 			"///////////////////////////////////////////////////////////////////////////////////////////////////");
