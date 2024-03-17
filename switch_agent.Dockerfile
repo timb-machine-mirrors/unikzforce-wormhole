@@ -46,9 +46,9 @@ COPY ./cmd/switch_agent/ /switch-source/cmd/switch_agent/
 
 WORKDIR /switch-source/
 
-RUN go install github.com/go-delve/delve/cmd/dlv@latest
+#RUN go install github.com/go-delve/delve/cmd/dlv@latest
 RUN go mod download
-RUN go generate ./ebpf/
+RUN go generate ./ebpf/switch_agent/
 
 RUN go build -o /switch-build/switch_agent ./cmd/switch_agent/main.go
 # for debuging comment above and uncomment below 2 commands & comment above

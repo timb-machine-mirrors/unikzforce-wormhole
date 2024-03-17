@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
@@ -20,10 +21,6 @@ import (
 	"sync"
 	"time"
 	"wormhole/ebpf/switch_agent"
-)
-
-import (
-	"encoding/binary"
 )
 
 // Pool to cache Encoder and Decoder instances
