@@ -33,9 +33,8 @@ struct {
 //	__uint(key_size, sizeof(struct mac_address));
 	__type(value, struct iface_index);
 //	__uint(value_size, sizeof(struct iface_index));
-	__uint(max_entries, 256 * 1024);
-	__uint(map_flags, BPF_F_NO_PREALLOC);
-	__uint(pinning, LIBBPF_PIN_BY_NAME);
+	__uint(max_entries, 4 * 1024 * 1024);
+//	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } mac_table SEC(".maps") /*__weak */;
 // TODO in above check if lack of __weak would
 // create any error in program logic or not,
@@ -46,8 +45,8 @@ struct {
 
 struct {
 	__uint(type, BPF_MAP_TYPE_RINGBUF);
-	__uint(max_entries, 256 * 1024);
-	__uint(pinning, LIBBPF_PIN_BY_NAME);
+	__uint(max_entries, 1024 * 1024);
+//	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } new_discovered_entries_rb SEC(".maps") /*__weak */;
 
 void register_source_mac_address_if_required(const struct xdp_md *ctx, const struct ethhdr *eth,

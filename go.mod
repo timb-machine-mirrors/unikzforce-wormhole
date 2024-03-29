@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/allegro/bigcache/v3 v3.1.0
-	github.com/cilium/ebpf v0.13.2
+	github.com/cilium/ebpf v0.14.0
 	github.com/janog-netcon/netcon-problem-management-subsystem v0.0.0-20240127085854-07c265d714d1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/urfave/cli v1.22.14

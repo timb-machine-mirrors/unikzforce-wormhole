@@ -61,6 +61,8 @@ func activateSwitchAgent(cCtx *cli.Context) error {
 
 	networkInterfaces := findNetworkInterfaces(cCtx)
 
+	log.Print("1")
+
 	// Load the compiled eBPF ELF and load it into the kernel.
 	var xdpObjects switch_agent.SwitchAgentXDPObjects
 	if err := switch_agent.LoadSwitchAgentXDPObjects(&xdpObjects, nil); err != nil {
@@ -68,16 +70,24 @@ func activateSwitchAgent(cCtx *cli.Context) error {
 	}
 	defer xdpObjects.Close()
 
+	log.Print("2")
+
 	var tcObjects switch_agent.SwitchAgentUnknownUnicastFloodingObjects
 	if err := switch_agent.LoadSwitchAgentUnknownUnicastFloodingObjects(&tcObjects, nil); err != nil {
 		log.Fatal("Loading TC ebpf objects:", err)
 	}
 	defer tcObjects.Close()
 
+	log.Print("size of networkInterfaces ", len(networkInterfaces))
+
+	log.Print("3")
+
 	err := addNetworkInterfacesToUnknownUnicastFloodingMaps(tcObjects, networkInterfaces)
 	if err != nil {
 		return err
 	}
+
+	log.Print("4")
 
 	// create userspaceMacTable: Cache<MacAddress, IfaceIndex>
 	// attention the in allegro bigcache, each entry has string key and byte[] value
@@ -85,7 +95,11 @@ func activateSwitchAgent(cCtx *cli.Context) error {
 	userspaceMacTableEvictionCallback := createUserspaceMacTableEvictionCallback(xdpObjects.MacTable, userspaceMacTableReInsertChannel)
 	userspaceMacTable := createUserspaceMacTable(userspaceMacTableEvictionCallback)
 
+	log.Print("5")
+
 	go reInsertIntoUserspaceMacTable(userspaceMacTableReInsertChannel, userspaceMacTable)
+
+	log.Print("6")
 
 	attachedLinks, err := attachToInterfaces(networkInterfaces, xdpObjects, tcObjects)
 	defer closeAttachedLinks(attachedLinks)
@@ -93,23 +107,34 @@ func activateSwitchAgent(cCtx *cli.Context) error {
 		return err
 	}
 
+	log.Print("7")
+
 	go handleNewDiscoveredEntriesRingBuffer(userspaceMacTable, xdpObjects.NewDiscoveredEntriesRb)
+
+	log.Print("8")
 
 	return waitForCtrlC(xdpObjects)
 }
 
 func addNetworkInterfacesToUnknownUnicastFloodingMaps(tcObjects switch_agent.SwitchAgentUnknownUnicastFloodingObjects, networkInterfaces []netlink.Link) error {
-	err := tcObjects.InterfacesArrayLength.Put(0, len(networkInterfaces))
+
+	log.Print("3.1")
+	err := tcObjects.InterfacesArrayLength.Put(uint32(0), uint32(len(networkInterfaces)))
 	if err != nil {
-		return err
+		log.Fatalf("something bad happened %s", err)
 	}
 
+	log.Print("3.2")
+
 	for i, networkInterface := range networkInterfaces {
-		err = tcObjects.InterfacesArray.Put(i, networkInterface.Attrs().Index)
+		log.Print("3.3_element")
+		err = tcObjects.InterfacesArray.Put(uint32(i), uint32(networkInterface.Attrs().Index))
 		if err != nil {
 			return err
 		}
 	}
+
+	log.Print("3.4")
 	return nil
 }
 
@@ -186,7 +211,10 @@ func findNetworkInterfaces(cCtx *cli.Context) []netlink.Link {
 		log.Fatal("--interface-names should be present and not empty")
 	}
 
-	interfaceNames := strings.Fields(cliInterfaceNames)
+	log.Println(cliInterfaceNames)
+
+	interfaceNames := strings.Split(cliInterfaceNames, ",")
+	log.Println(interfaceNames)
 
 	var ifaces []netlink.Link
 
@@ -204,8 +232,12 @@ func findNetworkInterfaces(cCtx *cli.Context) []netlink.Link {
 func attachToInterfaces(networkInterfaces []netlink.Link, xdpObjects switch_agent.SwitchAgentXDPObjects, tcObjects switch_agent.SwitchAgentUnknownUnicastFloodingObjects) ([]*link.Link, error) {
 	var attachedLinks []*link.Link
 
+	log.Print("6.1")
+
 	for _, iface := range networkInterfaces {
 		var err error
+
+		log.Print("6.2.element")
 
 		// Attach switchAgentXdp to the network interface.
 		attachedXdpLink, err := link.AttachXDP(link.XDPOptions{
@@ -224,7 +256,7 @@ func attachToInterfaces(networkInterfaces []netlink.Link, xdpObjects switch_agen
 			Interface: iface.Attrs().Index,
 			Program:   tcObjects.SwitchAgentUnknownUnicastFlooding,
 			Attach:    ebpf.AttachTCXIngress,
-			Anchor:    link.ReplaceProgram(tcObjects.SwitchAgentUnknownUnicastFlooding),
+			Anchor:    link.Tail(),
 		})
 
 		if err != nil {
@@ -324,23 +356,29 @@ func decodeMacIfaceEntry(data []byte) (switch_agent.SwitchAgentXDPMacAddressIfac
 }
 
 func waitForCtrlC(objs switch_agent.SwitchAgentXDPObjects) error {
-	// Periodically fetch the packet counter from PktCount,
-	// exit the program when interrupted.
-	tick := time.Tick(time.Second)
-	stop := make(chan os.Signal, 5)
+	//// Periodically fetch the packet counter from PktCount,
+	//// exit the program when interrupted.
+	//tick := time.Tick(time.Second)
+	//stop := make(chan os.Signal, 5)
+	//signal.Notify(stop, os.Interrupt)
+	//for {
+	//	select {
+	//	case <-tick:
+	//		var count uint64
+	//		err := objs.MacTable.Lookup(uint32(0), &count)
+	//		if err != nil {
+	//			log.Fatal("Map lookup:", err)
+	//		}
+	//		log.Printf("Received %d packets", count)
+	//	case <-stop:
+	//		log.Print("Received signal, exiting..")
+	//		return nil
+	//	}
+	//}
+	// Exit the program when interrupted.
+	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
-	for {
-		select {
-		case <-tick:
-			var count uint64
-			err := objs.MacTable.Lookup(uint32(0), &count)
-			if err != nil {
-				log.Fatal("Map lookup:", err)
-			}
-			log.Printf("Received %d packets", count)
-		case <-stop:
-			log.Print("Received signal, exiting..")
-			return nil
-		}
-	}
+	<-stop
+	log.Print("Received signal, exiting..")
+	return nil
 }
