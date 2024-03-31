@@ -4,7 +4,7 @@ topology:
   nodes:
     src:
       kind: linux
-      image: alpine:latest
+      image: wormhole/switch_agent:latest
     sw:
       kind: linux
       image: wormhole/switch_agent:latest
@@ -15,9 +15,11 @@ topology:
       # docker exec programmatically in our tests,
       # so this won't work:
       #      cmd:  "sh -c '/switch-build/switch_agent --if-name eth1'"
+      binds:
+        - /sys/kernel/debug:/sys/kernel/debug
     dst:
       kind: linux
-      image: alpine:latest
+      image: wormhole/switch_agent:latest
   links:
     - endpoints: [src:eth1, sw:eth1]
       # sometimes by default the containerlab would set MTU to 9500.

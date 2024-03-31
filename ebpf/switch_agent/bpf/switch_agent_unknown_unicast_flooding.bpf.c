@@ -27,19 +27,19 @@ int switch_agent_unknown_unicast_flooding(struct __sk_buff *skb)
     bpf_printk(
             "///////////////////////////////////////////////////////////////////////////////////////////////////");
     // we can use current_time as something like a unique identifier for packet
-    __u64 current_time = bpf_ktime_get_ns();
+    __u64 current_time = bpf_ktime_get_tai_ns();
     struct ethhdr *eth = (void *)(long)skb->data;
 
     if ((void *)(eth + 1) > (void *)(long)skb->data_end)
         return BPF_DROP;
 
     bpf_printk(
-            "///////////// id = %llx, interface = %d, Packet received, source MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+            "///////////// id = %llu, interface = %d, Packet received, source MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
             current_time, skb->ingress_ifindex, eth->h_source[0], eth->h_source[1],
             eth->h_source[2], eth->h_source[3], eth->h_source[4], eth->h_source[5]);
 
     bpf_printk(
-            "///////////// id = %llx, interface = %d, Packet received, dest MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+            "///////////// id = %llu, interface = %d, Packet received, dest MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
             current_time, skb->ingress_ifindex, eth->h_dest[0], eth->h_dest[1], eth->h_dest[2],
             eth->h_dest[3], eth->h_dest[4], eth->h_dest[5]);
 
@@ -53,7 +53,7 @@ int switch_agent_unknown_unicast_flooding(struct __sk_buff *skb)
     }
     __u32 number_of_interfaces = *number_of_interfaces_ptr;
 
-    bpf_printk("///////////// id = %llx, interface = %d, start to multicast\n", current_time, skb->ingress_ifindex);
+    bpf_printk("///////////// id = %llu, interface = %d, start to multicast\n", current_time, skb->ingress_ifindex);
 
     if (number_of_interfaces>MAX_INTERFACES)
     {
@@ -74,7 +74,7 @@ int switch_agent_unknown_unicast_flooding(struct __sk_buff *skb)
 
         if (interface_index != ingress_ifindex) {
             bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llx, multicast: redirection to %d \n",
+            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
                        current_time, interface_index);
         }
     } else {
@@ -92,7 +92,7 @@ int switch_agent_unknown_unicast_flooding(struct __sk_buff *skb)
 
         if (interface_index != ingress_ifindex) {
             bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llx, multicast: redirection to %d \n",
+            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
                        current_time, interface_index);
         }
     } else {
@@ -110,7 +110,7 @@ int switch_agent_unknown_unicast_flooding(struct __sk_buff *skb)
 
         if (interface_index != ingress_ifindex) {
             bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llx, multicast: redirection to %d \n",
+            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
                        current_time, interface_index);
         }
     } else {
@@ -128,7 +128,7 @@ int switch_agent_unknown_unicast_flooding(struct __sk_buff *skb)
 
         if (interface_index != ingress_ifindex) {
             bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llx, multicast: redirection to %d \n",
+            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
                        current_time, interface_index);
         }
     } else {
@@ -146,7 +146,7 @@ int switch_agent_unknown_unicast_flooding(struct __sk_buff *skb)
 
         if (interface_index != ingress_ifindex) {
             bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llx, multicast: redirection to %d \n",
+            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
                        current_time, interface_index);
         }
     } else {
@@ -164,7 +164,7 @@ int switch_agent_unknown_unicast_flooding(struct __sk_buff *skb)
 
         if (interface_index != ingress_ifindex) {
             bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llx, multicast: redirection to %d \n",
+            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
                        current_time, interface_index);
         }
     } else {
@@ -182,7 +182,7 @@ int switch_agent_unknown_unicast_flooding(struct __sk_buff *skb)
 
         if (interface_index != ingress_ifindex) {
             bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llx, multicast: redirection to %d \n",
+            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
                        current_time, interface_index);
         }
     } else {
@@ -200,7 +200,7 @@ int switch_agent_unknown_unicast_flooding(struct __sk_buff *skb)
 
         if (interface_index != ingress_ifindex) {
             bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llx, multicast: redirection to %d \n",
+            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
                        current_time, interface_index);
         }
     } else {
@@ -218,7 +218,7 @@ int switch_agent_unknown_unicast_flooding(struct __sk_buff *skb)
 
         if (interface_index != ingress_ifindex) {
             bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llx, multicast: redirection to %d \n",
+            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
                        current_time, interface_index);
         }
     } else {
@@ -236,7 +236,7 @@ int switch_agent_unknown_unicast_flooding(struct __sk_buff *skb)
 
         if (interface_index != ingress_ifindex) {
             bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llx, multicast: redirection to %d \n",
+            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
                        current_time, interface_index);
         }
     } else {

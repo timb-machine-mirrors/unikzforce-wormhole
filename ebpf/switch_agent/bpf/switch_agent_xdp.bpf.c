@@ -58,7 +58,7 @@ long switch_agent_xdp(struct xdp_md *ctx)
 	bpf_printk(
 		"----------------------------------------------------------------------------------------------------");
 	// we can use current_time as something like a unique identifier for packet
-	__u64 current_time = bpf_ktime_get_ns();
+	__u64 current_time = bpf_ktime_get_tai_ns();
 
 	struct ethhdr *eth = (void *)(long)ctx->data;
 
@@ -67,12 +67,12 @@ long switch_agent_xdp(struct xdp_md *ctx)
 		return XDP_ABORTED;
 
 	bpf_printk(
-		"id = %llx, interface = %d, Packet received, source MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+		"id = %llu, interface = %d, Packet received, source MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
 		current_time, ctx->ingress_ifindex, eth->h_source[0], eth->h_source[1],
 		eth->h_source[2], eth->h_source[3], eth->h_source[4], eth->h_source[5]);
 
 	bpf_printk(
-		"id = %llx, interface = %d, Packet received, dest MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+		"id = %llu, interface = %d, Packet received, dest MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
 		current_time, ctx->ingress_ifindex, eth->h_dest[0], eth->h_dest[1], eth->h_dest[2],
 		eth->h_dest[3], eth->h_dest[4], eth->h_dest[5]);
 
@@ -83,7 +83,7 @@ long switch_agent_xdp(struct xdp_md *ctx)
 			 ETH_ALEN); // Changed from h_source to h_dest
 
 	bpf_printk(
-		"id = %llx, interface = %d, lookup mac_table for matching redirect iface, h_dest MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+		"id = %llu, interface = %d, lookup mac_table for matching redirect iface, h_dest MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
 		current_time, ctx->ingress_ifindex, eth->h_dest[0], eth->h_dest[1], eth->h_dest[2],
 		eth->h_dest[3], eth->h_dest[4], eth->h_dest[5]);
 
@@ -91,7 +91,7 @@ long switch_agent_xdp(struct xdp_md *ctx)
 
 	if (!iface_to_redirect) {
 		bpf_printk(
-			"id = %llx, interface = %d, in case eth-h_dest==ff:ff:ff:ff:ff:ff we should do unknown unicast flooding\n",
+			"id = %llu, interface = %d, in case eth-h_dest==ff:ff:ff:ff:ff:ff we should do unknown unicast flooding\n",
 			current_time, ctx->ingress_ifindex);
 		// Unknown Unicast Flooding:
 		// in this case we need to redirect to interfaces that is not equal to ctx->ingress_ifindex,
@@ -105,19 +105,19 @@ long switch_agent_xdp(struct xdp_md *ctx)
 		// TODO: just here
 
 		//		if (ctx->ingress_ifindex != first_interface) {
-		//			bpf_printk("id = %llx, interface = %d, redirecting to interface %d \n", current_time, ctx->ingress_ifindex, first_interface);
+		//			bpf_printk("id = %llu, interface = %d, redirecting to interface %d \n", current_time, ctx->ingress_ifindex, first_interface);
 		//			return bpf_redirect(first_interface, 0);
 		//		}
 		//		else if (ctx->ingress_ifindex != second_interface) {
-		//			bpf_printk("id = %llx, interface = %d, redirecting to interface %d \n", current_time, ctx->ingress_ifindex, second_interface);
+		//			bpf_printk("id = %llu, interface = %d, redirecting to interface %d \n", current_time, ctx->ingress_ifindex, second_interface);
 		//			return bpf_redirect(second_interface, 0);
 		//		} else {
-		//			bpf_printk("id = %llx, interface = %d, nothing has been found so will do XDP_PASS\n", current_time, ctx->ingress_ifindex);
+		//			bpf_printk("id = %llu, interface = %d, nothing has been found so will do XDP_PASS\n", current_time, ctx->ingress_ifindex);
 		//			return XDP_PASS; // If the destination MAC isn't found, simply pass the packet
 		//		}
 	}
 
-	bpf_printk("id = %llx, interface = %d, match found. do the redirection\n", current_time,
+	bpf_printk("id = %llu, interface = %d, match found. do the redirection\n", current_time,
 		   ctx->ingress_ifindex);
 	return bpf_redirect(iface_to_redirect->interface_index, 0);
 }
@@ -125,13 +125,13 @@ long switch_agent_xdp(struct xdp_md *ctx)
 void register_source_mac_address_if_required(const struct xdp_md *ctx, const struct ethhdr *eth,
 					     __u64 current_time)
 {
-	bpf_printk("id = %llx, learning-process: register source mac address if required\n",
+	bpf_printk("id = %llu, learning-process: register source mac address if required\n",
 		   current_time);
 	struct mac_address source_mac_addr;
 	__builtin_memcpy(source_mac_addr.mac, eth->h_source, ETH_ALEN);
 
 	bpf_printk(
-		"id = %llx, learning-process: check if we already have registered source mac address \n",
+		"id = %llu, learning-process: check if we already have registered source mac address \n",
 		current_time);
 
 	struct iface_index *iface_for_source_mac =
@@ -139,7 +139,7 @@ void register_source_mac_address_if_required(const struct xdp_md *ctx, const str
 
 	if (!iface_for_source_mac) {
 		bpf_printk(
-			"id = %llx, learning-process: have NOT Found an already registered entry for source mac address \n",
+			"id = %llu, learning-process: have NOT Found an already registered entry for source mac address \n",
 			current_time);
 
 		struct mac_address_iface_entry new_entry;
@@ -150,19 +150,19 @@ void register_source_mac_address_if_required(const struct xdp_md *ctx, const str
 		new_entry.iface.timestamp = current_time;
 
 		bpf_printk(
-			"id = %llx, learning-process: have NOT found + trying to update mac_table map\n",
+			"id = %llu, learning-process: have NOT found + trying to update mac_table map\n",
 			current_time);
 
 		bpf_map_update_elem(&mac_table, &(new_entry.mac), &(new_entry.iface), BPF_ANY);
 		//		bpf_ringbuf_submit(new_entry, 0);
 
 		bpf_printk(
-			"id = %llx, learning-process: have NOT found + trying to submit data to new_discovered map\n",
+			"id = %llu, learning-process: have NOT found + trying to submit data to new_discovered map\n",
 			current_time);
 		bpf_ringbuf_output(&new_discovered_entries_rb, &new_entry, sizeof(new_entry), 0);
 	} else {
 		bpf_printk(
-			"id = %llx, learning-process: have Found an already registered entry for source mac address \n",
+			"id = %llu, learning-process: have Found an already registered entry for source mac address \n",
 			current_time);
 		iface_for_source_mac->timestamp = current_time;
 		bpf_map_update_elem(&mac_table, &source_mac_addr, iface_for_source_mac, BPF_ANY);

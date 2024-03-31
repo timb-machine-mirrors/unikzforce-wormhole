@@ -139,7 +139,7 @@ func addNetworkInterfacesToUnknownUnicastFloodingMaps(tcObjects switch_agent.Swi
 }
 
 func createUserspaceMacTable(onRemove func(string, []byte)) *bigcache.BigCache {
-	defaultCacheConfig := bigcache.DefaultConfig(5 * time.Minute)
+	defaultCacheConfig := bigcache.DefaultConfig(20 * time.Second)
 	userspaceMacTable, _ := bigcache.New(
 		context.Background(),
 		bigcache.Config{
@@ -159,36 +159,45 @@ func createUserspaceMacTable(onRemove func(string, []byte)) *bigcache.BigCache {
 
 func createUserspaceMacTableEvictionCallback(kernelspaceMacTable *ebpf.Map, userspaceMacTableReInsertChannel chan switch_agent.SwitchAgentXDPMacAddressIfaceEntry) func(string, []byte) {
 	return func(key string, entry []byte) {
+		log.Print("Evection1")
 		macKey := convertStringToMac(key)
 		ifaceIndexInKernel := switch_agent.SwitchAgentXDPIfaceIndex{}
-		err := kernelspaceMacTable.Lookup(macKey, ifaceIndexInKernel)
+		err := kernelspaceMacTable.Lookup(&macKey, &ifaceIndexInKernel)
 		if err != nil {
 			log.Fatalf("Error parsing value in kernel for mac %s, err: %s", key, err)
 			return
 		}
 
-		currentTimeSeconds := time.Now().Unix()
-		timestampSecondsInKernel := int64(ifaceIndexInKernel.Timestamp / 1_000_000_000) // convert timestamp to seconds
+		log.Printf("Evection2, %d", ifaceIndexInKernel.InterfaceIndex)
 
-		timeDifferenceSeconds := currentTimeSeconds - timestampSecondsInKernel
+		currentTimeNano := uint64(time.Now().UnixNano())
+		log.Printf("Eviction.currentTimeNano %d", currentTimeNano)
+		timestampInKernelNano := ifaceIndexInKernel.Timestamp // convert timestamp to seconds
 
-		if timeDifferenceSeconds < 300 {
+		timeDifferenceSeconds := (currentTimeNano - timestampInKernelNano) / 1_000_000_000
+
+		log.Printf("Eviction.currentTimeNano %d timestampInKernelNano %d TimeDifference %d, for mac: %s", currentTimeNano, timestampInKernelNano, timeDifferenceSeconds, key)
+
+		if timeDifferenceSeconds < 20 {
 			// if upon removal of the key in userspace Mac Table we realized that
 			// the kernel space equivalent of that item is _not_ older than 5 minutes
 			// we will realize that this Mac address have been visible to the switch
 			// in tha last 5 minutes, so we will re-insert the key/value for that mac
 			// address again in the userspace table, with the latest value obtained
 			// from the kernel space mac table.
+			log.Print("Eviction.TryToReinsert")
 			userspaceMacTableReInsertChannel <- switch_agent.SwitchAgentXDPMacAddressIfaceEntry{
 				Mac:   macKey,
 				Iface: ifaceIndexInKernel,
 			}
 		} else {
+			log.Printf("Eviction.Delete, for mac: %s", key)
 			err := kernelspaceMacTable.Delete(key)
 			if err != nil {
 				return
 			}
 		}
+		log.Print("Eviction.finish")
 	}
 }
 
