@@ -5,6 +5,8 @@ topology:
     src:
       kind: linux
       image: wormhole/switch_agent:latest
+      exec:
+        - ip addr add 2.2.2.1/24 dev eth1
     sw:
       kind: linux
       image: wormhole/switch_agent:latest
@@ -20,6 +22,8 @@ topology:
     dst:
       kind: linux
       image: wormhole/switch_agent:latest
+      exec:
+        - ip addr add 2.2.2.2/24 dev eth1
   links:
     - endpoints: [src:eth1, sw:eth1]
       # sometimes by default the containerlab would set MTU to 9500.
