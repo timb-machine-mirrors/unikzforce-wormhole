@@ -1,0 +1,35 @@
+name: switch
+
+topology:
+  nodes:
+    src:
+      kind: linux
+      image: wormhole/switch_agent:latest
+      exec:
+        - ip addr add 2.2.2.1/24 dev eth1
+    sw:
+      kind: linux
+      image: wormhole/switch_agent:latest
+      # we cannot run program using entrypoint
+      # or cmd here cause the network interface
+      # at this point is not created by containerlab
+      # yet. so we should run our commands with
+      # docker exec programmatically in our tests,
+      # so this won't work:
+      #      cmd:  "sh -c '/switch-build/switch_agent --if-name eth1'"
+      binds:
+        - /sys/kernel/debug:/sys/kernel/debug
+    dst:
+      kind: linux
+      image: wormhole/switch_agent:latest
+      exec:
+        - ip addr add 2.2.2.2/24 dev eth1
+  links:
+    - endpoints: [src:eth1, sw:eth1]
+      # sometimes by default the containerlab would set MTU to 9500.
+      # if the MTU is high the libbpf would complain like this:
+      #   libbpf: Kernel error message: veth: Peer MTU is too large to set XDP
+      #   Error: interface xdp attach failed: Numerical result out of range
+      mtu: 1500
+    - endpoints: [dst:eth1, sw:eth2]
+      mtu: 1500
