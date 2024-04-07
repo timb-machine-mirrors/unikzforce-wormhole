@@ -1,0 +1,12 @@
+syntax = "proto3";
+package test_agent;
+
+option go_package = "./protoc";
+
+message Message {
+  string body = 1;
+}
+
+service TestAgentService {
+  rpc SayHello(Message) returns (Message) {}
+}

@@ -46,6 +46,10 @@ RUN make -C xdp-tools/ install
 workdir /
 
 
+RUN apt install -y protobuf-compiler
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
 
 # install CLAB
 # containelab version will be set in devcontainer.json
