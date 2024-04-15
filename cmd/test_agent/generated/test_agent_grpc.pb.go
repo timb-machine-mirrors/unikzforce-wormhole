@@ -4,7 +4,7 @@
 // - protoc             v3.21.12
 // source: cmd/test_agent/test_agent.proto
 
-package test_agent
+package generated
 
 import (
 	context "context"
@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ChatService_SayHello_FullMethodName = "/test_agent.ChatService/SayHello"
+	ChatService_SayHello_FullMethodName = "/generated.ChatService/SayHello"
 )
 
 // ChatServiceClient is the client API for ChatService service.
@@ -96,7 +96,7 @@ func _ChatService_SayHello_Handler(srv interface{}, ctx context.Context, dec fun
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ChatService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "test_agent.ChatService",
+	ServiceName: "generated.ChatService",
 	HandlerType: (*ChatServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
