@@ -10,3 +10,16 @@ message Message {
 service ChatService {
   rpc SayHello(Message) returns (Message) {}
 }
+
+
+message PingRequest {
+  string ipV4Address = 1;
+}
+
+message PingResponse {
+  bool success = 1;
+}
+
+service TestAgentService {
+  rpc Ping(PingRequest) returns (PingResponse) {}
+}
