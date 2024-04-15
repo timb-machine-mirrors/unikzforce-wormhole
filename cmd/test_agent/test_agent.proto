@@ -3,15 +3,6 @@ package generated;
 
 option go_package = "./generated";
 
-message Message {
-  string body = 1;
-}
-
-service ChatService {
-  rpc SayHello(Message) returns (Message) {}
-}
-
-
 message PingRequest {
   string ipV4Address = 1;
 }

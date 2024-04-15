@@ -17,18 +17,18 @@ func main() {
 	}
 	defer conn.Close()
 
-	c := generated.NewChatServiceClient(conn)
+	c := generated.NewTestAgentServiceClient(conn)
 
-	message := generated.Message{
-		Body: "Hello from the client",
+	message := generated.PingRequest{
+		IpV4Address: "google.com",
 	}
 
-	resp, err := c.SayHello(context.Background(), &message)
+	resp, err := c.Ping(context.Background(), &message)
 
 	if err != nil {
 		log.Fatalf("error while calling SayHello: %s", err)
 	}
 
-	log.Printf("Response from server: %s", resp.Body)
+	log.Printf("Response from server: %s", resp.Success)
 
 }

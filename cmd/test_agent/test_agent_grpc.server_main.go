@@ -18,7 +18,7 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 
-	generated.RegisterChatServiceServer(grpcServer, &s)
+	generated.RegisterTestAgentServiceServer(grpcServer, &s)
 
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve grpc server over port 9000: %v", err)
