@@ -5,9 +5,13 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"os"
 	"os/exec"
+	"syscall"
 	"wormhole/cmd/test_agent/generated"
 )
+
+var switchAgentProcess *os.Process
 
 type Server struct {
 	generated.UnimplementedTestAgentServiceServer
@@ -43,10 +47,17 @@ func (s *Server) EnableSwitchAgent(ctx context.Context, in *emptypb.Empty) (*emp
 		log.Fatalf("error happened during starting the switch_agent: %s", err)
 	}
 
+	switchAgentProcess = cmd.Process
+
 	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) DisableSwitchAgent(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+
+	err := switchAgentProcess.Signal(syscall.SIGINT)
+	if err != nil {
+		return nil, err
+	}
 
 	return &emptypb.Empty{}, nil
 }
