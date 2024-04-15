@@ -9,10 +9,13 @@ require (
 	github.com/janog-netcon/netcon-problem-management-subsystem v0.0.0-20240127085854-07c265d714d1
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.32.0
+	github.com/prometheus-community/pro-bing v0.4.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/urfave/cli v1.22.14
 	github.com/vishvananda/netlink v1.1.0
+	golang.org/x/net v0.21.0
 	google.golang.org/grpc v1.63.0
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
@@ -60,8 +63,8 @@ require (
 	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/oauth2 v0.17.0 // indirect
+	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/term v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
@@ -70,7 +73,6 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

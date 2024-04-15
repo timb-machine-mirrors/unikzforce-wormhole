@@ -20,7 +20,7 @@ func main() {
 	c := generated.NewTestAgentServiceClient(conn)
 
 	message := generated.PingRequest{
-		IpV4Address: "google.com",
+		IpV4Address: "8.8.8.8",
 	}
 
 	resp, err := c.Ping(context.Background(), &message)
