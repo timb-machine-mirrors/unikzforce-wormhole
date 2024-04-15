@@ -1,7 +1,7 @@
 syntax = "proto3";
-package chat;
+package test_agent;
 
-option go_package = "./proto";
+option go_package = "./test_agent";
 
 message Message {
   string body = 1;

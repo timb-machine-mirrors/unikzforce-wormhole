@@ -5,7 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"wormhole/cmd/test_agent/proto"
+	"wormhole/cmd/test_agent"
 )
 
 func main() {
@@ -17,9 +17,9 @@ func main() {
 	}
 	defer conn.Close()
 
-	c := proto.NewChatServiceClient(conn)
+	c := test_agent.NewChatServiceClient(conn)
 
-	message := proto.Message{
+	message := test_agent.Message{
 		Body: "Hello from the client",
 	}
 

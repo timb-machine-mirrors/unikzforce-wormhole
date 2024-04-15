@@ -1,4 +1,4 @@
-package proto
+package test_agent
 
 import (
 	log "github.com/sirupsen/logrus"
