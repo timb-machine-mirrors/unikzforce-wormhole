@@ -1,4 +1,5 @@
 syntax = "proto3";
+import "google/protobuf/empty.proto";
 package generated;
 
 option go_package = "./generated";
@@ -13,4 +14,6 @@ message PingResponse {
 
 service TestAgentService {
   rpc Ping(PingRequest) returns (PingResponse) {}
+  rpc EnableSwitchAgent(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc DisableSwitchAgent(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
