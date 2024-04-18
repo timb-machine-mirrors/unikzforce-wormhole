@@ -14,11 +14,11 @@ import (
 
 var switchAgentProcess *os.Process
 
-type Server struct {
+type TestAgentServiceImpl struct {
 	generated.UnimplementedTestAgentServiceServer
 }
 
-func (s *Server) Ping(ctx context.Context, pingRequest *generated.PingRequest) (*generated.PingResponse, error) {
+func (s *TestAgentServiceImpl) Ping(ctx context.Context, pingRequest *generated.PingRequest) (*generated.PingResponse, error) {
 	log.Printf("Received ping request: %s", pingRequest.IpV4Address)
 
 	pinger, err := probing.NewPinger(pingRequest.IpV4Address)
@@ -38,7 +38,7 @@ func (s *Server) Ping(ctx context.Context, pingRequest *generated.PingRequest) (
 	return &generated.PingResponse{Success: (float32(stats.PacketsRecv) / float32(stats.PacketsSent)) > 0.5}, nil
 }
 
-func (s *Server) EnableSwitchAgent(ctx context.Context, in *generated.EnableSwitchAgentRequest) (*emptypb.Empty, error) {
+func (s *TestAgentServiceImpl) EnableSwitchAgent(ctx context.Context, in *generated.EnableSwitchAgentRequest) (*emptypb.Empty, error) {
 	fileName := "/switch-build/switch-agent"
 
 	interfacesCommaSeparated := strings.Join(in.InterfaceNames, ",")
@@ -53,7 +53,7 @@ func (s *Server) EnableSwitchAgent(ctx context.Context, in *generated.EnableSwit
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) DisableSwitchAgent(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+func (s *TestAgentServiceImpl) DisableSwitchAgent(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
 
 	err := switchAgentProcess.Signal(syscall.SIGINT)
 	if err != nil {

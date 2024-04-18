@@ -14,7 +14,7 @@ func main() {
 		log.Fatalf("Failed to listen on port 9000: %v", err)
 	}
 
-	s := impl.Server{}
+	s := impl.TestAgentServiceImpl{}
 
 	grpcServer := grpc.NewServer()
 
