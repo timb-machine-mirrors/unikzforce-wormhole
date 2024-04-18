@@ -16,7 +16,7 @@ topology:
       # yet. so we should run our commands with
       # docker exec programmatically in our tests,
       # so this won't work:
-      #      cmd:  "sh -c '/switch-build/switch_agent --if-name eth1'"
+      #      cmd:  "sh -c '/build/switch_agent --if-name eth1'"
       binds:
         - /sys/kernel/debug:/sys/kernel/debug
     dst:

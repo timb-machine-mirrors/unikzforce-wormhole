@@ -39,7 +39,7 @@ func (s *TestAgentServiceImpl) Ping(ctx context.Context, pingRequest *generated.
 }
 
 func (s *TestAgentServiceImpl) EnableSwitchAgent(ctx context.Context, in *generated.EnableSwitchAgentRequest) (*emptypb.Empty, error) {
-	fileName := "/switch-build/switch-agent"
+	fileName := "/build/switch-agent"
 
 	interfacesCommaSeparated := strings.Join(in.InterfaceNames, ",")
 
