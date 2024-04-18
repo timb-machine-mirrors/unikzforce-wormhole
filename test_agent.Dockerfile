@@ -43,6 +43,7 @@ COPY go.mod /switch-source
 COPY go.sum /switch-source
 COPY ./ebpf/ /switch-source/ebpf/
 COPY ./cmd/switch_agent/ /switch-source/cmd/switch_agent/
+COPY ./cmd/test_agent/ /switch-source/cmd/switch_agent/
 
 WORKDIR /switch-source/
 
@@ -51,6 +52,7 @@ RUN go mod download
 RUN go generate ./ebpf/switch_agent/
 
 RUN go build -o /build/switch_agent ./cmd/switch_agent/main.go
+RUN go build -o /build/test_agent ./cmd/test_agent/test_agent_grpc.server_bootstrap.go
 # for debuging comment above and uncomment below 2 commands & comment above
 #RUN go build -gcflags="all=-N -l" -o /build/switch_agent ./cmd/switch_agent/main.go
 #EXPOSE 40000
@@ -59,6 +61,7 @@ RUN go build -o /build/switch_agent ./cmd/switch_agent/main.go
 
 #ENTRYPOINT ["dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/build/switch_agent", "--", "--if-name", "eth1"]
 
-ENTRYPOINT ["sh", "-c", "trap 'exit 0' SIGTERM SIGINT; while true; do echo 'Container is running...'; sleep 10; done"]
+#ENTRYPOINT ["sh", "-c", "trap 'exit 0' SIGTERM SIGINT; while true; do echo 'Container is running...'; sleep 10; done"]
 
-#ENTRYPOINT ["/build/switch_agent", "--if-name", "eth1"]
+EXPOSE "9000"
+ENTRYPOINT ["/build/test_agent"]
