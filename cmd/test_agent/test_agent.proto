@@ -12,8 +12,12 @@ message PingResponse {
   bool success = 1;
 }
 
+message EnableSwitchAgentRequest {
+  repeated string interfaceNames = 1;
+}
+
 service TestAgentService {
   rpc Ping(PingRequest) returns (PingResponse) {}
-  rpc EnableSwitchAgent(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc EnableSwitchAgent(EnableSwitchAgentRequest) returns (google.protobuf.Empty) {}
   rpc DisableSwitchAgent(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }

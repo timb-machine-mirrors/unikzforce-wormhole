@@ -30,7 +30,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TestAgentServiceClient interface {
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
-	EnableSwitchAgent(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	EnableSwitchAgent(ctx context.Context, in *EnableSwitchAgentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DisableSwitchAgent(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -51,7 +51,7 @@ func (c *testAgentServiceClient) Ping(ctx context.Context, in *PingRequest, opts
 	return out, nil
 }
 
-func (c *testAgentServiceClient) EnableSwitchAgent(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *testAgentServiceClient) EnableSwitchAgent(ctx context.Context, in *EnableSwitchAgentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, TestAgentService_EnableSwitchAgent_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -74,7 +74,7 @@ func (c *testAgentServiceClient) DisableSwitchAgent(ctx context.Context, in *emp
 // for forward compatibility
 type TestAgentServiceServer interface {
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
-	EnableSwitchAgent(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	EnableSwitchAgent(context.Context, *EnableSwitchAgentRequest) (*emptypb.Empty, error)
 	DisableSwitchAgent(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedTestAgentServiceServer()
 }
@@ -86,7 +86,7 @@ type UnimplementedTestAgentServiceServer struct {
 func (UnimplementedTestAgentServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedTestAgentServiceServer) EnableSwitchAgent(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+func (UnimplementedTestAgentServiceServer) EnableSwitchAgent(context.Context, *EnableSwitchAgentRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EnableSwitchAgent not implemented")
 }
 func (UnimplementedTestAgentServiceServer) DisableSwitchAgent(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
@@ -124,7 +124,7 @@ func _TestAgentService_Ping_Handler(srv interface{}, ctx context.Context, dec fu
 }
 
 func _TestAgentService_EnableSwitchAgent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(EnableSwitchAgentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func _TestAgentService_EnableSwitchAgent_Handler(srv interface{}, ctx context.Co
 		FullMethod: TestAgentService_EnableSwitchAgent_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TestAgentServiceServer).EnableSwitchAgent(ctx, req.(*emptypb.Empty))
+		return srv.(TestAgentServiceServer).EnableSwitchAgent(ctx, req.(*EnableSwitchAgentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

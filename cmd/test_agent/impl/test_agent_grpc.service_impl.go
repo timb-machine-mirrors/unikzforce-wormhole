@@ -7,6 +7,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 	"wormhole/cmd/test_agent/generated"
 )
@@ -37,17 +38,17 @@ func (s *Server) Ping(ctx context.Context, pingRequest *generated.PingRequest) (
 	return &generated.PingResponse{Success: (float32(stats.PacketsRecv) / float32(stats.PacketsSent)) > 0.5}, nil
 }
 
-func (s *Server) EnableSwitchAgent(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+func (s *Server) EnableSwitchAgent(ctx context.Context, in *generated.EnableSwitchAgentRequest) (*emptypb.Empty, error) {
 	fileName := "/switch-build/switch-agent"
 
-	cmd := exec.Command(fileName)
+	interfacesCommaSeparated := strings.Join(in.InterfaceNames, ",")
+
+	cmd := exec.Command(fileName, "--interface-names", interfacesCommaSeparated)
 
 	err := cmd.Start()
 	if err != nil {
 		log.Fatalf("error happened during starting the switch_agent: %s", err)
 	}
-
-	switchAgentProcess = cmd.Process
 
 	return &emptypb.Empty{}, nil
 }
