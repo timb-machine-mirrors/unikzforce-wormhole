@@ -37,15 +37,15 @@ RUN git clone --recurse-submodules https://github.com/xdp-project/xdp-tools.git
 
 RUN make -C xdp-tools/ install
 
-RUN mkdir /switch-source/
+RUN mkdir /wormhole-source/
 
-COPY go.mod /switch-source
-COPY go.sum /switch-source
-COPY ./ebpf/ /switch-source/ebpf/
-COPY ./cmd/switch_agent/ /switch-source/cmd/switch_agent/
-COPY ./cmd/test_agent/ /switch-source/cmd/switch_agent/
+COPY go.mod /wormhole-source
+COPY go.sum /wormhole-source
+COPY ./ebpf/ /wormhole-source/ebpf/
+COPY ./cmd/switch_agent/ /wormhole-source/cmd/switch_agent/
+COPY ./cmd/test_agent/ /wormhole-source/cmd/test_agent/
 
-WORKDIR /switch-source/
+WORKDIR /wormhole-source/
 
 #RUN go install github.com/go-delve/delve/cmd/dlv@latest
 RUN go mod download
@@ -63,5 +63,5 @@ RUN go build -o /build/test_agent ./cmd/test_agent/test_agent_grpc.server_bootst
 
 #ENTRYPOINT ["sh", "-c", "trap 'exit 0' SIGTERM SIGINT; while true; do echo 'Container is running...'; sleep 10; done"]
 
-EXPOSE "9000"
+EXPOSE 9000
 ENTRYPOINT ["/build/test_agent"]

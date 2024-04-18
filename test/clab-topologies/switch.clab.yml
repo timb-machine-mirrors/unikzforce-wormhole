@@ -5,6 +5,8 @@ topology:
     src:
       kind: linux
       image: wormhole/switch_agent:latest
+      ports:
+        - 9000:9000
       exec:
         - ip addr add 2.2.2.1/24 dev eth1
     sw:
@@ -19,9 +21,13 @@ topology:
       #      cmd:  "sh -c '/build/switch_agent --if-name eth1'"
       binds:
         - /sys/kernel/debug:/sys/kernel/debug
+      ports:
+        - 9000:9001
     dst:
       kind: linux
       image: wormhole/switch_agent:latest
+      ports:
+        - 9000:9002
       exec:
         - ip addr add 2.2.2.2/24 dev eth1
   links:
