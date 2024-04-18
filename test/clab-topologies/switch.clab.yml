@@ -4,14 +4,14 @@ topology:
   nodes:
     src:
       kind: linux
-      image: wormhole/switch_agent:latest
+      image: wormhole/test_agent:latest
       ports:
         - 9000:9000
       exec:
         - ip addr add 2.2.2.1/24 dev eth1
     sw:
       kind: linux
-      image: wormhole/switch_agent:latest
+      image: wormhole/test_agent:latest
       # we cannot run program using entrypoint
       # or cmd here cause the network interface
       # at this point is not created by containerlab
@@ -22,12 +22,12 @@ topology:
       binds:
         - /sys/kernel/debug:/sys/kernel/debug
       ports:
-        - 9000:9001
+        - 9001:9000
     dst:
       kind: linux
-      image: wormhole/switch_agent:latest
+      image: wormhole/test_agent:latest
       ports:
-        - 9000:9002
+        - 9002:9000
       exec:
         - ip addr add 2.2.2.2/24 dev eth1
   links:

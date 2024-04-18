@@ -30,12 +30,12 @@ var _ = Describe("checking switch_agent", func() {
 		}
 	})
 
-	AfterEach(func() {
-		err := clabClient.Destroy(ctx)
-		if err != nil {
-			fmt.Println("error happened " + err.Error())
-		}
-	})
+	//AfterEach(func() {
+	//	err := clabClient.Destroy(ctx)
+	//	if err != nil {
+	//		fmt.Println("error happened " + err.Error())
+	//	}
+	//})
 
 	When("the switch_agents run locally", func() {
 		dockerClient, err := client.NewClientWithOpts(client.FromEnv)
