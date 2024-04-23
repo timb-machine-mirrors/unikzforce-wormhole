@@ -59,7 +59,7 @@ RUN go build -o /build/test_agent ./cmd/test_agent/test_agent_grpc.server_bootst
 
 
 
-#ENTRYPOINT ["dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/build/switch_agent", "--", "--if-name", "eth1"]
+#ENTRYPOINT ["dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/build/test_agent"]
 
 #ENTRYPOINT ["sh", "-c", "trap 'exit 0' SIGTERM SIGINT; while true; do echo 'Container is running...'; sleep 10; done"]
 
