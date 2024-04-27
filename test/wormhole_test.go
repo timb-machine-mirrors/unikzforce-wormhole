@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"testing"
-	"time"
 	"wormhole/cmd/test_agent/generated"
 )
 
@@ -42,7 +41,7 @@ var _ = Describe("checking switch_agent", func() {
 		}
 		sourceClient = generated.NewTestAgentServiceClient(sourceConn)
 
-		destConn, err := grpc.NewClient("clab-switch-dst:9002", grpc.WithTransportCredentials(insecure.NewCredentials()))
+		destConn, err := grpc.NewClient("clab-switch-dst:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			GinkgoT().Fatalf("Could not connect: %s", err)
 		}
@@ -58,11 +57,7 @@ var _ = Describe("checking switch_agent", func() {
 
 	When("the switch_agent is not running the ping should not work", func() {
 
-		It("returns a non nil sourceContainer", func() {
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-			defer cancel()
-
+		It("source should not be able to ping dest", func() {
 			pingResp, err := sourceClient.Ping(ctx, &generated.PingRequest{
 				IpV4Address: "2.2.2.2",
 			})
@@ -70,21 +65,20 @@ var _ = Describe("checking switch_agent", func() {
 			if err != nil {
 				GinkgoT().Fatalf("error while calling Ping form source: %s", err)
 			}
+			Expect(pingResp.Success).To(BeFalse())
+		})
 
-			It("returns a non nil sourceContainer", func() {
-				Expect(pingResp.Success).To(BeTrue())
-			})
-
-			pingResp, err = destClient.Ping(ctx, &generated.PingRequest{
+		It("dest should not be able to ping ", func() {
+			pingResp, err := destClient.Ping(ctx, &generated.PingRequest{
 				IpV4Address: "2.2.2.1",
 			})
 
 			if err != nil {
 				GinkgoT().Fatalf("error while calling Ping form dest: %s", err)
 			}
-
-			Expect(pingResp.Success).To(BeTrue())
+			Expect(pingResp.Success).To(BeFalse())
 		})
+
 	})
 
 })

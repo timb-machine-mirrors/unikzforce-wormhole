@@ -5,9 +5,10 @@ topology:
     src:
       kind: linux
       image: wormhole/test_agent:latest
+      publish:
+        - tcp/9000/clab-switch-src
       ports:
         - 9000:9000
-#        - 40000:40000
       exec:
         - ip addr add 2.2.2.1/24 dev eth1
     sw:
@@ -22,11 +23,11 @@ topology:
       #      cmd:  "sh -c '/build/switch_agent --if-name eth1'"
       binds:
         - /sys/kernel/debug:/sys/kernel/debug
-      ports:
-        - 9001:9000
     dst:
       kind: linux
       image: wormhole/test_agent:latest
+      publish:
+        - tcp/9000/clab-switch-dst
       ports:
         - 9002:9000
       exec:

@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+	"time"
 	"wormhole/cmd/test_agent/generated"
 )
 
@@ -27,6 +28,7 @@ func (s *TestAgentServiceImpl) Ping(ctx context.Context, pingRequest *generated.
 	}
 
 	pinger.Count = 3
+	pinger.Timeout = 2 * time.Second
 	err = pinger.Run()
 	if err != nil {
 		return &generated.PingResponse{Success: false}, nil
