@@ -68,7 +68,7 @@ var _ = Describe("checking switch_agent", func() {
 			Expect(pingResp.Success).To(BeFalse())
 		})
 
-		It("dest should not be able to ping ", func() {
+		It("dest should not be able to ping source", func() {
 			pingResp, err := destClient.Ping(ctx, &generated.PingRequest{
 				IpV4Address: "2.2.2.1",
 			})

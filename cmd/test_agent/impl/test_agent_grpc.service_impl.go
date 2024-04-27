@@ -37,7 +37,7 @@ func (s *TestAgentServiceImpl) Ping(ctx context.Context, pingRequest *generated.
 	log.Printf("returning the ping result")
 
 	stats := pinger.Statistics()
-	return &generated.PingResponse{Success: (float32(stats.PacketsRecv) / float32(stats.PacketsSent)) > 0.5}, nil
+	return &generated.PingResponse{Success: stats.PacketLoss < 100}, nil
 }
 
 func (s *TestAgentServiceImpl) EnableSwitchAgent(ctx context.Context, in *generated.EnableSwitchAgentRequest) (*emptypb.Empty, error) {
