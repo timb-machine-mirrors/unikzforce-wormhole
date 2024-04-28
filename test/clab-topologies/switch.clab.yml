@@ -5,12 +5,13 @@ topology:
     src:
       kind: linux
       image: wormhole/test_agent:latest
-      publish:
-        - tcp/9000/clab-switch-src
+#      publish:
+#        - tcp/9000/clab-switch-src
       ports:
         - 9000:9000
       exec:
         - ip addr add 2.2.2.1/24 dev eth1
+        - touch /tmp/is_clab_container_ready
     sw:
       kind: linux
       image: wormhole/test_agent:latest
@@ -23,6 +24,12 @@ topology:
       #      cmd:  "sh -c '/build/switch_agent --if-name eth1'"
       binds:
         - /sys/kernel/debug:/sys/kernel/debug
+      publish:
+        - tcp/9000/clab-switch-sw
+      ports:
+        - 9001:9000
+      exec:
+        - touch /tmp/is_clab_container_ready
     dst:
       kind: linux
       image: wormhole/test_agent:latest
@@ -32,6 +39,7 @@ topology:
         - 9002:9000
       exec:
         - ip addr add 2.2.2.2/24 dev eth1
+        - touch /tmp/is_clab_container_ready
   links:
     - endpoints: [src:eth1, sw:eth1]
       # sometimes by default the containerlab would set MTU to 9500.

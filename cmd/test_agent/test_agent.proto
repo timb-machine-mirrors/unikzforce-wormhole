@@ -4,20 +4,33 @@ package generated;
 
 option go_package = "./generated";
 
+message WaitUntilReadyResponse {
+  bool success = 1;
+}
+
 message PingRequest {
   string ipV4Address = 1;
 }
 
 message PingResponse {
   bool success = 1;
+  int32 packetsRecv = 2;
+  int32 packetsSent = 3;
+  int32 packetsRecvDuplicates = 4;
+  float packetLoss = 5;
 }
 
 message EnableSwitchAgentRequest {
   repeated string interfaceNames = 1;
 }
 
+message EnableSwitchAgentResponse {
+  string resp = 1;
+}
+
 service TestAgentService {
+  rpc WaitUntilReady(google.protobuf.Empty) returns (WaitUntilReadyResponse) {}
   rpc Ping(PingRequest) returns (PingResponse) {}
-  rpc EnableSwitchAgent(EnableSwitchAgentRequest) returns (google.protobuf.Empty) {}
+  rpc EnableSwitchAgent(EnableSwitchAgentRequest) returns (EnableSwitchAgentResponse) {}
   rpc DisableSwitchAgent(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }

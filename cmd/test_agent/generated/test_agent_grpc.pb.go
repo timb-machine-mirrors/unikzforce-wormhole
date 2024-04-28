@@ -20,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
+	TestAgentService_WaitUntilReady_FullMethodName     = "/generated.TestAgentService/WaitUntilReady"
 	TestAgentService_Ping_FullMethodName               = "/generated.TestAgentService/Ping"
 	TestAgentService_EnableSwitchAgent_FullMethodName  = "/generated.TestAgentService/EnableSwitchAgent"
 	TestAgentService_DisableSwitchAgent_FullMethodName = "/generated.TestAgentService/DisableSwitchAgent"
@@ -29,8 +30,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TestAgentServiceClient interface {
+	WaitUntilReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*WaitUntilReadyResponse, error)
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
-	EnableSwitchAgent(ctx context.Context, in *EnableSwitchAgentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	EnableSwitchAgent(ctx context.Context, in *EnableSwitchAgentRequest, opts ...grpc.CallOption) (*EnableSwitchAgentResponse, error)
 	DisableSwitchAgent(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -42,6 +44,15 @@ func NewTestAgentServiceClient(cc grpc.ClientConnInterface) TestAgentServiceClie
 	return &testAgentServiceClient{cc}
 }
 
+func (c *testAgentServiceClient) WaitUntilReady(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*WaitUntilReadyResponse, error) {
+	out := new(WaitUntilReadyResponse)
+	err := c.cc.Invoke(ctx, TestAgentService_WaitUntilReady_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *testAgentServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	out := new(PingResponse)
 	err := c.cc.Invoke(ctx, TestAgentService_Ping_FullMethodName, in, out, opts...)
@@ -51,8 +62,8 @@ func (c *testAgentServiceClient) Ping(ctx context.Context, in *PingRequest, opts
 	return out, nil
 }
 
-func (c *testAgentServiceClient) EnableSwitchAgent(ctx context.Context, in *EnableSwitchAgentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *testAgentServiceClient) EnableSwitchAgent(ctx context.Context, in *EnableSwitchAgentRequest, opts ...grpc.CallOption) (*EnableSwitchAgentResponse, error) {
+	out := new(EnableSwitchAgentResponse)
 	err := c.cc.Invoke(ctx, TestAgentService_EnableSwitchAgent_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -73,8 +84,9 @@ func (c *testAgentServiceClient) DisableSwitchAgent(ctx context.Context, in *emp
 // All implementations must embed UnimplementedTestAgentServiceServer
 // for forward compatibility
 type TestAgentServiceServer interface {
+	WaitUntilReady(context.Context, *emptypb.Empty) (*WaitUntilReadyResponse, error)
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
-	EnableSwitchAgent(context.Context, *EnableSwitchAgentRequest) (*emptypb.Empty, error)
+	EnableSwitchAgent(context.Context, *EnableSwitchAgentRequest) (*EnableSwitchAgentResponse, error)
 	DisableSwitchAgent(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedTestAgentServiceServer()
 }
@@ -83,10 +95,13 @@ type TestAgentServiceServer interface {
 type UnimplementedTestAgentServiceServer struct {
 }
 
+func (UnimplementedTestAgentServiceServer) WaitUntilReady(context.Context, *emptypb.Empty) (*WaitUntilReadyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method WaitUntilReady not implemented")
+}
 func (UnimplementedTestAgentServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedTestAgentServiceServer) EnableSwitchAgent(context.Context, *EnableSwitchAgentRequest) (*emptypb.Empty, error) {
+func (UnimplementedTestAgentServiceServer) EnableSwitchAgent(context.Context, *EnableSwitchAgentRequest) (*EnableSwitchAgentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EnableSwitchAgent not implemented")
 }
 func (UnimplementedTestAgentServiceServer) DisableSwitchAgent(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
@@ -103,6 +118,24 @@ type UnsafeTestAgentServiceServer interface {
 
 func RegisterTestAgentServiceServer(s grpc.ServiceRegistrar, srv TestAgentServiceServer) {
 	s.RegisterService(&TestAgentService_ServiceDesc, srv)
+}
+
+func _TestAgentService_WaitUntilReady_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TestAgentServiceServer).WaitUntilReady(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TestAgentService_WaitUntilReady_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TestAgentServiceServer).WaitUntilReady(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _TestAgentService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -166,6 +199,10 @@ var TestAgentService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "generated.TestAgentService",
 	HandlerType: (*TestAgentServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "WaitUntilReady",
+			Handler:    _TestAgentService_WaitUntilReady_Handler,
+		},
 		{
 			MethodName: "Ping",
 			Handler:    _TestAgentService_Ping_Handler,
