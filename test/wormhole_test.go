@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"testing"
+	"time"
 	"wormhole/cmd/test_agent/generated"
 )
 
@@ -21,7 +22,7 @@ func TestCart(t *testing.T) {
 var _ = Describe("checking switch_agent", func() {
 
 	var sourceClient generated.TestAgentServiceClient
-	//var switchClient generated.TestAgentServiceClient
+	var switchClient generated.TestAgentServiceClient
 	var destClient generated.TestAgentServiceClient
 
 	clabClient := containerlab.NewContainerLabClient("./clab-topologies/switch.clab.yml")
@@ -37,7 +38,7 @@ var _ = Describe("checking switch_agent", func() {
 			GinkgoT().Fatalf("error happened %v", err)
 		}
 
-		log.Printf("something something")
+		//log.Printf("something something")
 
 		sourceConn, err := grpc.NewClient("clab-switch-src:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
@@ -49,11 +50,15 @@ var _ = Describe("checking switch_agent", func() {
 			GinkgoT().Fatalf("Failed to wait for source container to become ready: %s", err)
 		}
 
-		//switchConn, err := grpc.NewClient("clab-switch-sw:9001", grpc.WithTransportCredentials(insecure.NewCredentials()))
-		//if err != nil {
-		//	GinkgoT().Fatalf("Could not connect: %s", err)
-		//}
-		//switchClient = generated.NewTestAgentServiceClient(switchConn)
+		switchConn, err := grpc.NewClient("clab-switch-sw:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			GinkgoT().Fatalf("Could not connect: %s", err)
+		}
+		switchClient = generated.NewTestAgentServiceClient(switchConn)
+		_, err = switchClient.WaitUntilReady(ctx, &emptypb.Empty{})
+		if err != nil {
+			GinkgoT().Fatalf("Failed to wait for switch container to become ready: %s", err)
+		}
 
 		destConn, err := grpc.NewClient("clab-switch-dst:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
@@ -79,9 +84,10 @@ var _ = Describe("checking switch_agent", func() {
 
 			pingResp, err := sourceClient.Ping(ctx, &generated.PingRequest{
 				IpV4Address: "2.2.2.1",
+				Count:       1,
+				Timeout:     1,
 			})
-			log.Printf("source ping itself stats, %d, %d, %d, %f", pingResp.PacketsRecv, pingResp.PacketsSent, pingResp.PacketsRecvDuplicates, pingResp.PacketLoss)
-
+			//log.Printf("source ping itself stats, %d, %d, %d, %f", pingResp.PacketsRecv, pingResp.PacketsSent, pingResp.PacketsRecvDuplicates, pingResp.PacketLoss)
 			if err != nil {
 				GinkgoT().Fatalf("error while calling Ping form source: %s", err)
 			}
@@ -89,9 +95,10 @@ var _ = Describe("checking switch_agent", func() {
 
 			pingResp, err = sourceClient.Ping(ctx, &generated.PingRequest{
 				IpV4Address: "2.2.2.2",
+				Count:       2,
+				Timeout:     2,
 			})
-			log.Printf("source ping dest stats, %d, %d, %d, %f", pingResp.PacketsRecv, pingResp.PacketsSent, pingResp.PacketsRecvDuplicates, pingResp.PacketLoss)
-
+			//log.Printf("source ping dest stats, %d, %d, %d, %f", pingResp.PacketsRecv, pingResp.PacketsSent, pingResp.PacketsRecvDuplicates, pingResp.PacketLoss)
 			if err != nil {
 				GinkgoT().Fatalf("error while calling Ping form source: %s", err)
 			}
@@ -99,10 +106,10 @@ var _ = Describe("checking switch_agent", func() {
 
 			pingResp, err = destClient.Ping(ctx, &generated.PingRequest{
 				IpV4Address: "2.2.2.2",
+				Count:       1,
+				Timeout:     1,
 			})
-
-			log.Printf("dest ping itself stats, %d, %d, %d, %f", pingResp.PacketsRecv, pingResp.PacketsSent, pingResp.PacketsRecvDuplicates, pingResp.PacketLoss)
-
+			//log.Printf("dest ping itself stats, %d, %d, %d, %f", pingResp.PacketsRecv, pingResp.PacketsSent, pingResp.PacketsRecvDuplicates, pingResp.PacketLoss)
 			if err != nil {
 				GinkgoT().Fatalf("error while calling Ping form dest: %s", err)
 			}
@@ -110,10 +117,10 @@ var _ = Describe("checking switch_agent", func() {
 
 			pingResp, err = destClient.Ping(ctx, &generated.PingRequest{
 				IpV4Address: "2.2.2.1",
+				Count:       2,
+				Timeout:     2,
 			})
-
-			log.Printf("dest ping source stats, %d, %d, %d, %f", pingResp.PacketsRecv, pingResp.PacketsSent, pingResp.PacketsRecvDuplicates, pingResp.PacketLoss)
-
+			//log.Printf("dest ping source stats, %d, %d, %d, %f", pingResp.PacketsRecv, pingResp.PacketsSent, pingResp.PacketsRecvDuplicates, pingResp.PacketLoss)
 			if err != nil {
 				GinkgoT().Fatalf("error while calling Ping form dest: %s", err)
 			}
@@ -121,36 +128,47 @@ var _ = Describe("checking switch_agent", func() {
 		})
 	})
 
-	//When("the switch_agent is running", func() {
-	//
-	//	It("source and dest should be able to ping each other", func() {
-	//
-	//		enableResp, err := switchClient.EnableSwitchAgent(ctx, &generated.EnableSwitchAgentRequest{InterfaceNames: []string{"eth1", "eth2"}})
-	//		if err != nil {
-	//			GinkgoT().Fatalf("error while enabling switch_agent: %v", err)
-	//		}
-	//
-	//		log.Print(enableResp.Resp)
-	//
-	//		pingResp, err := sourceClient.Ping(ctx, &generated.PingRequest{
-	//			IpV4Address: "2.2.2.2",
-	//		})
-	//
-	//		if err != nil {
-	//			GinkgoT().Fatalf("error while calling Ping form source: %s", err)
-	//		}
-	//		Expect(pingResp.Success).To(BeTrue())
-	//
-	//		pingResp, err = destClient.Ping(ctx, &generated.PingRequest{
-	//			IpV4Address: "2.2.2.1",
-	//		})
-	//
-	//		if err != nil {
-	//			GinkgoT().Fatalf("error while calling Ping form dest: %s", err)
-	//		}
-	//		Expect(pingResp.Success).To(BeTrue())
-	//	})
-	//})
+	When("the switch_agent is running", func() {
+
+		It("source and dest should be able to ping each other", func() {
+
+			time.Sleep(5 * time.Second)
+
+			enableResp, err := switchClient.EnableSwitchAgent(ctx, &generated.EnableSwitchAgentRequest{InterfaceNames: []string{"eth1", "eth2"}})
+			if err != nil {
+				GinkgoT().Fatalf("error while enabling switch_agent: %v", err)
+			}
+
+			time.Sleep(5 * time.Second)
+
+			Expect(enableResp.Resp).To(Equal("Success"))
+
+			something := time.Duration(10) * time.Second
+			log.Printf("duration %s", something)
+
+			pingResp, err := sourceClient.Ping(ctx, &generated.PingRequest{
+				IpV4Address: "2.2.2.2",
+				Count:       3,
+				Timeout:     2,
+			})
+
+			if err != nil {
+				GinkgoT().Fatalf("error while calling Ping form source: %s", err)
+			}
+			Expect(pingResp.Success).To(BeTrue())
+
+			pingResp, err = destClient.Ping(ctx, &generated.PingRequest{
+				IpV4Address: "2.2.2.1",
+				Count:       3,
+				Timeout:     2,
+			})
+
+			if err != nil {
+				GinkgoT().Fatalf("error while calling Ping form dest: %s", err)
+			}
+			Expect(pingResp.Success).To(BeTrue())
+		})
+	})
 
 })
 

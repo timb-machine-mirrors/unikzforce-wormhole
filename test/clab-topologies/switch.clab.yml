@@ -12,6 +12,8 @@ topology:
       exec:
         - ip addr add 2.2.2.1/24 dev eth1
         - touch /tmp/is_clab_container_ready
+
+
     sw:
       kind: linux
       image: wormhole/test_agent:latest
@@ -30,6 +32,8 @@ topology:
         - 9001:9000
       exec:
         - touch /tmp/is_clab_container_ready
+
+
     dst:
       kind: linux
       image: wormhole/test_agent:latest

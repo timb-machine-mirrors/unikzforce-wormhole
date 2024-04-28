@@ -10,6 +10,8 @@ message WaitUntilReadyResponse {
 
 message PingRequest {
   string ipV4Address = 1;
+  int32 count = 2;
+  int32 timeout = 3;
 }
 
 message PingResponse {
@@ -26,6 +28,8 @@ message EnableSwitchAgentRequest {
 
 message EnableSwitchAgentResponse {
   string resp = 1;
+  string command = 2;
+  int32 pid = 3;
 }
 
 service TestAgentService {

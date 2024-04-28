@@ -45,8 +45,10 @@ func (s *TestAgentServiceImpl) Ping(ctx context.Context, pingRequest *generated.
 		return &generated.PingResponse{Success: false}, nil
 	}
 
-	pinger.Count = 3
-	pinger.Timeout = 2 * time.Second
+	pinger.Count = int(pingRequest.Count)
+	pinger.Timeout = time.Duration(pingRequest.Timeout) * time.Second
+	//pinger.Count = 3
+	//pinger.Timeout = 2 * time.Second
 	err = pinger.Run()
 	if err != nil {
 		return &generated.PingResponse{
@@ -70,20 +72,22 @@ func (s *TestAgentServiceImpl) Ping(ctx context.Context, pingRequest *generated.
 }
 
 func (s *TestAgentServiceImpl) EnableSwitchAgent(ctx context.Context, in *generated.EnableSwitchAgentRequest) (*generated.EnableSwitchAgentResponse, error) {
-	fileName := "/build/switch-agent"
+	fileName := "/build/switch_agent"
 
 	interfacesCommaSeparated := strings.Join(in.InterfaceNames, ",")
 
 	cmd := exec.Command(fileName, "--interface-names", interfacesCommaSeparated)
 
+	fmt.Println("cmd", cmd.String())
+	log.Errorln("cmd", cmd.String())
+
 	err := cmd.Start()
 	if err != nil {
-		log.Fatalf("error happened during starting the switch_agent: %s", err)
-
-		return &generated.EnableSwitchAgentResponse{Resp: fmt.Sprintf("Error: %v", err)}, nil
+		fmt.Printf("error %v", err)
+		return &generated.EnableSwitchAgentResponse{Resp: fmt.Sprintf("Error: %v", err), Command: cmd.String(), Pid: int32(cmd.Process.Pid)}, nil
 	}
 
-	return &generated.EnableSwitchAgentResponse{Resp: "Success"}, nil
+	return &generated.EnableSwitchAgentResponse{Resp: "Success", Command: cmd.String(), Pid: int32(cmd.Process.Pid)}, nil
 }
 
 func (s *TestAgentServiceImpl) DisableSwitchAgent(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
