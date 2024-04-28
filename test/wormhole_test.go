@@ -2,7 +2,6 @@ package test
 
 import (
 	"context"
-	"fmt"
 	"github.com/janog-netcon/netcon-problem-management-subsystem/pkg/containerlab"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -35,7 +34,7 @@ var _ = Describe("checking switch_agent", func() {
 
 		err = clabClient.Deploy(ctx)
 		if err != nil {
-			fmt.Println("error happened " + err.Error())
+			GinkgoT().Fatalf("error happened %v", err)
 		}
 
 		log.Printf("something something")
