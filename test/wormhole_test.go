@@ -22,6 +22,24 @@ func TestCart(t *testing.T) {
 	RunSpecs(t, "Shopping Cart Suite")
 }
 
+var _ = AfterSuite(func() {
+
+	clabClient := containerlab.NewContainerLabClient("./clab-topologies/switch.clab.yml")
+	ctx := context.Background()
+
+	inspect, err := clabClient.Inspect(ctx)
+	if err != nil {
+		return
+	}
+
+	if len(inspect.Containers) != 0 {
+		err := clabClient.Destroy(ctx)
+		if err != nil {
+			GinkgoT().Fatalf("error happened " + err.Error())
+		}
+	}
+})
+
 var _ = Describe("checking switch_agent", func() {
 
 	var sourceClient generated.TestAgentServiceClient
@@ -200,21 +218,3 @@ func findContainerIp(containers []types.Container, containerName string) (string
 
 	return "", fmt.Errorf("IP address not found for container '%s'", containerName)
 }
-
-var _ = AfterSuite(func() {
-
-	clabClient := containerlab.NewContainerLabClient("./clab-topologies/switch.clab.yml")
-	ctx := context.Background()
-
-	inspect, err := clabClient.Inspect(ctx)
-	if err != nil {
-		return
-	}
-
-	if len(inspect.Containers) != 0 {
-		err := clabClient.Destroy(ctx)
-		if err != nil {
-			GinkgoT().Fatalf("error happened " + err.Error())
-		}
-	}
-})
