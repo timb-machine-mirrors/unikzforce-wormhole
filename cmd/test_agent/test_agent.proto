@@ -30,6 +30,7 @@ message EnableSwitchAgentResponse {
   string resp = 1;
   string command = 2;
   int32 pid = 3;
+  string hostname = 4;
 }
 
 service TestAgentService {

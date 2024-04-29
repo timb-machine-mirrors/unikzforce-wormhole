@@ -76,18 +76,33 @@ func (s *TestAgentServiceImpl) EnableSwitchAgent(ctx context.Context, in *genera
 
 	interfacesCommaSeparated := strings.Join(in.InterfaceNames, ",")
 
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Errorf("error obtaining the hostname %v", err)
+	}
+
 	cmd := exec.Command(fileName, "--interface-names", interfacesCommaSeparated)
 
 	fmt.Println("cmd", cmd.String())
 	log.Errorln("cmd", cmd.String())
 
-	err := cmd.Start()
+	err = cmd.Start()
 	if err != nil {
 		fmt.Printf("error %v", err)
-		return &generated.EnableSwitchAgentResponse{Resp: fmt.Sprintf("Error: %v", err), Command: cmd.String(), Pid: int32(cmd.Process.Pid)}, nil
+		return &generated.EnableSwitchAgentResponse{
+			Resp:     fmt.Sprintf("Error: %v", err),
+			Command:  cmd.String(),
+			Pid:      int32(cmd.Process.Pid),
+			Hostname: hostname,
+		}, nil
 	}
 
-	return &generated.EnableSwitchAgentResponse{Resp: "Success", Command: cmd.String(), Pid: int32(cmd.Process.Pid)}, nil
+	return &generated.EnableSwitchAgentResponse{
+		Resp:     "Success",
+		Command:  cmd.String(),
+		Pid:      int32(cmd.Process.Pid),
+		Hostname: hostname,
+	}, nil
 }
 
 func (s *TestAgentServiceImpl) DisableSwitchAgent(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
