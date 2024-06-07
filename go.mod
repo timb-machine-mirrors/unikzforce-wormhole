@@ -3,10 +3,12 @@ module wormhole
 go 1.22
 
 require (
+	github.com/Kseleven/traceroute-go v0.0.0-20230419080119-c46dd00be843
 	github.com/allegro/bigcache/v3 v3.1.0
 	github.com/cilium/ebpf v0.14.0
 	github.com/docker/docker v24.0.9+incompatible
 	github.com/janog-netcon/netcon-problem-management-subsystem v0.0.0-20240127085854-07c265d714d1
+	github.com/mostlygeek/arp v0.0.0-20170424181311-541a2129847a
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.32.0
 	github.com/prometheus-community/pro-bing v0.4.0

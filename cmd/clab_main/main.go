@@ -1,26 +1,28 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"github.com/janog-netcon/netcon-problem-management-subsystem/pkg/containerlab"
-	"os"
+	"github.com/Kseleven/traceroute-go"
+	"github.com/mostlygeek/arp"
 )
 
 func main() {
-	wd, err := os.Getwd()
+	conf := &traceroute.TraceConfig{
+		Debug:    true,
+		FirstTTL: 1,
+		MaxTTL:   1,
+		Retry:    0,
+		WaitSec:  1,
+	}
+
+	var destAddr = "1.1.1.1"
+
+	fmt.Printf("traceroute to %s %d hots max\n", destAddr, conf.MaxTTL)
+	results, err := traceroute.Traceroute(destAddr, conf)
 	if err != nil {
-		fmt.Printf("Error getting current working directory: %v\n", err)
+		fmt.Println(err.Error())
 		return
 	}
-	fmt.Println("Current working directory:", wd)
 
-	clabclient := containerlab.NewContainerLabClient("./cmd/clab_main/clab-topologies/switch.clab.yml")
-
-	ctx := context.Background()
-
-	err2 := clabclient.Deploy(ctx)
-	if err2 != nil {
-		fmt.Println("error happened " + err2.Error())
-	}
+	fmt.Printf("%s : %s\n", results[0].NextHot, arp.Search(results[0].NextHot))
 }
