@@ -63,184 +63,23 @@ int switch_agent_unknown_unicast_flooding(struct __sk_buff *skb)
     int i;
     __u32* interface_index_ptr;
 
-    i = 0;
-    if (i >= number_of_interfaces) {
-        return TC_ACT_OK;
-    }
-    interface_index_ptr = bpf_map_lookup_elem(&interfaces_array, &i);
-
-    if (interface_index_ptr) {
-        __u32 interface_index = *interface_index_ptr;
-
-        if (interface_index != ingress_ifindex) {
-            bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
-                       current_time, interface_index);
+    bpf_for(i, 0, 10) {
+        if (i >= number_of_interfaces) {
+            return TC_ACT_OK;
         }
-    } else {
-        return TC_ACT_OK;
-    }
+        interface_index_ptr = bpf_map_lookup_elem(&interfaces_array, &i);
 
-    i = 1;
-    if (i >= number_of_interfaces) {
-        return TC_ACT_OK;
-    }
-    interface_index_ptr = bpf_map_lookup_elem(&interfaces_array, &i);
+        if (interface_index_ptr) {
+            __u32 interface_index = *interface_index_ptr;
 
-    if (interface_index_ptr) {
-        __u32 interface_index = *interface_index_ptr;
-
-        if (interface_index != ingress_ifindex) {
-            bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
-                       current_time, interface_index);
+            if (interface_index != ingress_ifindex) {
+                bpf_clone_redirect(skb, interface_index, 0);
+                bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
+                           current_time, interface_index);
+            }
+        } else {
+            return TC_ACT_OK;
         }
-    } else {
-        return TC_ACT_OK;
-    }
-
-    i = 2;
-    if (i >= number_of_interfaces) {
-        return TC_ACT_OK;
-    }
-    interface_index_ptr = bpf_map_lookup_elem(&interfaces_array, &i);
-
-    if (interface_index_ptr) {
-        __u32 interface_index = *interface_index_ptr;
-
-        if (interface_index != ingress_ifindex) {
-            bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
-                       current_time, interface_index);
-        }
-    } else {
-        return TC_ACT_OK;
-    }
-
-    i = 3;
-    if (i >= number_of_interfaces) {
-        return TC_ACT_OK;
-    }
-    interface_index_ptr = bpf_map_lookup_elem(&interfaces_array, &i);
-
-    if (interface_index_ptr) {
-        __u32 interface_index = *interface_index_ptr;
-
-        if (interface_index != ingress_ifindex) {
-            bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
-                       current_time, interface_index);
-        }
-    } else {
-        return TC_ACT_OK;
-    }
-
-    i = 4;
-    if (i >= number_of_interfaces) {
-        return TC_ACT_OK;
-    }
-    interface_index_ptr = bpf_map_lookup_elem(&interfaces_array, &i);
-
-    if (interface_index_ptr) {
-        __u32 interface_index = *interface_index_ptr;
-
-        if (interface_index != ingress_ifindex) {
-            bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
-                       current_time, interface_index);
-        }
-    } else {
-        return TC_ACT_OK;
-    }
-
-    i = 5;
-    if (i >= number_of_interfaces) {
-        return TC_ACT_OK;
-    }
-    interface_index_ptr = bpf_map_lookup_elem(&interfaces_array, &i);
-
-    if (interface_index_ptr) {
-        __u32 interface_index = *interface_index_ptr;
-
-        if (interface_index != ingress_ifindex) {
-            bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
-                       current_time, interface_index);
-        }
-    } else {
-        return TC_ACT_OK;
-    }
-
-    i = 6;
-    if (i >= number_of_interfaces) {
-        return TC_ACT_OK;
-    }
-    interface_index_ptr = bpf_map_lookup_elem(&interfaces_array, &i);
-
-    if (interface_index_ptr) {
-        __u32 interface_index = *interface_index_ptr;
-
-        if (interface_index != ingress_ifindex) {
-            bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
-                       current_time, interface_index);
-        }
-    } else {
-        return TC_ACT_OK;
-    }
-
-    i = 7;
-    if (i >= number_of_interfaces) {
-        return TC_ACT_OK;
-    }
-    interface_index_ptr = bpf_map_lookup_elem(&interfaces_array, &i);
-
-    if (interface_index_ptr) {
-        __u32 interface_index = *interface_index_ptr;
-
-        if (interface_index != ingress_ifindex) {
-            bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
-                       current_time, interface_index);
-        }
-    } else {
-        return TC_ACT_OK;
-    }
-
-    i = 8;
-    if (i >= number_of_interfaces) {
-        return TC_ACT_OK;
-    }
-    interface_index_ptr = bpf_map_lookup_elem(&interfaces_array, &i);
-
-    if (interface_index_ptr) {
-        __u32 interface_index = *interface_index_ptr;
-
-        if (interface_index != ingress_ifindex) {
-            bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
-                       current_time, interface_index);
-        }
-    } else {
-        return TC_ACT_OK;
-    }
-
-    i = 9;
-    if (i >= number_of_interfaces) {
-        return TC_ACT_OK;
-    }
-    interface_index_ptr = bpf_map_lookup_elem(&interfaces_array, &i);
-
-    if (interface_index_ptr) {
-        __u32 interface_index = *interface_index_ptr;
-
-        if (interface_index != ingress_ifindex) {
-            bpf_clone_redirect(skb, interface_index, 0);
-            bpf_printk("///////////// id = %llu, multicast: redirection to %d \n",
-                       current_time, interface_index);
-        }
-    } else {
-        return TC_ACT_OK;
     }
 
     return TC_ACT_OK;

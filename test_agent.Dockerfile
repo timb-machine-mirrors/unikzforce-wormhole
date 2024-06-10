@@ -1,9 +1,10 @@
-FROM golang:1.22.0-bookworm
+FROM ubuntu:24.04
 
 RUN apt-get update && \
     echo "wireshark-common wireshark-common/install-setuid boolean true" | debconf-set-selections && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y tshark
 
+RUN apt install -y golang-go
 RUN apt install -y build-essential
 RUN apt install -y pkg-config
 RUN apt install -y clang
