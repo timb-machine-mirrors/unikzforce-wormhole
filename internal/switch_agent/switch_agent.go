@@ -10,7 +10,6 @@ import (
 	"github.com/cilium/ebpf/ringbuf"
 	"github.com/cilium/ebpf/rlimit"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
 	"github.com/vishvananda/netlink"
 	"os"
 	"os/signal"
@@ -37,7 +36,7 @@ func NewSwitchAgent(networkInterfaces []netlink.Link) *SwitchAgent {
 }
 
 // ActivateSwitchAgent is the entry point to start the SwitchAgent
-func (sa *SwitchAgent) ActivateSwitchAgent(cCtx *cli.Context) error {
+func (sa *SwitchAgent) ActivateSwitchAgent() error {
 	if err := rlimit.RemoveMemlock(); err != nil {
 		logrus.Fatal("Removing memlock:", err)
 	}

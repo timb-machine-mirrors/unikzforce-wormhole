@@ -34,7 +34,7 @@ func ActivateSwitchAgent(cCtx *cli.Context) error {
 	networkInterfaces := findNetworkInterfaces(cCtx)
 	switchAgent := switch_agent.NewSwitchAgent(networkInterfaces)
 
-	return switchAgent.ActivateSwitchAgent(cCtx)
+	return switchAgent.ActivateSwitchAgent()
 }
 
 func findNetworkInterfaces(cCtx *cli.Context) []netlink.Link {
