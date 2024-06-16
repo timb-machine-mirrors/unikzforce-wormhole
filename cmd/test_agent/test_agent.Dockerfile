@@ -40,17 +40,16 @@ RUN make -C xdp-tools/ install
 
 RUN mkdir /wormhole-source/
 
-COPY go.mod /wormhole-source
-COPY go.sum /wormhole-source
-COPY ./ebpf/ /wormhole-source/ebpf/
-COPY ./cmd/switch_agent/ /wormhole-source/cmd/switch_agent/
-COPY ./cmd/test_agent/ /wormhole-source/cmd/test_agent/
+COPY ../../go.mod /wormhole-source
+COPY ../../go.sum /wormhole-source
+COPY ../../internal/ /wormhole-source/internal/
+COPY ../../cmd/ /wormhole-source/cmd/
 
 WORKDIR /wormhole-source/
 
 #RUN go install github.com/go-delve/delve/cmd/dlv@latest
 RUN go mod download
-RUN go generate ./ebpf/switch_agent/
+RUN go generate ./internal/switch_agent/ebpf/
 
 RUN go build -o /build/switch_agent ./cmd/switch_agent/main.go
 RUN go build -o /build/test_agent ./cmd/test_agent/test_agent_grpc.server_bootstrap.go

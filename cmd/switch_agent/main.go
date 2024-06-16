@@ -1,35 +1,12 @@
 package main
 
 import (
-	"bytes"
-	"context"
-	"encoding/binary"
-	"encoding/gob"
-	"encoding/hex"
-	"fmt"
-	"github.com/allegro/bigcache/v3"
-	"github.com/cilium/ebpf"
-	"github.com/cilium/ebpf/link"
-	"github.com/cilium/ebpf/ringbuf"
-	"github.com/cilium/ebpf/rlimit"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 	"github.com/vishvananda/netlink"
 	"os"
-	"os/signal"
 	"strings"
-	"sync"
-	"time"
-	"wormhole/ebpf/switch_agent"
-)
-
-// Pool to cache Encoder and Decoder instances
-var (
-	gobPool = sync.Pool{
-		New: func() interface{} {
-			return &bytes.Buffer{}
-		},
-	}
+	"wormhole/internal/switch_agent"
 )
 
 func main() {
@@ -44,359 +21,42 @@ func main() {
 				Usage: "the name of the network interfaces to attach",
 			},
 		},
-		Action: activateSwitchAgent,
+		Action: ActivateSwitchAgent,
 	}
 
 	if err := app.Run(os.Args); err != nil {
+		logrus.Fatalf("error %s", err)
 		panic(err)
 	}
 }
 
-func activateSwitchAgent(cCtx *cli.Context) error {
-
-	// Remove resource limits for kernels <5.11.
-	if err := rlimit.RemoveMemlock(); err != nil {
-		log.Fatal("Removing memlock:", err)
-	}
-
+func ActivateSwitchAgent(cCtx *cli.Context) error {
 	networkInterfaces := findNetworkInterfaces(cCtx)
+	switchAgent := switch_agent.NewSwitchAgent(networkInterfaces)
 
-	log.Print("1")
-
-	// Load the compiled eBPF ELF and load it into the kernel.
-	var xdpObjects switch_agent.SwitchAgentXDPObjects
-	if err := switch_agent.LoadSwitchAgentXDPObjects(&xdpObjects, nil); err != nil {
-		log.Fatal("Loading XDP eBPF objects:", err)
-	}
-	defer xdpObjects.Close()
-
-	log.Print("2")
-
-	var tcObjects switch_agent.SwitchAgentUnknownUnicastFloodingObjects
-	if err := switch_agent.LoadSwitchAgentUnknownUnicastFloodingObjects(&tcObjects, nil); err != nil {
-		log.Fatal("Loading TC ebpf objects:", err)
-	}
-	defer tcObjects.Close()
-
-	log.Print("size of networkInterfaces ", len(networkInterfaces))
-
-	log.Print("3")
-
-	err := addNetworkInterfacesToUnknownUnicastFloodingMaps(tcObjects, networkInterfaces)
-	if err != nil {
-		return err
-	}
-
-	log.Print("4")
-
-	// create userspaceMacTable: Cache<MacAddress, IfaceIndex>
-	// attention the in allegro bigcache, each entry has string key and byte[] value
-	userspaceMacTableReInsertChannel := make(chan switch_agent.SwitchAgentXDPMacAddressIfaceEntry)
-	userspaceMacTableEvictionCallback := createUserspaceMacTableEvictionCallback(xdpObjects.MacTable, userspaceMacTableReInsertChannel)
-	userspaceMacTable := createUserspaceMacTable(userspaceMacTableEvictionCallback)
-
-	log.Print("5")
-
-	go reInsertIntoUserspaceMacTable(userspaceMacTableReInsertChannel, userspaceMacTable)
-
-	log.Print("6")
-
-	attachedLinks, err := attachToInterfaces(networkInterfaces, xdpObjects, tcObjects)
-	defer closeAttachedLinks(attachedLinks)
-	if err != nil {
-		return err
-	}
-
-	log.Print("7")
-
-	go handleNewDiscoveredEntriesRingBuffer(userspaceMacTable, xdpObjects.NewDiscoveredEntriesRb)
-
-	log.Print("8")
-
-	return waitForCtrlC(xdpObjects, userspaceMacTable)
-}
-
-func addNetworkInterfacesToUnknownUnicastFloodingMaps(tcObjects switch_agent.SwitchAgentUnknownUnicastFloodingObjects, networkInterfaces []netlink.Link) error {
-
-	log.Print("3.1")
-	err := tcObjects.InterfacesArrayLength.Put(uint32(0), uint32(len(networkInterfaces)))
-	if err != nil {
-		log.Fatalf("something bad happened %s", err)
-	}
-
-	log.Print("3.2")
-
-	for i, networkInterface := range networkInterfaces {
-		log.Print("3.3_element")
-		err = tcObjects.InterfacesArray.Put(uint32(i), uint32(networkInterface.Attrs().Index))
-		if err != nil {
-			return err
-		}
-	}
-
-	log.Print("3.4")
-	return nil
-}
-
-func createUserspaceMacTable(onRemove func(string, []byte)) *bigcache.BigCache {
-	defaultCacheConfig := bigcache.DefaultConfig(20 * time.Second)
-	userspaceMacTable, _ := bigcache.New(
-		context.Background(),
-		bigcache.Config{
-			Shards:             defaultCacheConfig.Shards,
-			LifeWindow:         defaultCacheConfig.LifeWindow,
-			CleanWindow:        1 * time.Second,
-			MaxEntriesInWindow: defaultCacheConfig.MaxEntriesInWindow,
-			MaxEntrySize:       defaultCacheConfig.MaxEntrySize,
-			StatsEnabled:       defaultCacheConfig.StatsEnabled,
-			Verbose:            defaultCacheConfig.Verbose,
-			HardMaxCacheSize:   defaultCacheConfig.HardMaxCacheSize,
-			OnRemove:           onRemove,
-			Hasher:             defaultCacheConfig.Hasher,
-		})
-	return userspaceMacTable
-}
-
-func createUserspaceMacTableEvictionCallback(kernelspaceMacTable *ebpf.Map, userspaceMacTableReInsertChannel chan switch_agent.SwitchAgentXDPMacAddressIfaceEntry) func(string, []byte) {
-	return func(key string, entry []byte) {
-		log.Print("Evection1")
-		macKey := convertStringToMac(key)
-		ifaceIndexInKernel := switch_agent.SwitchAgentXDPIfaceIndex{}
-		err := kernelspaceMacTable.Lookup(&macKey, &ifaceIndexInKernel)
-		if err != nil {
-			log.Fatalf("Error parsing value in kernel for mac %s, err: %s", key, err)
-			return
-		}
-
-		log.Printf("Evection2, %d", ifaceIndexInKernel.InterfaceIndex)
-
-		currentTimeNano := uint64(time.Now().UnixNano())
-		log.Printf("Eviction.currentTimeNano %d", currentTimeNano)
-		timestampInKernelNano := ifaceIndexInKernel.Timestamp // convert timestamp to seconds
-
-		timeDifferenceSeconds := (currentTimeNano - timestampInKernelNano) / 1_000_000_000
-
-		log.Printf("Eviction.currentTimeNano %d timestampInKernelNano %d TimeDifference %d, for mac: %s", currentTimeNano, timestampInKernelNano, timeDifferenceSeconds, key)
-
-		if timeDifferenceSeconds < 20 {
-			// if upon removal of the key in userspace Mac Table we realized that
-			// the kernel space equivalent of that item is _not_ older than 5 minutes
-			// we will realize that this Mac address have been visible to the switch
-			// in tha last 5 minutes, so we will re-insert the key/value for that mac
-			// address again in the userspace table, with the latest value obtained
-			// from the kernel space mac table.
-			log.Print("Eviction.TryToReinsert")
-			userspaceMacTableReInsertChannel <- switch_agent.SwitchAgentXDPMacAddressIfaceEntry{
-				Mac:   macKey,
-				Iface: ifaceIndexInKernel,
-			}
-		} else {
-			log.Printf("Eviction.Delete, for mac: %s", key)
-			err := kernelspaceMacTable.Delete(macKey)
-			if err != nil {
-				log.Fatalf("Error In Deleting %s", err)
-			}
-		}
-		log.Print("Eviction.finish")
-	}
-}
-
-func reInsertIntoUserspaceMacTable(userspaceMacTableReInsertChannel chan switch_agent.SwitchAgentXDPMacAddressIfaceEntry, userspaceMacTable *bigcache.BigCache) {
-	for entry := range userspaceMacTableReInsertChannel {
-
-		log.Print("ReInsert.1")
-
-		key := convertMacToString(entry.Mac)
-		value, _ := encodeIfaceIndex(entry.Iface)
-
-		log.Print("ReInsert.2")
-
-		err := userspaceMacTable.Set(key, value)
-		if err != nil {
-			log.Fatalln("cannot reinsert evicted into userspaceMacTable")
-		}
-
-		log.Print("ReInsert.3")
-	}
+	return switchAgent.ActivateSwitchAgent(cCtx)
 }
 
 func findNetworkInterfaces(cCtx *cli.Context) []netlink.Link {
 	cliInterfaceNames := strings.TrimSpace(cCtx.String("interface-names"))
 	if cliInterfaceNames == "" {
-		log.Fatal("--interface-names should be present and not empty")
+		logrus.Fatal("--interface-names should be present and not empty")
 	}
 
-	log.Println(cliInterfaceNames)
+	logrus.Println(cliInterfaceNames)
 
 	interfaceNames := strings.Split(cliInterfaceNames, ",")
-	log.Println(interfaceNames)
+	logrus.Println(interfaceNames)
 
 	var ifaces []netlink.Link
 
 	for _, ifaceName := range interfaceNames {
 		iface, err := netlink.LinkByName(ifaceName)
 		if err != nil {
-			log.Fatalf("Getting interface %s: %s", ifaceName, err)
+			logrus.Fatalf("Getting interface %s: %s", ifaceName, err)
 		}
 
 		ifaces = append(ifaces, iface)
 	}
 	return ifaces
-}
-
-func attachToInterfaces(networkInterfaces []netlink.Link, xdpObjects switch_agent.SwitchAgentXDPObjects, tcObjects switch_agent.SwitchAgentUnknownUnicastFloodingObjects) ([]*link.Link, error) {
-	var attachedLinks []*link.Link
-
-	log.Print("6.1")
-
-	for _, iface := range networkInterfaces {
-		var err error
-
-		log.Print("6.2.element")
-
-		// Attach switchAgentXdp to the network interface.
-		attachedXdpLink, err := link.AttachXDP(link.XDPOptions{
-			Program:   xdpObjects.SwitchAgentXdp,
-			Interface: iface.Attrs().Index,
-			Flags:     link.XDPGenericMode,
-		})
-
-		if err != nil {
-			log.Fatal("Attaching XDP:", err)
-			return attachedLinks, err
-		}
-
-		// attach switchAgentUnknownUnicastFlooding to the network interface
-		attachedTcLink, err := link.AttachTCX(link.TCXOptions{
-			Interface: iface.Attrs().Index,
-			Program:   tcObjects.SwitchAgentUnknownUnicastFlooding,
-			Attach:    ebpf.AttachTCXIngress,
-			Anchor:    link.Tail(),
-		})
-
-		if err != nil {
-			log.Fatal("Attaching TCX:", err)
-			return attachedLinks, err
-		}
-
-		attachedLinks = append(attachedLinks, &attachedXdpLink, &attachedTcLink)
-	}
-
-	return attachedLinks, nil
-}
-
-func handleNewDiscoveredEntriesRingBuffer(userspaceMacTable *bigcache.BigCache, newDiscoveredEntriesRb *ebpf.Map) {
-
-	for {
-		log.Print("HandleNewDiscoveredEntries.1")
-		rd, err := ringbuf.NewReader(newDiscoveredEntriesRb)
-		if err != nil {
-			log.Fatalf("opening ringbuf reader: %s", err)
-		}
-		defer rd.Close()
-
-		log.Print("HandleNewDiscoveredEntries.2")
-		var entry switch_agent.SwitchAgentXDPMacAddressIfaceEntry
-		record, err := rd.Read()
-
-		log.Print("HandleNewDiscoveredEntries.3")
-		if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.NativeEndian, &entry); err != nil {
-			log.Fatalf("failedparsing ringbuf entry: %s", err)
-			continue
-		}
-
-		log.Print("HandleNewDiscoveredEntries.4")
-		key := convertMacToString(entry.Mac)
-		value, _ := encodeIfaceIndex(entry.Iface)
-
-		log.Print("HandleNewDiscoveredEntries.5")
-		userspaceMacTable.Set(key, value)
-		log.Print("HandleNewDiscoveredEntries.6")
-	}
-}
-
-func closeAttachedLinks(links []*link.Link) {
-	for _, l := range links {
-		(*l).Close()
-	}
-}
-
-func convertMacToString(mac switch_agent.SwitchAgentXDPMacAddress) string {
-	return fmt.Sprintf("%02X%02X%02X%02X%02X%02X",
-		mac.Mac[0], mac.Mac[1], mac.Mac[2], mac.Mac[3], mac.Mac[4], mac.Mac[5])
-}
-
-func convertStringToMac(macStr string) switch_agent.SwitchAgentXDPMacAddress {
-	macBytes, err := hex.DecodeString(macStr)
-	if err != nil {
-		log.Fatalln("Error decoding MAC address:", err)
-	}
-
-	var mac [6]uint8
-	copy(mac[:], macBytes)
-
-	return switch_agent.SwitchAgentXDPMacAddress{Mac: mac}
-}
-
-func encodeIfaceIndex(s switch_agent.SwitchAgentXDPIfaceIndex) ([]byte, error) {
-	// Get a buffer from the pool
-	buf := gobPool.Get().(*bytes.Buffer)
-	defer gobPool.Put(buf)
-	buf.Reset() // Reset buffer before encoding
-
-	// Encode the struct into the buffer
-	encoder := gob.NewEncoder(buf)
-	err := encoder.Encode(s)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-// Function to decode a byte slice into a struct
-func decodeMacIfaceEntry(data []byte) (switch_agent.SwitchAgentXDPMacAddressIfaceEntry, error) {
-	// Get a buffer from the pool
-	buf := gobPool.Get().(*bytes.Buffer)
-	defer gobPool.Put(buf)
-	buf.Reset() // Reset buffer before decoding
-
-	// Write data to buffer
-	_, err := buf.Write(data)
-	if err != nil {
-		return switch_agent.SwitchAgentXDPMacAddressIfaceEntry{}, err
-	}
-
-	// Decode the buffer into a struct
-	var decodedStruct switch_agent.SwitchAgentXDPMacAddressIfaceEntry
-	decoder := gob.NewDecoder(buf)
-	err = decoder.Decode(&decodedStruct)
-	if err != nil {
-		return switch_agent.SwitchAgentXDPMacAddressIfaceEntry{}, err
-	}
-	return decodedStruct, nil
-}
-
-func waitForCtrlC(objs switch_agent.SwitchAgentXDPObjects, userspaceMacTable *bigcache.BigCache) error {
-	// Periodically print user mac table
-	// exit the program when interrupted.
-	tick := time.Tick(time.Second)
-	stop := make(chan os.Signal, 5)
-	signal.Notify(stop, os.Interrupt)
-	for {
-		select {
-		case <-tick:
-			log.Printf("userspace mac table size %d", userspaceMacTable.Len())
-			var (
-				key   switch_agent.SwitchAgentXDPMacAddress
-				value switch_agent.SwitchAgentXDPIfaceIndex
-			)
-
-			for i := 0; objs.MacTable.Iterate().Next(&key, &value) && i < 3; i++ {
-				log.Printf("item in kernelspace MacTable, key %s", convertMacToString(key))
-			}
-		case <-stop:
-			log.Print("Received signal, exiting..")
-			return nil
-		}
-	}
 }
