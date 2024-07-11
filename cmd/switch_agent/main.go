@@ -13,7 +13,7 @@ func main() {
 
 	app := &cli.App{
 		Name:  "switch_agent",
-		Usage: "switch_agent, is the program that will reside in each network and facilitate forwarding packets to other networks and also will report to controller",
+		Usage: "switch_agent, is the program that will reside in a network and will act as a switch device",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "interface-names",
@@ -31,14 +31,14 @@ func main() {
 }
 
 func ActivateSwitchAgent(cCtx *cli.Context) error {
-	networkInterfaces := findNetworkInterfaces(cCtx)
+	networkInterfaces := findNetworkInterfaces(cCtx, "interface-names")
 	switchAgent := switch_agent.NewSwitchAgent(networkInterfaces)
 
 	return switchAgent.ActivateSwitchAgent()
 }
 
-func findNetworkInterfaces(cCtx *cli.Context) []netlink.Link {
-	cliInterfaceNames := strings.TrimSpace(cCtx.String("interface-names"))
+func findNetworkInterfaces(cCtx *cli.Context, argumentName string) []netlink.Link {
+	cliInterfaceNames := strings.TrimSpace(cCtx.String(argumentName))
 	if cliInterfaceNames == "" {
 		logrus.Fatal("--interface-names should be present and not empty")
 	}
