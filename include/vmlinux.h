@@ -14,6 +14,24 @@
 #endif
 
 enum {
+	AD_CURRENT_WHILE_TIMER = 0,
+	AD_ACTOR_CHURN_TIMER = 1,
+	AD_PERIODIC_TIMER = 2,
+	AD_PARTNER_CHURN_TIMER = 3,
+	AD_WAIT_WHILE_TIMER = 4,
+};
+
+enum {
+	AD_MARKER_INFORMATION_SUBTYPE = 1,
+	AD_MARKER_RESPONSE_SUBTYPE = 2,
+};
+
+enum {
+	AD_TYPE_LACPDU = 1,
+	AD_TYPE_MARKER = 2,
+};
+
+enum {
 	AFFINITY = 0,
 	AFFINITY_LIST = 1,
 	EFFECTIVE = 2,
@@ -121,16 +139,9 @@ enum {
 
 enum {
 	BINDER_DEBUG_USER_ERROR = 1,
-	BINDER_DEBUG_OPEN_CLOSE = 2,
-	BINDER_DEBUG_BUFFER_ALLOC = 4,
-	BINDER_DEBUG_BUFFER_ALLOC_ASYNC = 8,
-};
-
-enum {
-	BINDER_DEBUG_USER_ERROR___2 = 1,
 	BINDER_DEBUG_FAILED_TRANSACTION = 2,
 	BINDER_DEBUG_DEAD_TRANSACTION = 4,
-	BINDER_DEBUG_OPEN_CLOSE___2 = 8,
+	BINDER_DEBUG_OPEN_CLOSE = 8,
 	BINDER_DEBUG_DEAD_BINDER = 16,
 	BINDER_DEBUG_DEATH_NOTIFICATION = 32,
 	BINDER_DEBUG_READ_WRITE = 64,
@@ -142,6 +153,13 @@ enum {
 	BINDER_DEBUG_INTERNAL_REFS = 4096,
 	BINDER_DEBUG_PRIORITY_CAP = 8192,
 	BINDER_DEBUG_SPINLOCKS = 16384,
+};
+
+enum {
+	BINDER_DEBUG_USER_ERROR___2 = 1,
+	BINDER_DEBUG_OPEN_CLOSE___2 = 2,
+	BINDER_DEBUG_BUFFER_ALLOC = 4,
+	BINDER_DEBUG_BUFFER_ALLOC_ASYNC = 8,
 };
 
 enum {
@@ -243,6 +261,83 @@ enum {
 	INODE_BITMAP = 1,
 	INODE_TABLE = 2,
 	GROUP_TABLE_COUNT = 3,
+};
+
+enum {
+	BOND_3AD_STAT_LACPDU_RX = 0,
+	BOND_3AD_STAT_LACPDU_TX = 1,
+	BOND_3AD_STAT_LACPDU_UNKNOWN_RX = 2,
+	BOND_3AD_STAT_LACPDU_ILLEGAL_RX = 3,
+	BOND_3AD_STAT_MARKER_RX = 4,
+	BOND_3AD_STAT_MARKER_TX = 5,
+	BOND_3AD_STAT_MARKER_RESP_RX = 6,
+	BOND_3AD_STAT_MARKER_RESP_TX = 7,
+	BOND_3AD_STAT_MARKER_UNKNOWN_RX = 8,
+	BOND_3AD_STAT_PAD = 9,
+	__BOND_3AD_STAT_MAX = 10,
+};
+
+enum {
+	BOND_AD_STABLE = 0,
+	BOND_AD_BANDWIDTH = 1,
+	BOND_AD_COUNT = 2,
+};
+
+enum {
+	BOND_OPTFLAG_NOSLAVES = 1,
+	BOND_OPTFLAG_IFDOWN = 2,
+	BOND_OPTFLAG_RAWVAL = 4,
+};
+
+enum {
+	BOND_OPT_MODE = 0,
+	BOND_OPT_PACKETS_PER_SLAVE = 1,
+	BOND_OPT_XMIT_HASH = 2,
+	BOND_OPT_ARP_VALIDATE = 3,
+	BOND_OPT_ARP_ALL_TARGETS = 4,
+	BOND_OPT_FAIL_OVER_MAC = 5,
+	BOND_OPT_ARP_INTERVAL = 6,
+	BOND_OPT_ARP_TARGETS = 7,
+	BOND_OPT_DOWNDELAY = 8,
+	BOND_OPT_UPDELAY = 9,
+	BOND_OPT_LACP_RATE = 10,
+	BOND_OPT_MINLINKS = 11,
+	BOND_OPT_AD_SELECT = 12,
+	BOND_OPT_NUM_PEER_NOTIF = 13,
+	BOND_OPT_MIIMON = 14,
+	BOND_OPT_PRIMARY = 15,
+	BOND_OPT_PRIMARY_RESELECT = 16,
+	BOND_OPT_USE_CARRIER = 17,
+	BOND_OPT_ACTIVE_SLAVE = 18,
+	BOND_OPT_QUEUE_ID = 19,
+	BOND_OPT_ALL_SLAVES_ACTIVE = 20,
+	BOND_OPT_RESEND_IGMP = 21,
+	BOND_OPT_LP_INTERVAL = 22,
+	BOND_OPT_SLAVES = 23,
+	BOND_OPT_TLB_DYNAMIC_LB = 24,
+	BOND_OPT_AD_ACTOR_SYS_PRIO = 25,
+	BOND_OPT_AD_ACTOR_SYSTEM = 26,
+	BOND_OPT_AD_USER_PORT_KEY = 27,
+	BOND_OPT_NUM_PEER_NOTIF_ALIAS = 28,
+	BOND_OPT_PEER_NOTIF_DELAY = 29,
+	BOND_OPT_LACP_ACTIVE = 30,
+	BOND_OPT_MISSED_MAX = 31,
+	BOND_OPT_NS_TARGETS = 32,
+	BOND_OPT_PRIO = 33,
+	BOND_OPT_COUPLED_CONTROL = 34,
+	BOND_OPT_LAST = 35,
+};
+
+enum {
+	BOND_VALFLAG_DEFAULT = 1,
+	BOND_VALFLAG_MIN = 2,
+	BOND_VALFLAG_MAX = 4,
+};
+
+enum {
+	BOND_XSTATS_UNSPEC = 0,
+	BOND_XSTATS_3AD = 1,
+	__BOND_XSTATS_MAX = 2,
 };
 
 enum {
@@ -3224,6 +3319,67 @@ enum {
 };
 
 enum {
+	IFLA_BOND_AD_INFO_UNSPEC = 0,
+	IFLA_BOND_AD_INFO_AGGREGATOR = 1,
+	IFLA_BOND_AD_INFO_NUM_PORTS = 2,
+	IFLA_BOND_AD_INFO_ACTOR_KEY = 3,
+	IFLA_BOND_AD_INFO_PARTNER_KEY = 4,
+	IFLA_BOND_AD_INFO_PARTNER_MAC = 5,
+	__IFLA_BOND_AD_INFO_MAX = 6,
+};
+
+enum {
+	IFLA_BOND_SLAVE_UNSPEC = 0,
+	IFLA_BOND_SLAVE_STATE = 1,
+	IFLA_BOND_SLAVE_MII_STATUS = 2,
+	IFLA_BOND_SLAVE_LINK_FAILURE_COUNT = 3,
+	IFLA_BOND_SLAVE_PERM_HWADDR = 4,
+	IFLA_BOND_SLAVE_QUEUE_ID = 5,
+	IFLA_BOND_SLAVE_AD_AGGREGATOR_ID = 6,
+	IFLA_BOND_SLAVE_AD_ACTOR_OPER_PORT_STATE = 7,
+	IFLA_BOND_SLAVE_AD_PARTNER_OPER_PORT_STATE = 8,
+	IFLA_BOND_SLAVE_PRIO = 9,
+	__IFLA_BOND_SLAVE_MAX = 10,
+};
+
+enum {
+	IFLA_BOND_UNSPEC = 0,
+	IFLA_BOND_MODE = 1,
+	IFLA_BOND_ACTIVE_SLAVE = 2,
+	IFLA_BOND_MIIMON = 3,
+	IFLA_BOND_UPDELAY = 4,
+	IFLA_BOND_DOWNDELAY = 5,
+	IFLA_BOND_USE_CARRIER = 6,
+	IFLA_BOND_ARP_INTERVAL = 7,
+	IFLA_BOND_ARP_IP_TARGET = 8,
+	IFLA_BOND_ARP_VALIDATE = 9,
+	IFLA_BOND_ARP_ALL_TARGETS = 10,
+	IFLA_BOND_PRIMARY = 11,
+	IFLA_BOND_PRIMARY_RESELECT = 12,
+	IFLA_BOND_FAIL_OVER_MAC = 13,
+	IFLA_BOND_XMIT_HASH_POLICY = 14,
+	IFLA_BOND_RESEND_IGMP = 15,
+	IFLA_BOND_NUM_PEER_NOTIF = 16,
+	IFLA_BOND_ALL_SLAVES_ACTIVE = 17,
+	IFLA_BOND_MIN_LINKS = 18,
+	IFLA_BOND_LP_INTERVAL = 19,
+	IFLA_BOND_PACKETS_PER_SLAVE = 20,
+	IFLA_BOND_AD_LACP_RATE = 21,
+	IFLA_BOND_AD_SELECT = 22,
+	IFLA_BOND_AD_INFO = 23,
+	IFLA_BOND_AD_ACTOR_SYS_PRIO = 24,
+	IFLA_BOND_AD_USER_PORT_KEY = 25,
+	IFLA_BOND_AD_ACTOR_SYSTEM = 26,
+	IFLA_BOND_TLB_DYNAMIC_LB = 27,
+	IFLA_BOND_PEER_NOTIF_DELAY = 28,
+	IFLA_BOND_AD_LACP_ACTIVE = 29,
+	IFLA_BOND_MISSED_MAX = 30,
+	IFLA_BOND_NS_IP6_TARGET = 31,
+	IFLA_BOND_COUPLED_CONTROL = 32,
+	__IFLA_BOND_MAX = 33,
+};
+
+enum {
 	IFLA_BRIDGE_FLAGS = 0,
 	IFLA_BRIDGE_MODE = 1,
 	IFLA_BRIDGE_VLAN_INFO = 2,
@@ -3385,6 +3541,17 @@ enum {
 	IFLA_GENEVE_DF = 13,
 	IFLA_GENEVE_INNER_PROTO_INHERIT = 14,
 	__IFLA_GENEVE_MAX = 15,
+};
+
+enum {
+	IFLA_GTP_UNSPEC = 0,
+	IFLA_GTP_FD0 = 1,
+	IFLA_GTP_FD1 = 2,
+	IFLA_GTP_PDP_HASHSIZE = 3,
+	IFLA_GTP_ROLE = 4,
+	IFLA_GTP_CREATE_SOCKETS = 5,
+	IFLA_GTP_RESTART_COUNT = 6,
+	__IFLA_GTP_MAX = 7,
 };
 
 enum {
@@ -7013,13 +7180,6 @@ enum {
 enum {
 	Opt_uid___5 = 0,
 	Opt_gid___5 = 1,
-	Opt_mode___3 = 2,
-	Opt_err___11 = 3,
-};
-
-enum {
-	Opt_uid___6 = 0,
-	Opt_gid___6 = 1,
 	Opt_umask___3 = 2,
 	Opt_dmask___2 = 3,
 	Opt_fmask___2 = 4,
@@ -7035,6 +7195,13 @@ enum {
 	Opt_debug___4 = 14,
 	Opt_namecase = 15,
 	Opt_codepage___2 = 16,
+};
+
+enum {
+	Opt_uid___6 = 0,
+	Opt_gid___6 = 1,
+	Opt_mode___3 = 2,
+	Opt_err___11 = 3,
 };
 
 enum {
@@ -8261,6 +8428,16 @@ enum {
 	TCA_CGROUP_POLICE = 2,
 	TCA_CGROUP_EMATCHES = 3,
 	__TCA_CGROUP_MAX = 4,
+};
+
+enum {
+	TCA_CSUM_UPDATE_FLAG_IPV4HDR = 1,
+	TCA_CSUM_UPDATE_FLAG_ICMP = 2,
+	TCA_CSUM_UPDATE_FLAG_IGMP = 4,
+	TCA_CSUM_UPDATE_FLAG_TCP = 8,
+	TCA_CSUM_UPDATE_FLAG_UDP = 16,
+	TCA_CSUM_UPDATE_FLAG_UDPLITE = 32,
+	TCA_CSUM_UPDATE_FLAG_SCTP = 64,
 };
 
 enum {
@@ -10268,14 +10445,15 @@ enum {
 	attr_trigger_test_error = 7,
 	attr_first_error_time = 8,
 	attr_last_error_time = 9,
-	attr_feature___2 = 10,
-	attr_pointer_ui___2 = 11,
-	attr_pointer_ul = 12,
-	attr_pointer_u64 = 13,
-	attr_pointer_u8 = 14,
-	attr_pointer_string = 15,
-	attr_pointer_atomic = 16,
-	attr_journal_task = 17,
+	attr_clusters_in_group = 10,
+	attr_feature___2 = 11,
+	attr_pointer_ui___2 = 12,
+	attr_pointer_ul = 13,
+	attr_pointer_u64 = 14,
+	attr_pointer_u8 = 15,
+	attr_pointer_string = 16,
+	attr_pointer_atomic = 17,
+	attr_journal_task = 18,
 };
 
 enum {
@@ -11688,6 +11866,26 @@ enum actions {
 	CPU_DONT_CARE = 2,
 };
 
+enum ad_link_speed_type {
+	AD_LINK_SPEED_1MBPS = 1,
+	AD_LINK_SPEED_10MBPS = 2,
+	AD_LINK_SPEED_100MBPS = 3,
+	AD_LINK_SPEED_1000MBPS = 4,
+	AD_LINK_SPEED_2500MBPS = 5,
+	AD_LINK_SPEED_5000MBPS = 6,
+	AD_LINK_SPEED_10000MBPS = 7,
+	AD_LINK_SPEED_14000MBPS = 8,
+	AD_LINK_SPEED_20000MBPS = 9,
+	AD_LINK_SPEED_25000MBPS = 10,
+	AD_LINK_SPEED_40000MBPS = 11,
+	AD_LINK_SPEED_50000MBPS = 12,
+	AD_LINK_SPEED_56000MBPS = 13,
+	AD_LINK_SPEED_100000MBPS = 14,
+	AD_LINK_SPEED_200000MBPS = 15,
+	AD_LINK_SPEED_400000MBPS = 16,
+	AD_LINK_SPEED_800000MBPS = 17,
+};
+
 enum addr_type_t {
 	UNICAST_ADDR = 0,
 	MULTICAST_ADDR = 1,
@@ -11790,6 +11988,13 @@ enum armpmu_attr_groups {
 	ARMPMU_ATTR_GROUP_FORMATS = 2,
 	ARMPMU_ATTR_GROUP_CAPS = 3,
 	ARMPMU_NR_ATTR_GROUPS = 4,
+};
+
+enum ask_yn {
+	YN_NO = 0,
+	YN_YES = 1,
+	YN_ALLNO = 2,
+	YN_ALLYES = 3,
 };
 
 enum asn1_class {
@@ -11978,6 +12183,1230 @@ enum batadv_packettype {
 	BATADV_UNICAST_TVLV = 68,
 };
 
+enum bcachefs_metadata_version {
+	bcachefs_metadata_version_min = 9,
+	bcachefs_metadata_version_bkey_renumber = 10,
+	bcachefs_metadata_version_inode_btree_change = 11,
+	bcachefs_metadata_version_snapshot = 12,
+	bcachefs_metadata_version_inode_backpointers = 13,
+	bcachefs_metadata_version_btree_ptr_sectors_written = 14,
+	bcachefs_metadata_version_snapshot_2 = 15,
+	bcachefs_metadata_version_reflink_p_fix = 16,
+	bcachefs_metadata_version_subvol_dirent = 17,
+	bcachefs_metadata_version_inode_v2 = 18,
+	bcachefs_metadata_version_freespace = 19,
+	bcachefs_metadata_version_alloc_v4 = 20,
+	bcachefs_metadata_version_new_data_types = 21,
+	bcachefs_metadata_version_backpointers = 22,
+	bcachefs_metadata_version_inode_v3 = 23,
+	bcachefs_metadata_version_unwritten_extents = 24,
+	bcachefs_metadata_version_bucket_gens = 25,
+	bcachefs_metadata_version_lru_v2 = 26,
+	bcachefs_metadata_version_fragmentation_lru = 27,
+	bcachefs_metadata_version_no_bps_in_alloc_keys = 28,
+	bcachefs_metadata_version_snapshot_trees = 29,
+	bcachefs_metadata_version_major_minor = 1024,
+	bcachefs_metadata_version_snapshot_skiplists = 1025,
+	bcachefs_metadata_version_deleted_inodes = 1026,
+	bcachefs_metadata_version_rebalance_work = 1027,
+	bcachefs_metadata_version_member_seq = 1028,
+	bcachefs_metadata_version_subvolume_fs_parent = 1029,
+	bcachefs_metadata_version_btree_subvolume_children = 1030,
+	bcachefs_metadata_version_mi_btree_bitmap = 1031,
+	bcachefs_metadata_version_max = 1032,
+};
+
+enum bch_bkey_fields {
+	BKEY_FIELD_INODE = 0,
+	BKEY_FIELD_OFFSET = 1,
+	BKEY_FIELD_SNAPSHOT = 2,
+	BKEY_FIELD_SIZE = 3,
+	BKEY_FIELD_VERSION_HI = 4,
+	BKEY_FIELD_VERSION_LO = 5,
+	BKEY_NR_FIELDS = 6,
+};
+
+enum bch_bkey_type {
+	KEY_TYPE_deleted = 0,
+	KEY_TYPE_whiteout = 1,
+	KEY_TYPE_error = 2,
+	KEY_TYPE_cookie = 3,
+	KEY_TYPE_hash_whiteout = 4,
+	KEY_TYPE_btree_ptr = 5,
+	KEY_TYPE_extent = 6,
+	KEY_TYPE_reservation = 7,
+	KEY_TYPE_inode = 8,
+	KEY_TYPE_inode_generation = 9,
+	KEY_TYPE_dirent = 10,
+	KEY_TYPE_xattr = 11,
+	KEY_TYPE_alloc = 12,
+	KEY_TYPE_quota = 13,
+	KEY_TYPE_stripe = 14,
+	KEY_TYPE_reflink_p = 15,
+	KEY_TYPE_reflink_v = 16,
+	KEY_TYPE_inline_data = 17,
+	KEY_TYPE_btree_ptr_v2 = 18,
+	KEY_TYPE_indirect_inline_data = 19,
+	KEY_TYPE_alloc_v2 = 20,
+	KEY_TYPE_subvolume = 21,
+	KEY_TYPE_snapshot = 22,
+	KEY_TYPE_inode_v2 = 23,
+	KEY_TYPE_alloc_v3 = 24,
+	KEY_TYPE_set = 25,
+	KEY_TYPE_lru = 26,
+	KEY_TYPE_alloc_v4 = 27,
+	KEY_TYPE_backpointer = 28,
+	KEY_TYPE_inode_v3 = 29,
+	KEY_TYPE_bucket_gens = 30,
+	KEY_TYPE_snapshot_tree = 31,
+	KEY_TYPE_logged_op_truncate = 32,
+	KEY_TYPE_logged_op_finsert = 33,
+	KEY_TYPE_MAX = 34,
+};
+
+enum bch_compression_opts {
+	BCH_COMPRESSION_OPT_none = 0,
+	BCH_COMPRESSION_OPT_lz4 = 1,
+	BCH_COMPRESSION_OPT_gzip = 2,
+	BCH_COMPRESSION_OPT_zstd = 3,
+	BCH_COMPRESSION_OPT_NR = 4,
+};
+
+enum bch_compression_type {
+	BCH_COMPRESSION_TYPE_none = 0,
+	BCH_COMPRESSION_TYPE_lz4_old = 1,
+	BCH_COMPRESSION_TYPE_gzip = 2,
+	BCH_COMPRESSION_TYPE_lz4 = 3,
+	BCH_COMPRESSION_TYPE_zstd = 4,
+	BCH_COMPRESSION_TYPE_incompressible = 5,
+	BCH_COMPRESSION_TYPE_NR = 6,
+};
+
+enum bch_csum_opts {
+	BCH_CSUM_OPT_none = 0,
+	BCH_CSUM_OPT_crc32c = 1,
+	BCH_CSUM_OPT_crc64 = 2,
+	BCH_CSUM_OPT_xxhash = 3,
+	BCH_CSUM_OPT_NR = 4,
+};
+
+enum bch_csum_type {
+	BCH_CSUM_none = 0,
+	BCH_CSUM_crc32c_nonzero = 1,
+	BCH_CSUM_crc64_nonzero = 2,
+	BCH_CSUM_chacha20_poly1305_80 = 3,
+	BCH_CSUM_chacha20_poly1305_128 = 4,
+	BCH_CSUM_crc32c = 5,
+	BCH_CSUM_crc64 = 6,
+	BCH_CSUM_xxhash = 7,
+	BCH_CSUM_NR = 8,
+};
+
+enum bch_data_event {
+	BCH_DATA_EVENT_PROGRESS = 0,
+	BCH_DATA_EVENT_NR = 1,
+};
+
+enum bch_data_ops {
+	BCH_DATA_OP_scrub = 0,
+	BCH_DATA_OP_rereplicate = 1,
+	BCH_DATA_OP_migrate = 2,
+	BCH_DATA_OP_rewrite_old_nodes = 3,
+	BCH_DATA_OP_drop_extra_replicas = 4,
+	BCH_DATA_OP_NR = 5,
+};
+
+enum bch_data_type {
+	BCH_DATA_free = 0,
+	BCH_DATA_sb = 1,
+	BCH_DATA_journal = 2,
+	BCH_DATA_btree = 3,
+	BCH_DATA_user = 4,
+	BCH_DATA_cached = 5,
+	BCH_DATA_parity = 6,
+	BCH_DATA_stripe = 7,
+	BCH_DATA_need_gc_gens = 8,
+	BCH_DATA_need_discard = 9,
+	BCH_DATA_NR = 10,
+};
+
+enum bch_errcode {
+	BCH_ERR_START = 2048,
+	BCH_ERR_ERANGE_option_too_small = 2049,
+	BCH_ERR_ERANGE_option_too_big = 2050,
+	BCH_ERR_mount_option = 2051,
+	BCH_ERR_option_name = 2052,
+	BCH_ERR_option_value = 2053,
+	BCH_ERR_option_not_bool = 2054,
+	BCH_ERR_ENOMEM_stripe_buf = 2055,
+	BCH_ERR_ENOMEM_replicas_table = 2056,
+	BCH_ERR_ENOMEM_cpu_replicas = 2057,
+	BCH_ERR_ENOMEM_replicas_gc = 2058,
+	BCH_ERR_ENOMEM_disk_groups_validate = 2059,
+	BCH_ERR_ENOMEM_disk_groups_to_cpu = 2060,
+	BCH_ERR_ENOMEM_mark_snapshot = 2061,
+	BCH_ERR_ENOMEM_mark_stripe = 2062,
+	BCH_ERR_ENOMEM_mark_stripe_ptr = 2063,
+	BCH_ERR_ENOMEM_btree_key_cache_create = 2064,
+	BCH_ERR_ENOMEM_btree_key_cache_fill = 2065,
+	BCH_ERR_ENOMEM_btree_key_cache_insert = 2066,
+	BCH_ERR_ENOMEM_trans_kmalloc = 2067,
+	BCH_ERR_ENOMEM_trans_log_msg = 2068,
+	BCH_ERR_ENOMEM_do_encrypt = 2069,
+	BCH_ERR_ENOMEM_ec_read_extent = 2070,
+	BCH_ERR_ENOMEM_ec_stripe_mem_alloc = 2071,
+	BCH_ERR_ENOMEM_ec_new_stripe_alloc = 2072,
+	BCH_ERR_ENOMEM_fs_btree_cache_init = 2073,
+	BCH_ERR_ENOMEM_fs_btree_key_cache_init = 2074,
+	BCH_ERR_ENOMEM_fs_counters_init = 2075,
+	BCH_ERR_ENOMEM_fs_btree_write_buffer_init = 2076,
+	BCH_ERR_ENOMEM_io_clock_init = 2077,
+	BCH_ERR_ENOMEM_blacklist_table_init = 2078,
+	BCH_ERR_ENOMEM_sb_realloc_injected = 2079,
+	BCH_ERR_ENOMEM_sb_bio_realloc = 2080,
+	BCH_ERR_ENOMEM_sb_buf_realloc = 2081,
+	BCH_ERR_ENOMEM_sb_journal_validate = 2082,
+	BCH_ERR_ENOMEM_sb_journal_v2_validate = 2083,
+	BCH_ERR_ENOMEM_journal_entry_add = 2084,
+	BCH_ERR_ENOMEM_journal_read_buf_realloc = 2085,
+	BCH_ERR_ENOMEM_btree_interior_update_worker_init = 2086,
+	BCH_ERR_ENOMEM_btree_interior_update_pool_init = 2087,
+	BCH_ERR_ENOMEM_bio_read_init = 2088,
+	BCH_ERR_ENOMEM_bio_read_split_init = 2089,
+	BCH_ERR_ENOMEM_bio_write_init = 2090,
+	BCH_ERR_ENOMEM_bio_bounce_pages_init = 2091,
+	BCH_ERR_ENOMEM_writepage_bioset_init = 2092,
+	BCH_ERR_ENOMEM_dio_read_bioset_init = 2093,
+	BCH_ERR_ENOMEM_dio_write_bioset_init = 2094,
+	BCH_ERR_ENOMEM_nocow_flush_bioset_init = 2095,
+	BCH_ERR_ENOMEM_promote_table_init = 2096,
+	BCH_ERR_ENOMEM_compression_bounce_read_init = 2097,
+	BCH_ERR_ENOMEM_compression_bounce_write_init = 2098,
+	BCH_ERR_ENOMEM_compression_workspace_init = 2099,
+	BCH_ERR_ENOMEM_decompression_workspace_init = 2100,
+	BCH_ERR_ENOMEM_bucket_gens = 2101,
+	BCH_ERR_ENOMEM_buckets_nouse = 2102,
+	BCH_ERR_ENOMEM_usage_init = 2103,
+	BCH_ERR_ENOMEM_btree_node_read_all_replicas = 2104,
+	BCH_ERR_ENOMEM_btree_node_reclaim = 2105,
+	BCH_ERR_ENOMEM_btree_node_mem_alloc = 2106,
+	BCH_ERR_ENOMEM_btree_cache_cannibalize_lock = 2107,
+	BCH_ERR_ENOMEM_buckets_waiting_for_journal_init = 2108,
+	BCH_ERR_ENOMEM_buckets_waiting_for_journal_set = 2109,
+	BCH_ERR_ENOMEM_set_nr_journal_buckets = 2110,
+	BCH_ERR_ENOMEM_dev_journal_init = 2111,
+	BCH_ERR_ENOMEM_journal_pin_fifo = 2112,
+	BCH_ERR_ENOMEM_journal_buf = 2113,
+	BCH_ERR_ENOMEM_gc_start = 2114,
+	BCH_ERR_ENOMEM_gc_alloc_start = 2115,
+	BCH_ERR_ENOMEM_gc_reflink_start = 2116,
+	BCH_ERR_ENOMEM_gc_gens = 2117,
+	BCH_ERR_ENOMEM_gc_repair_key = 2118,
+	BCH_ERR_ENOMEM_fsck_extent_ends_at = 2119,
+	BCH_ERR_ENOMEM_fsck_add_nlink = 2120,
+	BCH_ERR_ENOMEM_journal_key_insert = 2121,
+	BCH_ERR_ENOMEM_journal_keys_sort = 2122,
+	BCH_ERR_ENOMEM_read_superblock_clean = 2123,
+	BCH_ERR_ENOMEM_fs_alloc = 2124,
+	BCH_ERR_ENOMEM_fs_name_alloc = 2125,
+	BCH_ERR_ENOMEM_fs_other_alloc = 2126,
+	BCH_ERR_ENOMEM_dev_alloc = 2127,
+	BCH_ERR_ENOMEM_disk_accounting = 2128,
+	BCH_ERR_ENOSPC_disk_reservation = 2129,
+	BCH_ERR_ENOSPC_bucket_alloc = 2130,
+	BCH_ERR_ENOSPC_disk_label_add = 2131,
+	BCH_ERR_ENOSPC_stripe_create = 2132,
+	BCH_ERR_ENOSPC_inode_create = 2133,
+	BCH_ERR_ENOSPC_str_hash_create = 2134,
+	BCH_ERR_ENOSPC_snapshot_create = 2135,
+	BCH_ERR_ENOSPC_subvolume_create = 2136,
+	BCH_ERR_ENOSPC_sb = 2137,
+	BCH_ERR_ENOSPC_sb_journal = 2138,
+	BCH_ERR_ENOSPC_sb_journal_seq_blacklist = 2139,
+	BCH_ERR_ENOSPC_sb_quota = 2140,
+	BCH_ERR_ENOSPC_sb_replicas = 2141,
+	BCH_ERR_ENOSPC_sb_members = 2142,
+	BCH_ERR_ENOSPC_sb_members_v2 = 2143,
+	BCH_ERR_ENOSPC_sb_crypt = 2144,
+	BCH_ERR_ENOSPC_sb_downgrade = 2145,
+	BCH_ERR_ENOSPC_btree_slot = 2146,
+	BCH_ERR_ENOSPC_snapshot_tree = 2147,
+	BCH_ERR_ENOENT_bkey_type_mismatch = 2148,
+	BCH_ERR_ENOENT_str_hash_lookup = 2149,
+	BCH_ERR_ENOENT_str_hash_set_must_replace = 2150,
+	BCH_ERR_ENOENT_inode = 2151,
+	BCH_ERR_ENOENT_not_subvol = 2152,
+	BCH_ERR_ENOENT_not_directory = 2153,
+	BCH_ERR_ENOENT_directory_dead = 2154,
+	BCH_ERR_ENOENT_subvolume = 2155,
+	BCH_ERR_ENOENT_snapshot_tree = 2156,
+	BCH_ERR_ENOENT_dirent_doesnt_match_inode = 2157,
+	BCH_ERR_ENOENT_dev_not_found = 2158,
+	BCH_ERR_ENOENT_dev_idx_not_found = 2159,
+	BCH_ERR_ENOTEMPTY_dir_not_empty = 2160,
+	BCH_ERR_ENOTEMPTY_subvol_not_empty = 2161,
+	BCH_ERR_open_buckets_empty = 2162,
+	BCH_ERR_freelist_empty = 2163,
+	BCH_ERR_no_buckets_found = 2164,
+	BCH_ERR_transaction_restart = 2165,
+	BCH_ERR_transaction_restart_fault_inject = 2166,
+	BCH_ERR_transaction_restart_relock = 2167,
+	BCH_ERR_transaction_restart_relock_path = 2168,
+	BCH_ERR_transaction_restart_relock_path_intent = 2169,
+	BCH_ERR_transaction_restart_relock_after_fill = 2170,
+	BCH_ERR_transaction_restart_too_many_iters = 2171,
+	BCH_ERR_transaction_restart_lock_node_reused = 2172,
+	BCH_ERR_transaction_restart_fill_relock = 2173,
+	BCH_ERR_transaction_restart_fill_mem_alloc_fail = 2174,
+	BCH_ERR_transaction_restart_mem_realloced = 2175,
+	BCH_ERR_transaction_restart_in_traverse_all = 2176,
+	BCH_ERR_transaction_restart_would_deadlock = 2177,
+	BCH_ERR_transaction_restart_would_deadlock_write = 2178,
+	BCH_ERR_transaction_restart_deadlock_recursion_limit = 2179,
+	BCH_ERR_transaction_restart_upgrade = 2180,
+	BCH_ERR_transaction_restart_key_cache_upgrade = 2181,
+	BCH_ERR_transaction_restart_key_cache_fill = 2182,
+	BCH_ERR_transaction_restart_key_cache_raced = 2183,
+	BCH_ERR_transaction_restart_key_cache_realloced = 2184,
+	BCH_ERR_transaction_restart_journal_preres_get = 2185,
+	BCH_ERR_transaction_restart_split_race = 2186,
+	BCH_ERR_transaction_restart_write_buffer_flush = 2187,
+	BCH_ERR_transaction_restart_nested = 2188,
+	BCH_ERR_no_btree_node = 2189,
+	BCH_ERR_no_btree_node_relock = 2190,
+	BCH_ERR_no_btree_node_upgrade = 2191,
+	BCH_ERR_no_btree_node_drop = 2192,
+	BCH_ERR_no_btree_node_lock_root = 2193,
+	BCH_ERR_no_btree_node_up = 2194,
+	BCH_ERR_no_btree_node_down = 2195,
+	BCH_ERR_no_btree_node_init = 2196,
+	BCH_ERR_no_btree_node_cached = 2197,
+	BCH_ERR_no_btree_node_srcu_reset = 2198,
+	BCH_ERR_btree_insert_fail = 2199,
+	BCH_ERR_btree_insert_btree_node_full = 2200,
+	BCH_ERR_btree_insert_need_mark_replicas = 2201,
+	BCH_ERR_btree_insert_need_journal_res = 2202,
+	BCH_ERR_btree_insert_need_journal_reclaim = 2203,
+	BCH_ERR_backpointer_to_overwritten_btree_node = 2204,
+	BCH_ERR_lock_fail_root_changed = 2205,
+	BCH_ERR_journal_reclaim_would_deadlock = 2206,
+	BCH_ERR_fsck = 2207,
+	BCH_ERR_fsck_fix = 2208,
+	BCH_ERR_fsck_ignore = 2209,
+	BCH_ERR_fsck_errors_not_fixed = 2210,
+	BCH_ERR_fsck_repair_unimplemented = 2211,
+	BCH_ERR_fsck_repair_impossible = 2212,
+	BCH_ERR_restart_recovery = 2213,
+	BCH_ERR_data_update_done = 2214,
+	BCH_ERR_device_state_not_allowed = 2215,
+	BCH_ERR_member_info_missing = 2216,
+	BCH_ERR_mismatched_block_size = 2217,
+	BCH_ERR_block_size_too_small = 2218,
+	BCH_ERR_bucket_size_too_small = 2219,
+	BCH_ERR_device_size_too_small = 2220,
+	BCH_ERR_device_size_too_big = 2221,
+	BCH_ERR_device_not_a_member_of_filesystem = 2222,
+	BCH_ERR_device_has_been_removed = 2223,
+	BCH_ERR_device_splitbrain = 2224,
+	BCH_ERR_device_already_online = 2225,
+	BCH_ERR_insufficient_devices_to_start = 2226,
+	BCH_ERR_invalid = 2227,
+	BCH_ERR_internal_fsck_err = 2228,
+	BCH_ERR_opt_parse_error = 2229,
+	BCH_ERR_remove_with_metadata_missing_unimplemented = 2230,
+	BCH_ERR_remove_would_lose_data = 2231,
+	BCH_ERR_btree_iter_with_journal_not_supported = 2232,
+	BCH_ERR_erofs_trans_commit = 2233,
+	BCH_ERR_erofs_no_writes = 2234,
+	BCH_ERR_erofs_journal_err = 2235,
+	BCH_ERR_erofs_sb_err = 2236,
+	BCH_ERR_erofs_unfixed_errors = 2237,
+	BCH_ERR_erofs_norecovery = 2238,
+	BCH_ERR_erofs_nochanges = 2239,
+	BCH_ERR_insufficient_devices = 2240,
+	BCH_ERR_operation_blocked = 2241,
+	BCH_ERR_btree_cache_cannibalize_lock_blocked = 2242,
+	BCH_ERR_journal_res_get_blocked = 2243,
+	BCH_ERR_journal_preres_get_blocked = 2244,
+	BCH_ERR_bucket_alloc_blocked = 2245,
+	BCH_ERR_stripe_alloc_blocked = 2246,
+	BCH_ERR_invalid_sb = 2247,
+	BCH_ERR_invalid_sb_magic = 2248,
+	BCH_ERR_invalid_sb_version = 2249,
+	BCH_ERR_invalid_sb_features = 2250,
+	BCH_ERR_invalid_sb_too_big = 2251,
+	BCH_ERR_invalid_sb_csum_type = 2252,
+	BCH_ERR_invalid_sb_csum = 2253,
+	BCH_ERR_invalid_sb_block_size = 2254,
+	BCH_ERR_invalid_sb_uuid = 2255,
+	BCH_ERR_invalid_sb_too_many_members = 2256,
+	BCH_ERR_invalid_sb_dev_idx = 2257,
+	BCH_ERR_invalid_sb_time_precision = 2258,
+	BCH_ERR_invalid_sb_field_size = 2259,
+	BCH_ERR_invalid_sb_layout = 2260,
+	BCH_ERR_invalid_sb_layout_type = 2261,
+	BCH_ERR_invalid_sb_layout_nr_superblocks = 2262,
+	BCH_ERR_invalid_sb_layout_superblocks_overlap = 2263,
+	BCH_ERR_invalid_sb_members_missing = 2264,
+	BCH_ERR_invalid_sb_members = 2265,
+	BCH_ERR_invalid_sb_disk_groups = 2266,
+	BCH_ERR_invalid_sb_replicas = 2267,
+	BCH_ERR_invalid_replicas_entry = 2268,
+	BCH_ERR_invalid_sb_journal = 2269,
+	BCH_ERR_invalid_sb_journal_seq_blacklist = 2270,
+	BCH_ERR_invalid_sb_crypt = 2271,
+	BCH_ERR_invalid_sb_clean = 2272,
+	BCH_ERR_invalid_sb_quota = 2273,
+	BCH_ERR_invalid_sb_errors = 2274,
+	BCH_ERR_invalid_sb_opt_compression = 2275,
+	BCH_ERR_invalid_sb_ext = 2276,
+	BCH_ERR_invalid_sb_downgrade = 2277,
+	BCH_ERR_invalid_bkey = 2278,
+	BCH_ERR_nocow_lock_blocked = 2279,
+	BCH_ERR_btree_node_read_err = 2280,
+	BCH_ERR_sb_not_downgraded = 2281,
+	BCH_ERR_btree_node_write_all_failed = 2282,
+	BCH_ERR_btree_node_read_error = 2283,
+	BCH_ERR_btree_node_read_validate_error = 2284,
+	BCH_ERR_btree_need_topology_repair = 2285,
+	BCH_ERR_btree_node_read_err_fixable = 2286,
+	BCH_ERR_btree_node_read_err_want_retry = 2287,
+	BCH_ERR_btree_node_read_err_must_retry = 2288,
+	BCH_ERR_btree_node_read_err_bad_node = 2289,
+	BCH_ERR_btree_node_read_err_incompatible = 2290,
+	BCH_ERR_nopromote = 2291,
+	BCH_ERR_nopromote_may_not = 2292,
+	BCH_ERR_nopromote_already_promoted = 2293,
+	BCH_ERR_nopromote_unwritten = 2294,
+	BCH_ERR_nopromote_congested = 2295,
+	BCH_ERR_nopromote_in_flight = 2296,
+	BCH_ERR_nopromote_no_writes = 2297,
+	BCH_ERR_nopromote_enomem = 2298,
+	BCH_ERR_need_inode_lock = 2299,
+	BCH_ERR_invalid_snapshot_node = 2300,
+	BCH_ERR_MAX = 2301,
+};
+
+enum bch_error_actions {
+	BCH_ON_ERROR_continue = 0,
+	BCH_ON_ERROR_ro = 1,
+	BCH_ON_ERROR_panic = 2,
+	BCH_ON_ERROR_NR = 3,
+};
+
+enum bch_extent_entry_type {
+	BCH_EXTENT_ENTRY_ptr = 0,
+	BCH_EXTENT_ENTRY_crc32 = 1,
+	BCH_EXTENT_ENTRY_crc64 = 2,
+	BCH_EXTENT_ENTRY_crc128 = 3,
+	BCH_EXTENT_ENTRY_stripe_ptr = 4,
+	BCH_EXTENT_ENTRY_rebalance = 5,
+};
+
+enum bch_extent_overlap {
+	BCH_EXTENT_OVERLAP_ALL = 0,
+	BCH_EXTENT_OVERLAP_BACK = 1,
+	BCH_EXTENT_OVERLAP_FRONT = 2,
+	BCH_EXTENT_OVERLAP_MIDDLE = 3,
+};
+
+enum bch_folio_sector_state {
+	SECTOR_unallocated = 0,
+	SECTOR_reserved = 1,
+	SECTOR_dirty = 2,
+	SECTOR_dirty_reserved = 3,
+	SECTOR_allocated = 4,
+};
+
+enum bch_fs_flags {
+	BCH_FS_new_fs = 0,
+	BCH_FS_started = 1,
+	BCH_FS_may_go_rw = 2,
+	BCH_FS_rw = 3,
+	BCH_FS_was_rw = 4,
+	BCH_FS_stopping = 5,
+	BCH_FS_emergency_ro = 6,
+	BCH_FS_going_ro = 7,
+	BCH_FS_write_disable_complete = 8,
+	BCH_FS_clean_shutdown = 9,
+	BCH_FS_fsck_running = 10,
+	BCH_FS_initial_gc_unfixed = 11,
+	BCH_FS_need_another_gc = 12,
+	BCH_FS_need_delete_dead_snapshots = 13,
+	BCH_FS_error = 14,
+	BCH_FS_topology_error = 15,
+	BCH_FS_errors_fixed = 16,
+	BCH_FS_errors_not_fixed = 17,
+};
+
+enum bch_fs_usage_type {
+	BCH_FS_USAGE_reserved = 0,
+	BCH_FS_USAGE_inodes = 1,
+	BCH_FS_USAGE_key_version = 2,
+	BCH_FS_USAGE_NR = 3,
+};
+
+enum bch_fsck_flags {
+	FSCK_CAN_FIX = 1,
+	FSCK_CAN_IGNORE = 2,
+	FSCK_NEED_FSCK = 4,
+	FSCK_NO_RATELIMIT = 8,
+};
+
+enum bch_inode_flags {
+	BCH_INODE_sync = 1,
+	BCH_INODE_immutable = 2,
+	BCH_INODE_append = 4,
+	BCH_INODE_nodump = 8,
+	BCH_INODE_noatime = 16,
+	BCH_INODE_i_size_dirty = 32,
+	BCH_INODE_i_sectors_dirty = 64,
+	BCH_INODE_unlinked = 128,
+	BCH_INODE_backptr_untrusted = 256,
+};
+
+enum bch_iops_measurement {
+	BCH_IOPS_seqread = 0,
+	BCH_IOPS_seqwrite = 1,
+	BCH_IOPS_randread = 2,
+	BCH_IOPS_randwrite = 3,
+	BCH_IOPS_NR = 4,
+};
+
+enum bch_jset_entry_type {
+	BCH_JSET_ENTRY_btree_keys = 0,
+	BCH_JSET_ENTRY_btree_root = 1,
+	BCH_JSET_ENTRY_prio_ptrs = 2,
+	BCH_JSET_ENTRY_blacklist = 3,
+	BCH_JSET_ENTRY_blacklist_v2 = 4,
+	BCH_JSET_ENTRY_usage = 5,
+	BCH_JSET_ENTRY_data_usage = 6,
+	BCH_JSET_ENTRY_clock = 7,
+	BCH_JSET_ENTRY_dev_usage = 8,
+	BCH_JSET_ENTRY_log = 9,
+	BCH_JSET_ENTRY_overwrite = 10,
+	BCH_JSET_ENTRY_write_buffer_keys = 11,
+	BCH_JSET_ENTRY_datetime = 12,
+	BCH_JSET_ENTRY_NR = 13,
+};
+
+enum bch_lru_type {
+	BCH_LRU_read = 0,
+	BCH_LRU_fragmentation = 1,
+};
+
+enum bch_member_error_type {
+	BCH_MEMBER_ERROR_read = 0,
+	BCH_MEMBER_ERROR_write = 1,
+	BCH_MEMBER_ERROR_checksum = 2,
+	BCH_MEMBER_ERROR_NR = 3,
+};
+
+enum bch_member_state {
+	BCH_MEMBER_STATE_rw = 0,
+	BCH_MEMBER_STATE_ro = 1,
+	BCH_MEMBER_STATE_failed = 2,
+	BCH_MEMBER_STATE_spare = 3,
+	BCH_MEMBER_STATE_NR = 4,
+};
+
+enum bch_opt_id {
+	Opt_block_size = 0,
+	Opt_btree_node_size = 1,
+	Opt_errors___4 = 2,
+	Opt_metadata_replicas = 3,
+	Opt_data_replicas = 4,
+	Opt_metadata_replicas_required = 5,
+	Opt_data_replicas_required = 6,
+	Opt_encoded_extent_max = 7,
+	Opt_metadata_checksum = 8,
+	Opt_data_checksum = 9,
+	Opt_compression = 10,
+	Opt_background_compression = 11,
+	Opt_str_hash = 12,
+	Opt_metadata_target = 13,
+	Opt_foreground_target = 14,
+	Opt_background_target = 15,
+	Opt_promote_target = 16,
+	Opt_erasure_code = 17,
+	Opt_inodes_32bit = 18,
+	Opt_shard_inode_numbers = 19,
+	Opt_inodes_use_key_cache = 20,
+	Opt_btree_node_mem_ptr_optimization = 21,
+	Opt_gc_reserve_percent = 22,
+	Opt_gc_reserve_bytes = 23,
+	Opt_root_reserve_percent = 24,
+	Opt_wide_macs = 25,
+	Opt_inline_data___2 = 26,
+	Opt_acl___6 = 27,
+	Opt_usrquota___4 = 28,
+	Opt_grpquota___4 = 29,
+	Opt_prjquota___4 = 30,
+	Opt_degraded___2 = 31,
+	Opt_very_degraded = 32,
+	Opt_no_splitbrain_check = 33,
+	Opt_discard___8 = 34,
+	Opt_verbose = 35,
+	Opt_journal_flush_delay = 36,
+	Opt_journal_flush_disabled = 37,
+	Opt_journal_reclaim_delay = 38,
+	Opt_move_bytes_in_flight = 39,
+	Opt_move_ios_in_flight = 40,
+	Opt_fsck = 41,
+	Opt_fsck_memory_usage_percent = 42,
+	Opt_fix_errors = 43,
+	Opt_ratelimit_errors = 44,
+	Opt_nochanges = 45,
+	Opt_norecovery___4 = 46,
+	Opt_recovery_pass_last = 47,
+	Opt_retain_recovery_info = 48,
+	Opt_read_entire_journal = 49,
+	Opt_read_journal_only = 50,
+	Opt_journal_transaction_names = 51,
+	Opt_noexcl = 52,
+	Opt_direct_io = 53,
+	Opt_sb___3 = 54,
+	Opt_read_only = 55,
+	Opt_nostart = 56,
+	Opt_reconstruct_alloc = 57,
+	Opt_version_upgrade = 58,
+	Opt_buckets_nouse = 59,
+	Opt_stdio = 60,
+	Opt_project = 61,
+	Opt_nocow = 62,
+	Opt_nocow_enabled = 63,
+	Opt_no_data_io = 64,
+	Opt_fs_size = 65,
+	Opt_bucket = 66,
+	Opt_durability = 67,
+	Opt_btree_node_prefetch = 68,
+	bch2_opts_nr = 69,
+};
+
+enum bch_persistent_counters {
+	BCH_COUNTER_io_read = 0,
+	BCH_COUNTER_io_write = 1,
+	BCH_COUNTER_io_move = 2,
+	BCH_COUNTER_bucket_invalidate = 3,
+	BCH_COUNTER_bucket_discard = 4,
+	BCH_COUNTER_bucket_alloc = 5,
+	BCH_COUNTER_bucket_alloc_fail = 6,
+	BCH_COUNTER_btree_cache_scan = 7,
+	BCH_COUNTER_btree_cache_reap = 8,
+	BCH_COUNTER_btree_cache_cannibalize = 9,
+	BCH_COUNTER_btree_cache_cannibalize_lock = 10,
+	BCH_COUNTER_btree_cache_cannibalize_lock_fail = 11,
+	BCH_COUNTER_btree_cache_cannibalize_unlock = 12,
+	BCH_COUNTER_btree_node_write = 13,
+	BCH_COUNTER_btree_node_read = 14,
+	BCH_COUNTER_btree_node_compact = 15,
+	BCH_COUNTER_btree_node_merge = 16,
+	BCH_COUNTER_btree_node_split = 17,
+	BCH_COUNTER_btree_node_rewrite = 18,
+	BCH_COUNTER_btree_node_alloc = 19,
+	BCH_COUNTER_btree_node_free = 20,
+	BCH_COUNTER_btree_node_set_root = 21,
+	BCH_COUNTER_btree_path_relock_fail = 22,
+	BCH_COUNTER_btree_path_upgrade_fail = 23,
+	BCH_COUNTER_btree_reserve_get_fail = 24,
+	BCH_COUNTER_journal_entry_full = 25,
+	BCH_COUNTER_journal_full = 26,
+	BCH_COUNTER_journal_reclaim_finish = 27,
+	BCH_COUNTER_journal_reclaim_start = 28,
+	BCH_COUNTER_journal_write = 29,
+	BCH_COUNTER_read_promote = 30,
+	BCH_COUNTER_read_bounce = 31,
+	BCH_COUNTER_read_split = 32,
+	BCH_COUNTER_read_retry = 33,
+	BCH_COUNTER_read_reuse_race = 34,
+	BCH_COUNTER_move_extent_read = 35,
+	BCH_COUNTER_move_extent_write = 36,
+	BCH_COUNTER_move_extent_finish = 37,
+	BCH_COUNTER_move_extent_fail = 38,
+	BCH_COUNTER_move_extent_start_fail = 39,
+	BCH_COUNTER_copygc = 40,
+	BCH_COUNTER_copygc_wait = 41,
+	BCH_COUNTER_gc_gens_end = 42,
+	BCH_COUNTER_gc_gens_start = 43,
+	BCH_COUNTER_trans_blocked_journal_reclaim = 44,
+	BCH_COUNTER_trans_restart_btree_node_reused = 45,
+	BCH_COUNTER_trans_restart_btree_node_split = 46,
+	BCH_COUNTER_trans_restart_fault_inject = 47,
+	BCH_COUNTER_trans_restart_iter_upgrade = 48,
+	BCH_COUNTER_trans_restart_journal_preres_get = 49,
+	BCH_COUNTER_trans_restart_journal_reclaim = 50,
+	BCH_COUNTER_trans_restart_journal_res_get = 51,
+	BCH_COUNTER_trans_restart_key_cache_key_realloced = 52,
+	BCH_COUNTER_trans_restart_key_cache_raced = 53,
+	BCH_COUNTER_trans_restart_mark_replicas = 54,
+	BCH_COUNTER_trans_restart_mem_realloced = 55,
+	BCH_COUNTER_trans_restart_memory_allocation_failure = 56,
+	BCH_COUNTER_trans_restart_relock = 57,
+	BCH_COUNTER_trans_restart_relock_after_fill = 58,
+	BCH_COUNTER_trans_restart_relock_key_cache_fill = 59,
+	BCH_COUNTER_trans_restart_relock_next_node = 60,
+	BCH_COUNTER_trans_restart_relock_parent_for_fill = 61,
+	BCH_COUNTER_trans_restart_relock_path = 62,
+	BCH_COUNTER_trans_restart_relock_path_intent = 63,
+	BCH_COUNTER_trans_restart_too_many_iters = 64,
+	BCH_COUNTER_trans_restart_traverse = 65,
+	BCH_COUNTER_trans_restart_upgrade = 66,
+	BCH_COUNTER_trans_restart_would_deadlock = 67,
+	BCH_COUNTER_trans_restart_would_deadlock_write = 68,
+	BCH_COUNTER_trans_restart_injected = 69,
+	BCH_COUNTER_trans_restart_key_cache_upgrade = 70,
+	BCH_COUNTER_trans_traverse_all = 71,
+	BCH_COUNTER_transaction_commit = 72,
+	BCH_COUNTER_write_super = 73,
+	BCH_COUNTER_trans_restart_would_deadlock_recursion_limit = 74,
+	BCH_COUNTER_trans_restart_write_buffer_flush = 75,
+	BCH_COUNTER_trans_restart_split_race = 76,
+	BCH_COUNTER_write_buffer_flush_slowpath = 77,
+	BCH_COUNTER_write_buffer_flush_sync = 78,
+	BCH_COUNTER_NR = 79,
+};
+
+enum bch_read_flags {
+	BCH_READ_RETRY_IF_STALE = 1,
+	BCH_READ_MAY_PROMOTE = 2,
+	BCH_READ_USER_MAPPED = 4,
+	BCH_READ_NODECODE = 8,
+	BCH_READ_LAST_FRAGMENT = 16,
+	BCH_READ_MUST_BOUNCE = 32,
+	BCH_READ_MUST_CLONE = 64,
+	BCH_READ_IN_RETRY = 128,
+};
+
+enum bch_rebalance_states {
+	BCH_REBALANCE_waiting = 0,
+	BCH_REBALANCE_working = 1,
+	BCH_REBALANCE_scanning = 2,
+};
+
+enum bch_recovery_pass {
+	BCH_RECOVERY_PASS_scan_for_btree_nodes = 0,
+	BCH_RECOVERY_PASS_check_topology = 1,
+	BCH_RECOVERY_PASS_alloc_read = 2,
+	BCH_RECOVERY_PASS_stripes_read = 3,
+	BCH_RECOVERY_PASS_initialize_subvolumes = 4,
+	BCH_RECOVERY_PASS_snapshots_read = 5,
+	BCH_RECOVERY_PASS_check_allocations = 6,
+	BCH_RECOVERY_PASS_trans_mark_dev_sbs = 7,
+	BCH_RECOVERY_PASS_fs_journal_alloc = 8,
+	BCH_RECOVERY_PASS_set_may_go_rw = 9,
+	BCH_RECOVERY_PASS_journal_replay = 10,
+	BCH_RECOVERY_PASS_check_alloc_info = 11,
+	BCH_RECOVERY_PASS_check_lrus = 12,
+	BCH_RECOVERY_PASS_check_btree_backpointers = 13,
+	BCH_RECOVERY_PASS_check_backpointers_to_extents = 14,
+	BCH_RECOVERY_PASS_check_extents_to_backpointers = 15,
+	BCH_RECOVERY_PASS_check_alloc_to_lru_refs = 16,
+	BCH_RECOVERY_PASS_fs_freespace_init = 17,
+	BCH_RECOVERY_PASS_bucket_gens_init = 18,
+	BCH_RECOVERY_PASS_reconstruct_snapshots = 19,
+	BCH_RECOVERY_PASS_check_snapshot_trees = 20,
+	BCH_RECOVERY_PASS_check_snapshots = 21,
+	BCH_RECOVERY_PASS_check_subvols = 22,
+	BCH_RECOVERY_PASS_check_subvol_children = 23,
+	BCH_RECOVERY_PASS_delete_dead_snapshots = 24,
+	BCH_RECOVERY_PASS_fs_upgrade_for_subvolumes = 25,
+	BCH_RECOVERY_PASS_check_inodes = 26,
+	BCH_RECOVERY_PASS_check_extents = 27,
+	BCH_RECOVERY_PASS_check_indirect_extents = 28,
+	BCH_RECOVERY_PASS_check_dirents = 29,
+	BCH_RECOVERY_PASS_check_xattrs = 30,
+	BCH_RECOVERY_PASS_check_root = 31,
+	BCH_RECOVERY_PASS_check_subvolume_structure = 32,
+	BCH_RECOVERY_PASS_check_directory_structure = 33,
+	BCH_RECOVERY_PASS_check_nlinks = 34,
+	BCH_RECOVERY_PASS_resume_logged_ops = 35,
+	BCH_RECOVERY_PASS_delete_dead_inodes = 36,
+	BCH_RECOVERY_PASS_fix_reflink_p = 37,
+	BCH_RECOVERY_PASS_set_fs_needs_rebalance = 38,
+	BCH_RECOVERY_PASS_NR = 39,
+};
+
+enum bch_recovery_pass_stable {
+	BCH_RECOVERY_PASS_STABLE_scan_for_btree_nodes = 37,
+	BCH_RECOVERY_PASS_STABLE_check_topology = 4,
+	BCH_RECOVERY_PASS_STABLE_alloc_read = 0,
+	BCH_RECOVERY_PASS_STABLE_stripes_read = 1,
+	BCH_RECOVERY_PASS_STABLE_initialize_subvolumes = 2,
+	BCH_RECOVERY_PASS_STABLE_snapshots_read = 3,
+	BCH_RECOVERY_PASS_STABLE_check_allocations = 5,
+	BCH_RECOVERY_PASS_STABLE_trans_mark_dev_sbs = 6,
+	BCH_RECOVERY_PASS_STABLE_fs_journal_alloc = 7,
+	BCH_RECOVERY_PASS_STABLE_set_may_go_rw = 8,
+	BCH_RECOVERY_PASS_STABLE_journal_replay = 9,
+	BCH_RECOVERY_PASS_STABLE_check_alloc_info = 10,
+	BCH_RECOVERY_PASS_STABLE_check_lrus = 11,
+	BCH_RECOVERY_PASS_STABLE_check_btree_backpointers = 12,
+	BCH_RECOVERY_PASS_STABLE_check_backpointers_to_extents = 13,
+	BCH_RECOVERY_PASS_STABLE_check_extents_to_backpointers = 14,
+	BCH_RECOVERY_PASS_STABLE_check_alloc_to_lru_refs = 15,
+	BCH_RECOVERY_PASS_STABLE_fs_freespace_init = 16,
+	BCH_RECOVERY_PASS_STABLE_bucket_gens_init = 17,
+	BCH_RECOVERY_PASS_STABLE_reconstruct_snapshots = 38,
+	BCH_RECOVERY_PASS_STABLE_check_snapshot_trees = 18,
+	BCH_RECOVERY_PASS_STABLE_check_snapshots = 19,
+	BCH_RECOVERY_PASS_STABLE_check_subvols = 20,
+	BCH_RECOVERY_PASS_STABLE_check_subvol_children = 35,
+	BCH_RECOVERY_PASS_STABLE_delete_dead_snapshots = 21,
+	BCH_RECOVERY_PASS_STABLE_fs_upgrade_for_subvolumes = 22,
+	BCH_RECOVERY_PASS_STABLE_check_inodes = 24,
+	BCH_RECOVERY_PASS_STABLE_check_extents = 25,
+	BCH_RECOVERY_PASS_STABLE_check_indirect_extents = 26,
+	BCH_RECOVERY_PASS_STABLE_check_dirents = 27,
+	BCH_RECOVERY_PASS_STABLE_check_xattrs = 28,
+	BCH_RECOVERY_PASS_STABLE_check_root = 29,
+	BCH_RECOVERY_PASS_STABLE_check_subvolume_structure = 36,
+	BCH_RECOVERY_PASS_STABLE_check_directory_structure = 30,
+	BCH_RECOVERY_PASS_STABLE_check_nlinks = 31,
+	BCH_RECOVERY_PASS_STABLE_resume_logged_ops = 23,
+	BCH_RECOVERY_PASS_STABLE_delete_dead_inodes = 32,
+	BCH_RECOVERY_PASS_STABLE_fix_reflink_p = 33,
+	BCH_RECOVERY_PASS_STABLE_set_fs_needs_rebalance = 34,
+};
+
+enum bch_rename_mode {
+	BCH_RENAME = 0,
+	BCH_RENAME_OVERWRITE = 1,
+	BCH_RENAME_EXCHANGE = 2,
+};
+
+enum bch_sb_compat {
+	BCH_COMPAT_alloc_info = 0,
+	BCH_COMPAT_alloc_metadata = 1,
+	BCH_COMPAT_extents_above_btree_updates_done = 2,
+	BCH_COMPAT_bformat_overflow_done = 3,
+	BCH_COMPAT_NR = 4,
+};
+
+enum bch_sb_error_id {
+	BCH_FSCK_ERR_clean_but_journal_not_empty = 0,
+	BCH_FSCK_ERR_dirty_but_no_journal_entries = 1,
+	BCH_FSCK_ERR_dirty_but_no_journal_entries_post_drop_nonflushes = 2,
+	BCH_FSCK_ERR_sb_clean_journal_seq_mismatch = 3,
+	BCH_FSCK_ERR_sb_clean_btree_root_mismatch = 4,
+	BCH_FSCK_ERR_sb_clean_missing = 5,
+	BCH_FSCK_ERR_jset_unsupported_version = 6,
+	BCH_FSCK_ERR_jset_unknown_csum = 7,
+	BCH_FSCK_ERR_jset_last_seq_newer_than_seq = 8,
+	BCH_FSCK_ERR_jset_past_bucket_end = 9,
+	BCH_FSCK_ERR_jset_seq_blacklisted = 10,
+	BCH_FSCK_ERR_journal_entries_missing = 11,
+	BCH_FSCK_ERR_journal_entry_replicas_not_marked = 12,
+	BCH_FSCK_ERR_journal_entry_past_jset_end = 13,
+	BCH_FSCK_ERR_journal_entry_replicas_data_mismatch = 14,
+	BCH_FSCK_ERR_journal_entry_bkey_u64s_0 = 15,
+	BCH_FSCK_ERR_journal_entry_bkey_past_end = 16,
+	BCH_FSCK_ERR_journal_entry_bkey_bad_format = 17,
+	BCH_FSCK_ERR_journal_entry_bkey_invalid = 18,
+	BCH_FSCK_ERR_journal_entry_btree_root_bad_size = 19,
+	BCH_FSCK_ERR_journal_entry_blacklist_bad_size = 20,
+	BCH_FSCK_ERR_journal_entry_blacklist_v2_bad_size = 21,
+	BCH_FSCK_ERR_journal_entry_blacklist_v2_start_past_end = 22,
+	BCH_FSCK_ERR_journal_entry_usage_bad_size = 23,
+	BCH_FSCK_ERR_journal_entry_data_usage_bad_size = 24,
+	BCH_FSCK_ERR_journal_entry_clock_bad_size = 25,
+	BCH_FSCK_ERR_journal_entry_clock_bad_rw = 26,
+	BCH_FSCK_ERR_journal_entry_dev_usage_bad_size = 27,
+	BCH_FSCK_ERR_journal_entry_dev_usage_bad_dev = 28,
+	BCH_FSCK_ERR_journal_entry_dev_usage_bad_pad = 29,
+	BCH_FSCK_ERR_btree_node_unreadable = 30,
+	BCH_FSCK_ERR_btree_node_fault_injected = 31,
+	BCH_FSCK_ERR_btree_node_bad_magic = 32,
+	BCH_FSCK_ERR_btree_node_bad_seq = 33,
+	BCH_FSCK_ERR_btree_node_unsupported_version = 34,
+	BCH_FSCK_ERR_btree_node_bset_older_than_sb_min = 35,
+	BCH_FSCK_ERR_btree_node_bset_newer_than_sb = 36,
+	BCH_FSCK_ERR_btree_node_data_missing = 37,
+	BCH_FSCK_ERR_btree_node_bset_after_end = 38,
+	BCH_FSCK_ERR_btree_node_replicas_sectors_written_mismatch = 39,
+	BCH_FSCK_ERR_btree_node_replicas_data_mismatch = 40,
+	BCH_FSCK_ERR_bset_unknown_csum = 41,
+	BCH_FSCK_ERR_bset_bad_csum = 42,
+	BCH_FSCK_ERR_bset_past_end_of_btree_node = 43,
+	BCH_FSCK_ERR_bset_wrong_sector_offset = 44,
+	BCH_FSCK_ERR_bset_empty = 45,
+	BCH_FSCK_ERR_bset_bad_seq = 46,
+	BCH_FSCK_ERR_bset_blacklisted_journal_seq = 47,
+	BCH_FSCK_ERR_first_bset_blacklisted_journal_seq = 48,
+	BCH_FSCK_ERR_btree_node_bad_btree = 49,
+	BCH_FSCK_ERR_btree_node_bad_level = 50,
+	BCH_FSCK_ERR_btree_node_bad_min_key = 51,
+	BCH_FSCK_ERR_btree_node_bad_max_key = 52,
+	BCH_FSCK_ERR_btree_node_bad_format = 53,
+	BCH_FSCK_ERR_btree_node_bkey_past_bset_end = 54,
+	BCH_FSCK_ERR_btree_node_bkey_bad_format = 55,
+	BCH_FSCK_ERR_btree_node_bad_bkey = 56,
+	BCH_FSCK_ERR_btree_node_bkey_out_of_order = 57,
+	BCH_FSCK_ERR_btree_root_bkey_invalid = 58,
+	BCH_FSCK_ERR_btree_root_read_error = 59,
+	BCH_FSCK_ERR_btree_root_bad_min_key = 60,
+	BCH_FSCK_ERR_btree_root_bad_max_key = 61,
+	BCH_FSCK_ERR_btree_node_read_error = 62,
+	BCH_FSCK_ERR_btree_node_topology_bad_min_key = 63,
+	BCH_FSCK_ERR_btree_node_topology_bad_max_key = 64,
+	BCH_FSCK_ERR_btree_node_topology_overwritten_by_prev_node = 65,
+	BCH_FSCK_ERR_btree_node_topology_overwritten_by_next_node = 66,
+	BCH_FSCK_ERR_btree_node_topology_interior_node_empty = 67,
+	BCH_FSCK_ERR_fs_usage_hidden_wrong = 68,
+	BCH_FSCK_ERR_fs_usage_btree_wrong = 69,
+	BCH_FSCK_ERR_fs_usage_data_wrong = 70,
+	BCH_FSCK_ERR_fs_usage_cached_wrong = 71,
+	BCH_FSCK_ERR_fs_usage_reserved_wrong = 72,
+	BCH_FSCK_ERR_fs_usage_persistent_reserved_wrong = 73,
+	BCH_FSCK_ERR_fs_usage_nr_inodes_wrong = 74,
+	BCH_FSCK_ERR_fs_usage_replicas_wrong = 75,
+	BCH_FSCK_ERR_dev_usage_buckets_wrong = 76,
+	BCH_FSCK_ERR_dev_usage_sectors_wrong = 77,
+	BCH_FSCK_ERR_dev_usage_fragmented_wrong = 78,
+	BCH_FSCK_ERR_dev_usage_buckets_ec_wrong = 79,
+	BCH_FSCK_ERR_bkey_version_in_future = 80,
+	BCH_FSCK_ERR_bkey_u64s_too_small = 81,
+	BCH_FSCK_ERR_bkey_invalid_type_for_btree = 82,
+	BCH_FSCK_ERR_bkey_extent_size_zero = 83,
+	BCH_FSCK_ERR_bkey_extent_size_greater_than_offset = 84,
+	BCH_FSCK_ERR_bkey_size_nonzero = 85,
+	BCH_FSCK_ERR_bkey_snapshot_nonzero = 86,
+	BCH_FSCK_ERR_bkey_snapshot_zero = 87,
+	BCH_FSCK_ERR_bkey_at_pos_max = 88,
+	BCH_FSCK_ERR_bkey_before_start_of_btree_node = 89,
+	BCH_FSCK_ERR_bkey_after_end_of_btree_node = 90,
+	BCH_FSCK_ERR_bkey_val_size_nonzero = 91,
+	BCH_FSCK_ERR_bkey_val_size_too_small = 92,
+	BCH_FSCK_ERR_alloc_v1_val_size_bad = 93,
+	BCH_FSCK_ERR_alloc_v2_unpack_error = 94,
+	BCH_FSCK_ERR_alloc_v3_unpack_error = 95,
+	BCH_FSCK_ERR_alloc_v4_val_size_bad = 96,
+	BCH_FSCK_ERR_alloc_v4_backpointers_start_bad = 97,
+	BCH_FSCK_ERR_alloc_key_data_type_bad = 98,
+	BCH_FSCK_ERR_alloc_key_empty_but_have_data = 99,
+	BCH_FSCK_ERR_alloc_key_dirty_sectors_0 = 100,
+	BCH_FSCK_ERR_alloc_key_data_type_inconsistency = 101,
+	BCH_FSCK_ERR_alloc_key_to_missing_dev_bucket = 102,
+	BCH_FSCK_ERR_alloc_key_cached_inconsistency = 103,
+	BCH_FSCK_ERR_alloc_key_cached_but_read_time_zero = 104,
+	BCH_FSCK_ERR_alloc_key_to_missing_lru_entry = 105,
+	BCH_FSCK_ERR_alloc_key_data_type_wrong = 106,
+	BCH_FSCK_ERR_alloc_key_gen_wrong = 107,
+	BCH_FSCK_ERR_alloc_key_dirty_sectors_wrong = 108,
+	BCH_FSCK_ERR_alloc_key_cached_sectors_wrong = 109,
+	BCH_FSCK_ERR_alloc_key_stripe_wrong = 110,
+	BCH_FSCK_ERR_alloc_key_stripe_redundancy_wrong = 111,
+	BCH_FSCK_ERR_bucket_sector_count_overflow = 112,
+	BCH_FSCK_ERR_bucket_metadata_type_mismatch = 113,
+	BCH_FSCK_ERR_need_discard_key_wrong = 114,
+	BCH_FSCK_ERR_freespace_key_wrong = 115,
+	BCH_FSCK_ERR_freespace_hole_missing = 116,
+	BCH_FSCK_ERR_bucket_gens_val_size_bad = 117,
+	BCH_FSCK_ERR_bucket_gens_key_wrong = 118,
+	BCH_FSCK_ERR_bucket_gens_hole_wrong = 119,
+	BCH_FSCK_ERR_bucket_gens_to_invalid_dev = 120,
+	BCH_FSCK_ERR_bucket_gens_to_invalid_buckets = 121,
+	BCH_FSCK_ERR_bucket_gens_nonzero_for_invalid_buckets = 122,
+	BCH_FSCK_ERR_need_discard_freespace_key_to_invalid_dev_bucket = 123,
+	BCH_FSCK_ERR_need_discard_freespace_key_bad = 124,
+	BCH_FSCK_ERR_backpointer_bucket_offset_wrong = 125,
+	BCH_FSCK_ERR_backpointer_to_missing_device = 126,
+	BCH_FSCK_ERR_backpointer_to_missing_alloc = 127,
+	BCH_FSCK_ERR_backpointer_to_missing_ptr = 128,
+	BCH_FSCK_ERR_lru_entry_at_time_0 = 129,
+	BCH_FSCK_ERR_lru_entry_to_invalid_bucket = 130,
+	BCH_FSCK_ERR_lru_entry_bad = 131,
+	BCH_FSCK_ERR_btree_ptr_val_too_big = 132,
+	BCH_FSCK_ERR_btree_ptr_v2_val_too_big = 133,
+	BCH_FSCK_ERR_btree_ptr_has_non_ptr = 134,
+	BCH_FSCK_ERR_extent_ptrs_invalid_entry = 135,
+	BCH_FSCK_ERR_extent_ptrs_no_ptrs = 136,
+	BCH_FSCK_ERR_extent_ptrs_too_many_ptrs = 137,
+	BCH_FSCK_ERR_extent_ptrs_redundant_crc = 138,
+	BCH_FSCK_ERR_extent_ptrs_redundant_stripe = 139,
+	BCH_FSCK_ERR_extent_ptrs_unwritten = 140,
+	BCH_FSCK_ERR_extent_ptrs_written_and_unwritten = 141,
+	BCH_FSCK_ERR_ptr_to_invalid_device = 142,
+	BCH_FSCK_ERR_ptr_to_duplicate_device = 143,
+	BCH_FSCK_ERR_ptr_after_last_bucket = 144,
+	BCH_FSCK_ERR_ptr_before_first_bucket = 145,
+	BCH_FSCK_ERR_ptr_spans_multiple_buckets = 146,
+	BCH_FSCK_ERR_ptr_to_missing_backpointer = 147,
+	BCH_FSCK_ERR_ptr_to_missing_alloc_key = 148,
+	BCH_FSCK_ERR_ptr_to_missing_replicas_entry = 149,
+	BCH_FSCK_ERR_ptr_to_missing_stripe = 150,
+	BCH_FSCK_ERR_ptr_to_incorrect_stripe = 151,
+	BCH_FSCK_ERR_ptr_gen_newer_than_bucket_gen = 152,
+	BCH_FSCK_ERR_ptr_too_stale = 153,
+	BCH_FSCK_ERR_stale_dirty_ptr = 154,
+	BCH_FSCK_ERR_ptr_bucket_data_type_mismatch = 155,
+	BCH_FSCK_ERR_ptr_cached_and_erasure_coded = 156,
+	BCH_FSCK_ERR_ptr_crc_uncompressed_size_too_small = 157,
+	BCH_FSCK_ERR_ptr_crc_csum_type_unknown = 158,
+	BCH_FSCK_ERR_ptr_crc_compression_type_unknown = 159,
+	BCH_FSCK_ERR_ptr_crc_redundant = 160,
+	BCH_FSCK_ERR_ptr_crc_uncompressed_size_too_big = 161,
+	BCH_FSCK_ERR_ptr_crc_nonce_mismatch = 162,
+	BCH_FSCK_ERR_ptr_stripe_redundant = 163,
+	BCH_FSCK_ERR_reservation_key_nr_replicas_invalid = 164,
+	BCH_FSCK_ERR_reflink_v_refcount_wrong = 165,
+	BCH_FSCK_ERR_reflink_p_to_missing_reflink_v = 166,
+	BCH_FSCK_ERR_stripe_pos_bad = 167,
+	BCH_FSCK_ERR_stripe_val_size_bad = 168,
+	BCH_FSCK_ERR_stripe_sector_count_wrong = 169,
+	BCH_FSCK_ERR_snapshot_tree_pos_bad = 170,
+	BCH_FSCK_ERR_snapshot_tree_to_missing_snapshot = 171,
+	BCH_FSCK_ERR_snapshot_tree_to_missing_subvol = 172,
+	BCH_FSCK_ERR_snapshot_tree_to_wrong_subvol = 173,
+	BCH_FSCK_ERR_snapshot_tree_to_snapshot_subvol = 174,
+	BCH_FSCK_ERR_snapshot_pos_bad = 175,
+	BCH_FSCK_ERR_snapshot_parent_bad = 176,
+	BCH_FSCK_ERR_snapshot_children_not_normalized = 177,
+	BCH_FSCK_ERR_snapshot_child_duplicate = 178,
+	BCH_FSCK_ERR_snapshot_child_bad = 179,
+	BCH_FSCK_ERR_snapshot_skiplist_not_normalized = 180,
+	BCH_FSCK_ERR_snapshot_skiplist_bad = 181,
+	BCH_FSCK_ERR_snapshot_should_not_have_subvol = 182,
+	BCH_FSCK_ERR_snapshot_to_bad_snapshot_tree = 183,
+	BCH_FSCK_ERR_snapshot_bad_depth = 184,
+	BCH_FSCK_ERR_snapshot_bad_skiplist = 185,
+	BCH_FSCK_ERR_subvol_pos_bad = 186,
+	BCH_FSCK_ERR_subvol_not_master_and_not_snapshot = 187,
+	BCH_FSCK_ERR_subvol_to_missing_root = 188,
+	BCH_FSCK_ERR_subvol_root_wrong_bi_subvol = 189,
+	BCH_FSCK_ERR_bkey_in_missing_snapshot = 190,
+	BCH_FSCK_ERR_inode_pos_inode_nonzero = 191,
+	BCH_FSCK_ERR_inode_pos_blockdev_range = 192,
+	BCH_FSCK_ERR_inode_unpack_error = 193,
+	BCH_FSCK_ERR_inode_str_hash_invalid = 194,
+	BCH_FSCK_ERR_inode_v3_fields_start_bad = 195,
+	BCH_FSCK_ERR_inode_snapshot_mismatch = 196,
+	BCH_FSCK_ERR_inode_unlinked_but_clean = 197,
+	BCH_FSCK_ERR_inode_unlinked_but_nlink_nonzero = 198,
+	BCH_FSCK_ERR_inode_checksum_type_invalid = 199,
+	BCH_FSCK_ERR_inode_compression_type_invalid = 200,
+	BCH_FSCK_ERR_inode_subvol_root_but_not_dir = 201,
+	BCH_FSCK_ERR_inode_i_size_dirty_but_clean = 202,
+	BCH_FSCK_ERR_inode_i_sectors_dirty_but_clean = 203,
+	BCH_FSCK_ERR_inode_i_sectors_wrong = 204,
+	BCH_FSCK_ERR_inode_dir_wrong_nlink = 205,
+	BCH_FSCK_ERR_inode_dir_multiple_links = 206,
+	BCH_FSCK_ERR_inode_multiple_links_but_nlink_0 = 207,
+	BCH_FSCK_ERR_inode_wrong_backpointer = 208,
+	BCH_FSCK_ERR_inode_wrong_nlink = 209,
+	BCH_FSCK_ERR_inode_unreachable = 210,
+	BCH_FSCK_ERR_deleted_inode_but_clean = 211,
+	BCH_FSCK_ERR_deleted_inode_missing = 212,
+	BCH_FSCK_ERR_deleted_inode_is_dir = 213,
+	BCH_FSCK_ERR_deleted_inode_not_unlinked = 214,
+	BCH_FSCK_ERR_extent_overlapping = 215,
+	BCH_FSCK_ERR_extent_in_missing_inode = 216,
+	BCH_FSCK_ERR_extent_in_non_reg_inode = 217,
+	BCH_FSCK_ERR_extent_past_end_of_inode = 218,
+	BCH_FSCK_ERR_dirent_empty_name = 219,
+	BCH_FSCK_ERR_dirent_val_too_big = 220,
+	BCH_FSCK_ERR_dirent_name_too_long = 221,
+	BCH_FSCK_ERR_dirent_name_embedded_nul = 222,
+	BCH_FSCK_ERR_dirent_name_dot_or_dotdot = 223,
+	BCH_FSCK_ERR_dirent_name_has_slash = 224,
+	BCH_FSCK_ERR_dirent_d_type_wrong = 225,
+	BCH_FSCK_ERR_inode_bi_parent_wrong = 226,
+	BCH_FSCK_ERR_dirent_in_missing_dir_inode = 227,
+	BCH_FSCK_ERR_dirent_in_non_dir_inode = 228,
+	BCH_FSCK_ERR_dirent_to_missing_inode = 229,
+	BCH_FSCK_ERR_dirent_to_missing_subvol = 230,
+	BCH_FSCK_ERR_dirent_to_itself = 231,
+	BCH_FSCK_ERR_quota_type_invalid = 232,
+	BCH_FSCK_ERR_xattr_val_size_too_small = 233,
+	BCH_FSCK_ERR_xattr_val_size_too_big = 234,
+	BCH_FSCK_ERR_xattr_invalid_type = 235,
+	BCH_FSCK_ERR_xattr_name_invalid_chars = 236,
+	BCH_FSCK_ERR_xattr_in_missing_inode = 237,
+	BCH_FSCK_ERR_root_subvol_missing = 238,
+	BCH_FSCK_ERR_root_dir_missing = 239,
+	BCH_FSCK_ERR_root_inode_not_dir = 240,
+	BCH_FSCK_ERR_dir_loop = 241,
+	BCH_FSCK_ERR_hash_table_key_duplicate = 242,
+	BCH_FSCK_ERR_hash_table_key_wrong_offset = 243,
+	BCH_FSCK_ERR_unlinked_inode_not_on_deleted_list = 244,
+	BCH_FSCK_ERR_reflink_p_front_pad_bad = 245,
+	BCH_FSCK_ERR_journal_entry_dup_same_device = 246,
+	BCH_FSCK_ERR_inode_bi_subvol_missing = 247,
+	BCH_FSCK_ERR_inode_bi_subvol_wrong = 248,
+	BCH_FSCK_ERR_inode_points_to_missing_dirent = 249,
+	BCH_FSCK_ERR_inode_points_to_wrong_dirent = 250,
+	BCH_FSCK_ERR_inode_bi_parent_nonzero = 251,
+	BCH_FSCK_ERR_dirent_to_missing_parent_subvol = 252,
+	BCH_FSCK_ERR_dirent_not_visible_in_parent_subvol = 253,
+	BCH_FSCK_ERR_subvol_fs_path_parent_wrong = 254,
+	BCH_FSCK_ERR_subvol_root_fs_path_parent_nonzero = 255,
+	BCH_FSCK_ERR_subvol_children_not_set = 256,
+	BCH_FSCK_ERR_subvol_children_bad = 257,
+	BCH_FSCK_ERR_subvol_loop = 258,
+	BCH_FSCK_ERR_subvol_unreachable = 259,
+	BCH_FSCK_ERR_btree_node_bkey_bad_u64s = 260,
+	BCH_FSCK_ERR_btree_node_topology_empty_interior_node = 261,
+	BCH_FSCK_ERR_btree_ptr_v2_min_key_bad = 262,
+	BCH_FSCK_ERR_btree_root_unreadable_and_scan_found_nothing = 263,
+	BCH_FSCK_ERR_snapshot_node_missing = 264,
+	BCH_FSCK_ERR_dup_backpointer_to_bad_csum_extent = 265,
+	BCH_FSCK_ERR_btree_bitmap_not_marked = 266,
+	BCH_FSCK_ERR_sb_clean_entry_overrun = 267,
+	BCH_SB_ERR_MAX = 268,
+};
+
+enum bch_sb_feature {
+	BCH_FEATURE_lz4 = 0,
+	BCH_FEATURE_gzip = 1,
+	BCH_FEATURE_zstd = 2,
+	BCH_FEATURE_atomic_nlink = 3,
+	BCH_FEATURE_ec = 4,
+	BCH_FEATURE_journal_seq_blacklist_v3 = 5,
+	BCH_FEATURE_reflink = 6,
+	BCH_FEATURE_new_siphash = 7,
+	BCH_FEATURE_inline_data = 8,
+	BCH_FEATURE_new_extent_overwrite = 9,
+	BCH_FEATURE_incompressible = 10,
+	BCH_FEATURE_btree_ptr_v2 = 11,
+	BCH_FEATURE_extents_above_btree_updates = 12,
+	BCH_FEATURE_btree_updates_journalled = 13,
+	BCH_FEATURE_reflink_inline_data = 14,
+	BCH_FEATURE_new_varint = 15,
+	BCH_FEATURE_journal_no_flush = 16,
+	BCH_FEATURE_alloc_v2 = 17,
+	BCH_FEATURE_extents_across_btree_nodes = 18,
+	BCH_FEATURE_NR = 19,
+};
+
+enum bch_sb_field_type {
+	BCH_SB_FIELD_journal = 0,
+	BCH_SB_FIELD_members_v1 = 1,
+	BCH_SB_FIELD_crypt = 2,
+	BCH_SB_FIELD_replicas_v0 = 3,
+	BCH_SB_FIELD_quota = 4,
+	BCH_SB_FIELD_disk_groups = 5,
+	BCH_SB_FIELD_clean = 6,
+	BCH_SB_FIELD_replicas = 7,
+	BCH_SB_FIELD_journal_seq_blacklist = 8,
+	BCH_SB_FIELD_journal_v2 = 9,
+	BCH_SB_FIELD_counters = 10,
+	BCH_SB_FIELD_members_v2 = 11,
+	BCH_SB_FIELD_errors = 12,
+	BCH_SB_FIELD_ext = 13,
+	BCH_SB_FIELD_downgrade = 14,
+	BCH_SB_FIELD_NR = 15,
+};
+
+enum bch_str_hash_flags {
+	__BCH_HASH_SET_MUST_CREATE = 0,
+	__BCH_HASH_SET_MUST_REPLACE = 1,
+};
+
+enum bch_str_hash_opts {
+	BCH_STR_HASH_OPT_crc32c = 0,
+	BCH_STR_HASH_OPT_crc64 = 1,
+	BCH_STR_HASH_OPT_siphash = 2,
+	BCH_STR_HASH_OPT_NR = 3,
+};
+
+enum bch_str_hash_type {
+	BCH_STR_HASH_crc32c = 0,
+	BCH_STR_HASH_crc64 = 1,
+	BCH_STR_HASH_siphash_old = 2,
+	BCH_STR_HASH_siphash = 3,
+	BCH_STR_HASH_NR = 4,
+};
+
+enum bch_time_stats {
+	BCH_TIME_btree_node_mem_alloc = 0,
+	BCH_TIME_btree_node_split = 1,
+	BCH_TIME_btree_node_compact = 2,
+	BCH_TIME_btree_node_merge = 3,
+	BCH_TIME_btree_node_sort = 4,
+	BCH_TIME_btree_node_read = 5,
+	BCH_TIME_btree_node_read_done = 6,
+	BCH_TIME_btree_interior_update_foreground = 7,
+	BCH_TIME_btree_interior_update_total = 8,
+	BCH_TIME_btree_gc = 9,
+	BCH_TIME_data_write = 10,
+	BCH_TIME_data_read = 11,
+	BCH_TIME_data_promote = 12,
+	BCH_TIME_journal_flush_write = 13,
+	BCH_TIME_journal_noflush_write = 14,
+	BCH_TIME_journal_flush_seq = 15,
+	BCH_TIME_blocked_journal_low_on_space = 16,
+	BCH_TIME_blocked_journal_low_on_pin = 17,
+	BCH_TIME_blocked_journal_max_in_flight = 18,
+	BCH_TIME_blocked_allocate = 19,
+	BCH_TIME_blocked_allocate_open_bucket = 20,
+	BCH_TIME_blocked_write_buffer_full = 21,
+	BCH_TIME_nocow_lock_contended = 22,
+	BCH_TIME_STAT_NR = 23,
+};
+
+enum bch_trans_commit_flags {
+	BCH_TRANS_COMMIT_no_enospc = 16,
+	BCH_TRANS_COMMIT_no_check_rw = 32,
+	BCH_TRANS_COMMIT_lazy_rw = 64,
+	BCH_TRANS_COMMIT_no_journal_res = 128,
+	BCH_TRANS_COMMIT_journal_reclaim = 256,
+};
+
+enum bch_version_upgrade_opts {
+	BCH_VERSION_UPGRADE_compatible = 0,
+	BCH_VERSION_UPGRADE_incompatible = 1,
+	BCH_VERSION_UPGRADE_none = 2,
+};
+
+enum bch_watermark {
+	BCH_WATERMARK_stripe = 0,
+	BCH_WATERMARK_normal = 1,
+	BCH_WATERMARK_copygc = 2,
+	BCH_WATERMARK_btree = 3,
+	BCH_WATERMARK_btree_copygc = 4,
+	BCH_WATERMARK_reclaim = 5,
+	BCH_WATERMARK_interior_updates = 6,
+	BCH_WATERMARK_NR = 7,
+};
+
+enum bch_write_flags {
+	BCH_WRITE_ALLOC_NOWAIT = 1,
+	BCH_WRITE_CACHED = 2,
+	BCH_WRITE_DATA_ENCODED = 4,
+	BCH_WRITE_PAGES_STABLE = 8,
+	BCH_WRITE_PAGES_OWNED = 16,
+	BCH_WRITE_ONLY_SPECIFIED_DEVS = 32,
+	BCH_WRITE_WROTE_DATA_INLINE = 64,
+	BCH_WRITE_FROM_INTERNAL = 128,
+	BCH_WRITE_CHECK_ENOSPC = 256,
+	BCH_WRITE_SYNC = 512,
+	BCH_WRITE_MOVE = 1024,
+	BCH_WRITE_IN_WORKER = 2048,
+	BCH_WRITE_DONE = 4096,
+	BCH_WRITE_IO_ERROR = 8192,
+	BCH_WRITE_CONVERT_UNWRITTEN = 16384,
+};
+
+enum bch_write_ref {
+	BCH_WRITE_REF_trans = 0,
+	BCH_WRITE_REF_write = 1,
+	BCH_WRITE_REF_promote = 2,
+	BCH_WRITE_REF_node_rewrite = 3,
+	BCH_WRITE_REF_stripe_create = 4,
+	BCH_WRITE_REF_stripe_delete = 5,
+	BCH_WRITE_REF_reflink = 6,
+	BCH_WRITE_REF_fallocate = 7,
+	BCH_WRITE_REF_fsync = 8,
+	BCH_WRITE_REF_dio_write = 9,
+	BCH_WRITE_REF_discard = 10,
+	BCH_WRITE_REF_discard_fast = 11,
+	BCH_WRITE_REF_invalidate = 12,
+	BCH_WRITE_REF_delete_dead_snapshots = 13,
+	BCH_WRITE_REF_snapshot_delete_pagecache = 14,
+	BCH_WRITE_REF_sysfs = 15,
+	BCH_WRITE_REF_btree_write_buffer = 16,
+	BCH_WRITE_REF_NR = 17,
+};
+
 enum behavior {
 	EXCLUSIVE = 0,
 	SHARED = 1,
@@ -12093,16 +13522,16 @@ enum bio_merge_status {
 };
 
 enum bio_post_read_step {
-	STEP_DECRYPT = 0,
-	STEP_DECOMPRESS = 0,
-	STEP_VERITY = 0,
+	STEP_INITIAL = 0,
+	STEP_DECRYPT = 1,
+	STEP_VERITY = 2,
+	STEP_MAX = 3,
 };
 
 enum bio_post_read_step___2 {
-	STEP_INITIAL = 0,
-	STEP_DECRYPT___2 = 1,
-	STEP_VERITY___2 = 2,
-	STEP_MAX = 3,
+	STEP_DECRYPT___2 = 0,
+	STEP_DECOMPRESS = 0,
+	STEP_VERITY___2 = 0,
 };
 
 enum bip_flags {
@@ -12113,6 +13542,18 @@ enum bip_flags {
 	BIP_IP_CHECKSUM = 16,
 	BIP_INTEGRITY_USER = 32,
 	BIP_COPY_USER = 64,
+};
+
+enum bkey_invalid_flags {
+	BKEY_INVALID_WRITE = 1,
+	BKEY_INVALID_COMMIT = 2,
+	BKEY_INVALID_JOURNAL = 4,
+};
+
+enum bkey_pack_pos_ret {
+	BKEY_PACK_POS_EXACT = 0,
+	BKEY_PACK_POS_SMALLER = 1,
+	BKEY_PACK_POS_FAIL = 2,
 };
 
 enum blacklist_hash_type {
@@ -12980,6 +14421,12 @@ enum br_pkt_type {
 	BR_PKT_BROADCAST = 2,
 };
 
+enum bset_aux_tree_type {
+	BSET_NO_AUX_TREE = 0,
+	BSET_RO_AUX_TREE = 1,
+	BSET_RW_AUX_TREE = 2,
+};
+
 enum bss_compare_mode {
 	BSS_CMP_REGULAR = 0,
 	BSS_CMP_HIDE_ZLEN = 1,
@@ -13064,6 +14511,134 @@ enum btf_kfunc_hook {
 	BTF_KFUNC_HOOK_LWT = 11,
 	BTF_KFUNC_HOOK_NETFILTER = 12,
 	BTF_KFUNC_HOOK_MAX = 13,
+};
+
+enum btree_flags {
+	BTREE_NODE_FLAGS_START = 2,
+	BTREE_NODE_read_in_flight = 3,
+	BTREE_NODE_read_error = 4,
+	BTREE_NODE_dirty = 5,
+	BTREE_NODE_need_write = 6,
+	BTREE_NODE_write_blocked = 7,
+	BTREE_NODE_will_make_reachable = 8,
+	BTREE_NODE_noevict = 9,
+	BTREE_NODE_write_idx = 10,
+	BTREE_NODE_accessed = 11,
+	BTREE_NODE_write_in_flight = 12,
+	BTREE_NODE_write_in_flight_inner = 13,
+	BTREE_NODE_just_written = 14,
+	BTREE_NODE_dying = 15,
+	BTREE_NODE_fake = 16,
+	BTREE_NODE_need_rewrite = 17,
+	BTREE_NODE_never_write = 18,
+};
+
+enum btree_id {
+	BTREE_ID_extents = 0,
+	BTREE_ID_inodes = 1,
+	BTREE_ID_dirents = 2,
+	BTREE_ID_xattrs = 3,
+	BTREE_ID_alloc = 4,
+	BTREE_ID_quotas = 5,
+	BTREE_ID_stripes = 6,
+	BTREE_ID_reflink = 7,
+	BTREE_ID_subvolumes = 8,
+	BTREE_ID_snapshots = 9,
+	BTREE_ID_lru = 10,
+	BTREE_ID_freespace = 11,
+	BTREE_ID_need_discard = 12,
+	BTREE_ID_backpointers = 13,
+	BTREE_ID_bucket_gens = 14,
+	BTREE_ID_snapshot_trees = 15,
+	BTREE_ID_deleted_inodes = 16,
+	BTREE_ID_logged_ops = 17,
+	BTREE_ID_rebalance_work = 18,
+	BTREE_ID_subvolume_children = 19,
+	BTREE_ID_NR = 20,
+};
+
+enum btree_id_flags {
+	BTREE_ID_EXTENTS = 1,
+	BTREE_ID_SNAPSHOTS = 2,
+	BTREE_ID_SNAPSHOT_FIELD = 4,
+	BTREE_ID_DATA = 8,
+};
+
+enum btree_node_locked_type {
+	BTREE_NODE_UNLOCKED = -1,
+	BTREE_NODE_READ_LOCKED = 0,
+	BTREE_NODE_INTENT_LOCKED = 1,
+	BTREE_NODE_WRITE_LOCKED = 2,
+};
+
+enum btree_node_sibling {
+	btree_prev_sib = 0,
+	btree_next_sib = 1,
+};
+
+enum btree_node_type {
+	BKEY_TYPE_btree = 0,
+	BKEY_TYPE_extents = 1,
+	BKEY_TYPE_inodes = 2,
+	BKEY_TYPE_dirents = 3,
+	BKEY_TYPE_xattrs = 4,
+	BKEY_TYPE_alloc = 5,
+	BKEY_TYPE_quotas = 6,
+	BKEY_TYPE_stripes = 7,
+	BKEY_TYPE_reflink = 8,
+	BKEY_TYPE_subvolumes = 9,
+	BKEY_TYPE_snapshots = 10,
+	BKEY_TYPE_lru = 11,
+	BKEY_TYPE_freespace = 12,
+	BKEY_TYPE_need_discard = 13,
+	BKEY_TYPE_backpointers = 14,
+	BKEY_TYPE_bucket_gens = 15,
+	BKEY_TYPE_snapshot_trees = 16,
+	BKEY_TYPE_deleted_inodes = 17,
+	BKEY_TYPE_logged_ops = 18,
+	BKEY_TYPE_rebalance_work = 19,
+	BKEY_TYPE_subvolume_children = 20,
+	BKEY_TYPE_NR = 21,
+};
+
+enum btree_path_uptodate {
+	BTREE_ITER_UPTODATE = 0,
+	BTREE_ITER_NEED_RELOCK = 1,
+	BTREE_ITER_NEED_TRAVERSE = 2,
+};
+
+enum btree_update_flags {
+	__BTREE_UPDATE_INTERNAL_SNAPSHOT_NODE = 15,
+	__BTREE_UPDATE_NOJOURNAL = 16,
+	__BTREE_UPDATE_KEY_CACHE_RECLAIM = 17,
+	__BTREE_TRIGGER_NORUN = 18,
+	__BTREE_TRIGGER_TRANSACTIONAL = 19,
+	__BTREE_TRIGGER_ATOMIC = 20,
+	__BTREE_TRIGGER_GC = 21,
+	__BTREE_TRIGGER_INSERT = 22,
+	__BTREE_TRIGGER_OVERWRITE = 23,
+	__BTREE_TRIGGER_BUCKET_INVALIDATE = 24,
+};
+
+enum btree_update_mode {
+	BTREE_UPDATE_none = 0,
+	BTREE_UPDATE_node = 1,
+	BTREE_UPDATE_root = 2,
+	BTREE_UPDATE_update = 3,
+};
+
+enum btree_write_flags {
+	__BTREE_WRITE_ONLY_IF_NEED = 3,
+	__BTREE_WRITE_ALREADY_STARTED = 4,
+};
+
+enum btree_write_type {
+	BTREE_WRITE_initial = 0,
+	BTREE_WRITE_init_next_bset = 1,
+	BTREE_WRITE_cache_reclaim = 2,
+	BTREE_WRITE_journal_reclaim = 3,
+	BTREE_WRITE_interior = 4,
+	BTREE_WRITE_TYPE_NR = 5,
 };
 
 enum btrfs_block_group_flags {
@@ -13653,7 +15228,7 @@ enum cifs_param {
 	Opt_serverino = 27,
 	Opt_rwpidforward = 28,
 	Opt_cifsacl = 29,
-	Opt_acl___6 = 30,
+	Opt_acl___7 = 30,
 	Opt_locallease = 31,
 	Opt_sign = 32,
 	Opt_ignore_signature = 33,
@@ -13796,6 +15371,13 @@ enum clocksource_ids {
 	CSID_MAX = 5,
 };
 
+enum closure_state {
+	CLOSURE_BITS_START = 67108864,
+	CLOSURE_DESTRUCTOR = 67108864,
+	CLOSURE_WAITING = 268435456,
+	CLOSURE_RUNNING = 1073741824,
+};
+
 enum cm_msg_response {
 	CM_MSG_RESPONSE_REQ = 0,
 	CM_MSG_RESPONSE_REP = 1,
@@ -13830,6 +15412,11 @@ enum comp_state {
 	COMPST_ERROR = 12,
 	COMPST_EXIT = 13,
 	COMPST_DONE = 14,
+};
+
+enum compact_mode {
+	COMPACT_LAZY = 0,
+	COMPACT_ALL = 1,
 };
 
 enum compact_priority {
@@ -15044,6 +16631,12 @@ enum dynevent_type {
 	DYNEVENT_TYPE_NONE = 3,
 };
 
+enum ec_stripe_ref {
+	STRIPE_REF_io = 0,
+	STRIPE_REF_stripe = 1,
+	STRIPE_REF_NR = 2,
+};
+
 enum ecc_dialects {
 	ECC_DIALECT_STANDARD = 0,
 	ECC_DIALECT_ED25519 = 1,
@@ -15758,6 +17351,19 @@ enum flow_offload_tuple_dir {
 	FLOW_OFFLOAD_DIR_REPLY = 1,
 };
 
+enum flow_offload_type {
+	NF_FLOW_OFFLOAD_UNSPEC = 0,
+	NF_FLOW_OFFLOAD_ROUTE = 1,
+};
+
+enum flow_offload_xmit_type {
+	FLOW_OFFLOAD_XMIT_UNSPEC = 0,
+	FLOW_OFFLOAD_XMIT_NEIGH = 1,
+	FLOW_OFFLOAD_XMIT_XFRM = 2,
+	FLOW_OFFLOAD_XMIT_DIRECT = 3,
+	FLOW_OFFLOAD_XMIT_TC = 4,
+};
+
 enum flowlabel_reflect {
 	FLOWLABEL_REFLECT_ESTABLISHED = 1,
 	FLOWLABEL_REFLECT_TCP_RESET = 2,
@@ -15868,6 +17474,13 @@ enum fscache_want_state {
 	FSCACHE_WANT_PARAMS = 0,
 	FSCACHE_WANT_WRITE = 1,
 	FSCACHE_WANT_READ = 2,
+};
+
+enum fsck_err_opts {
+	FSCK_FIX_exit = 0,
+	FSCK_FIX_yes = 1,
+	FSCK_FIX_no = 2,
+	FSCK_FIX_ask = 3,
 };
 
 enum fsconfig_command {
@@ -16136,6 +17749,13 @@ enum garp_event {
 	__GARP_EVENT_MAX = 8,
 };
 
+enum gc_phase {
+	GC_PHASE_not_running = 0,
+	GC_PHASE_start = 1,
+	GC_PHASE_sb = 2,
+	GC_PHASE_btree = 3,
+};
+
 enum gcry_mpi_constants {
 	MPI_C_ZERO = 0,
 	MPI_C_ONE = 1,
@@ -16241,6 +17861,38 @@ enum group_type {
 	group_asym_packing = 4,
 	group_imbalanced = 5,
 	group_overloaded = 6,
+};
+
+enum gtp_attrs {
+	GTPA_UNSPEC = 0,
+	GTPA_LINK = 1,
+	GTPA_VERSION = 2,
+	GTPA_TID = 3,
+	GTPA_PEER_ADDRESS = 4,
+	GTPA_MS_ADDRESS = 5,
+	GTPA_FLOW = 6,
+	GTPA_NET_NS_FD = 7,
+	GTPA_I_TEI = 8,
+	GTPA_O_TEI = 9,
+	GTPA_PAD = 10,
+	__GTPA_MAX = 11,
+};
+
+enum gtp_genl_cmds {
+	GTP_CMD_NEWPDP = 0,
+	GTP_CMD_DELPDP = 1,
+	GTP_CMD_GETPDP = 2,
+	GTP_CMD_ECHOREQ = 3,
+	GTP_CMD_MAX = 4,
+};
+
+enum gtp_multicast_groups {
+	GTP_GENL_MCGRP = 0,
+};
+
+enum gtp_version {
+	GTP_V0 = 0,
+	GTP_V1 = 1,
 };
 
 enum gvrp_attributes {
@@ -18853,6 +20505,11 @@ enum ifla_geneve_df {
 	GENEVE_DF_MAX = 2,
 };
 
+enum ifla_gtp_role {
+	GTP_ROLE_GGSN = 0,
+	GTP_ROLE_SGSN = 1,
+};
+
 enum ifla_vxlan_df {
 	VXLAN_DF_UNSET = 0,
 	VXLAN_DF_SET = 1,
@@ -18906,6 +20563,20 @@ enum inode_i_mutex_lock_class {
 	I_MUTEX_XATTR = 3,
 	I_MUTEX_NONDIR2 = 4,
 	I_MUTEX_PARENT2 = 5,
+};
+
+enum inode_opt_id {
+	Inode_opt_data_checksum = 0,
+	Inode_opt_compression = 1,
+	Inode_opt_project = 2,
+	Inode_opt_background_compression = 3,
+	Inode_opt_data_replicas = 4,
+	Inode_opt_promote_target = 5,
+	Inode_opt_foreground_target = 6,
+	Inode_opt_background_target = 7,
+	Inode_opt_erasure_code = 8,
+	Inode_opt_nocow = 9,
+	Inode_opt_nr = 10,
 };
 
 enum inode_state {
@@ -19890,6 +21561,45 @@ enum jbd_state_bits {
 	BH_JBDPrivateStart = 25,
 };
 
+enum journal_errors {
+	JOURNAL_ERR_ok = 0,
+	JOURNAL_ERR_retry = 1,
+	JOURNAL_ERR_blocked = 2,
+	JOURNAL_ERR_max_in_flight = 3,
+	JOURNAL_ERR_journal_full = 4,
+	JOURNAL_ERR_journal_pin_full = 5,
+	JOURNAL_ERR_journal_stuck = 6,
+	JOURNAL_ERR_insufficient_devices = 7,
+};
+
+enum journal_flags {
+	JOURNAL_REPLAY_DONE = 0,
+	JOURNAL_STARTED = 1,
+	JOURNAL_MAY_SKIP_FLUSH = 2,
+	JOURNAL_NEED_FLUSH_WRITE = 3,
+	JOURNAL_SPACE_LOW = 4,
+};
+
+enum journal_pin_type {
+	JOURNAL_PIN_btree = 0,
+	JOURNAL_PIN_key_cache = 1,
+	JOURNAL_PIN_other = 2,
+	JOURNAL_PIN_NR = 3,
+};
+
+enum journal_res_flags {
+	__JOURNAL_RES_GET_NONBLOCK = 3,
+	__JOURNAL_RES_GET_CHECK = 4,
+};
+
+enum journal_space_from {
+	journal_space_discarded = 0,
+	journal_space_clean_ondisk = 1,
+	journal_space_clean = 2,
+	journal_space_total = 3,
+	journal_space_nr = 4,
+};
+
 enum jump_label_type {
 	JUMP_LABEL_NOP = 0,
 	JUMP_LABEL_JMP = 1,
@@ -20281,6 +21991,12 @@ enum lockdown_reason {
 	LOCKDOWN_XMON_RW = 27,
 	LOCKDOWN_XFRM_SECRET = 28,
 	LOCKDOWN_CONFIDENTIALITY_MAX = 29,
+};
+
+enum logged_op_finsert_state {
+	LOGGED_OP_FINSERT_start = 0,
+	LOGGED_OP_FINSERT_shift_extents = 1,
+	LOGGED_OP_FINSERT_finish = 2,
 };
 
 enum lru_list {
@@ -21594,34 +23310,35 @@ enum nf_ct_sysctl_index {
 	NF_SYSCTL_CT_PROTO_TIMEOUT_TCP_CLOSE = 16,
 	NF_SYSCTL_CT_PROTO_TIMEOUT_TCP_RETRANS = 17,
 	NF_SYSCTL_CT_PROTO_TIMEOUT_TCP_UNACK = 18,
-	NF_SYSCTL_CT_PROTO_TCP_LOOSE = 19,
-	NF_SYSCTL_CT_PROTO_TCP_LIBERAL = 20,
-	NF_SYSCTL_CT_PROTO_TCP_IGNORE_INVALID_RST = 21,
-	NF_SYSCTL_CT_PROTO_TCP_MAX_RETRANS = 22,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_UDP = 23,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_UDP_STREAM = 24,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_ICMP = 25,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_ICMPV6 = 26,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_CLOSED = 27,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_COOKIE_WAIT = 28,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_COOKIE_ECHOED = 29,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_ESTABLISHED = 30,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_SHUTDOWN_SENT = 31,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_SHUTDOWN_RECD = 32,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_SHUTDOWN_ACK_SENT = 33,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_HEARTBEAT_SENT = 34,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_DCCP_REQUEST = 35,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_DCCP_RESPOND = 36,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_DCCP_PARTOPEN = 37,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_DCCP_OPEN = 38,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_DCCP_CLOSEREQ = 39,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_DCCP_CLOSING = 40,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_DCCP_TIMEWAIT = 41,
-	NF_SYSCTL_CT_PROTO_DCCP_LOOSE = 42,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_GRE = 43,
-	NF_SYSCTL_CT_PROTO_TIMEOUT_GRE_STREAM = 44,
-	NF_SYSCTL_CT_LWTUNNEL = 45,
-	__NF_SYSCTL_CT_LAST_SYSCTL = 46,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_TCP_OFFLOAD = 19,
+	NF_SYSCTL_CT_PROTO_TCP_LOOSE = 20,
+	NF_SYSCTL_CT_PROTO_TCP_LIBERAL = 21,
+	NF_SYSCTL_CT_PROTO_TCP_IGNORE_INVALID_RST = 22,
+	NF_SYSCTL_CT_PROTO_TCP_MAX_RETRANS = 23,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_UDP = 24,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_UDP_STREAM = 25,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_UDP_OFFLOAD = 26,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_ICMP = 27,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_ICMPV6 = 28,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_CLOSED = 29,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_COOKIE_WAIT = 30,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_COOKIE_ECHOED = 31,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_ESTABLISHED = 32,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_SHUTDOWN_SENT = 33,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_SHUTDOWN_RECD = 34,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_SHUTDOWN_ACK_SENT = 35,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_SCTP_HEARTBEAT_SENT = 36,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_DCCP_REQUEST = 37,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_DCCP_RESPOND = 38,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_DCCP_PARTOPEN = 39,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_DCCP_OPEN = 40,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_DCCP_CLOSEREQ = 41,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_DCCP_CLOSING = 42,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_DCCP_TIMEWAIT = 43,
+	NF_SYSCTL_CT_PROTO_DCCP_LOOSE = 44,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_GRE = 45,
+	NF_SYSCTL_CT_PROTO_TIMEOUT_GRE_STREAM = 46,
+	__NF_SYSCTL_CT_LAST_SYSCTL = 47,
 };
 
 enum nf_ct_tcp_action {
@@ -21634,6 +23351,23 @@ enum nf_dev_hooks {
 	NF_NETDEV_INGRESS = 0,
 	NF_NETDEV_EGRESS = 1,
 	NF_NETDEV_NUMHOOKS = 2,
+};
+
+enum nf_flow_flags {
+	NF_FLOW_SNAT = 0,
+	NF_FLOW_DNAT = 1,
+	NF_FLOW_TEARDOWN = 2,
+	NF_FLOW_HW = 3,
+	NF_FLOW_HW_DYING = 4,
+	NF_FLOW_HW_DEAD = 5,
+	NF_FLOW_HW_PENDING = 6,
+	NF_FLOW_HW_BIDIRECTIONAL = 7,
+	NF_FLOW_HW_ESTABLISHED = 8,
+};
+
+enum nf_flowtable_flags {
+	NF_FLOWTABLE_HW_OFFLOAD = 1,
+	NF_FLOWTABLE_COUNTER = 2,
 };
 
 enum nf_hook_ops_type {
@@ -22096,7 +23830,7 @@ enum nfs_param {
 	Opt_ac = 0,
 	Opt_acdirmax___2 = 1,
 	Opt_acdirmin = 2,
-	Opt_acl___7 = 3,
+	Opt_acl___8 = 3,
 	Opt_acregmax___2 = 4,
 	Opt_acregmin = 5,
 	Opt_actimeo___2 = 6,
@@ -22974,6 +24708,12 @@ enum nft_objref_attributes {
 	NFTA_OBJREF_SET_NAME = 4,
 	NFTA_OBJREF_SET_ID = 5,
 	__NFTA_OBJREF_MAX = 6,
+};
+
+enum nft_offload_attributes {
+	NFTA_FLOW_UNSPEC = 0,
+	NFTA_FLOW_TABLE_NAME = 1,
+	__NFTA_FLOW_MAX = 2,
 };
 
 enum nft_offload_dep_type {
@@ -25578,6 +27318,26 @@ enum opentype4 {
 	NFS4_OPEN_CREATE = 1,
 };
 
+enum opt_flags {
+	OPT_FS = 1,
+	OPT_DEVICE = 2,
+	OPT_INODE = 4,
+	OPT_FORMAT = 8,
+	OPT_MOUNT = 16,
+	OPT_RUNTIME = 32,
+	OPT_HUMAN_READABLE = 64,
+	OPT_MUST_BE_POW_2 = 128,
+	OPT_SB_FIELD_SECTORS = 256,
+	OPT_SB_FIELD_ILOG2 = 512,
+};
+
+enum opt_type {
+	BCH_OPT_BOOL = 0,
+	BCH_OPT_UINT = 1,
+	BCH_OPT_STR = 2,
+	BCH_OPT_FN = 3,
+};
+
 enum osf_fmatch_states {
 	FMATCH_WRONG = 0,
 	FMATCH_OK = 1,
@@ -27164,6 +28924,13 @@ enum prep_dispatch {
 	PREP_DISPATCH_NO_BUDGET = 2,
 };
 
+enum prep_encoded_ret {
+	PREP_ENCODED_OK = 0,
+	PREP_ENCODED_ERR = 1,
+	PREP_ENCODED_CHECKSUM_ERR = 2,
+	PREP_ENCODED_DO_WRITE = 3,
+};
+
 enum prime_sc {
 	PRIME_CHNL_OFFSET_DONT_CARE = 0,
 	PRIME_CHNL_OFFSET_LOWER = 1,
@@ -27175,6 +28942,11 @@ enum print_line_t {
 	TRACE_TYPE_HANDLED = 1,
 	TRACE_TYPE_UNHANDLED = 2,
 	TRACE_TYPE_NO_CONSUME = 3,
+};
+
+enum printbuf_si {
+	PRINTBUF_UNITS_2 = 0,
+	PRINTBUF_UNITS_10 = 1,
 };
 
 enum printk_info_flags {
@@ -27312,10 +29084,37 @@ enum queue_type {
 	QUEUE_TYPE_TO_ULP = 3,
 };
 
+enum quota_acct_mode {
+	KEY_TYPE_QUOTA_PREALLOC = 0,
+	KEY_TYPE_QUOTA_WARN = 1,
+	KEY_TYPE_QUOTA_NOCHECK = 2,
+};
+
+enum quota_counters {
+	Q_SPC = 0,
+	Q_INO = 1,
+	Q_COUNTERS = 2,
+};
+
+enum quota_msg {
+	SOFTWARN = 0,
+	SOFTLONGWARN = 1,
+	HARDWARN = 2,
+	HARDBELOW = 3,
+	SOFTBELOW = 4,
+};
+
 enum quota_type {
 	USRQUOTA = 0,
 	GRPQUOTA = 1,
 	PRJQUOTA = 2,
+};
+
+enum quota_types {
+	QTYP_USR = 0,
+	QTYP_GRP = 1,
+	QTYP_PRJ = 2,
+	QTYP_NR = 3,
 };
 
 enum radio_path {
@@ -27393,6 +29192,12 @@ enum ratr_table_mode_new {
 	RATEID_IDX_MIX2 = 12,
 	RATEID_IDX_VHT_3SS = 13,
 	RATEID_IDX_BGN_3SS = 14,
+};
+
+enum rbio_context {
+	RBIO_CONTEXT_NULL = 0,
+	RBIO_CONTEXT_HIGHPRI = 1,
+	RBIO_CONTEXT_UNBOUND = 2,
 };
 
 enum rcutorture_type {
@@ -29492,8 +31297,8 @@ enum shmem_param {
 	Opt_inode64___2 = 9,
 	Opt_noswap = 10,
 	Opt_quota___4 = 11,
-	Opt_usrquota___4 = 12,
-	Opt_grpquota___4 = 13,
+	Opt_usrquota___5 = 12,
+	Opt_grpquota___5 = 13,
 	Opt_usrquota_block_hardlimit = 14,
 	Opt_usrquota_inode_hardlimit = 15,
 	Opt_grpquota_block_hardlimit = 16,
@@ -29670,6 +31475,16 @@ enum siw_wr_state {
 	SIW_WR_IDLE = 0,
 	SIW_WR_QUEUED = 1,
 	SIW_WR_INPROGRESS = 2,
+};
+
+enum six_lock_init_flags {
+	SIX_LOCK_INIT_PCPU = 1,
+};
+
+enum six_lock_type {
+	SIX_LOCK_read = 0,
+	SIX_LOCK_intent = 1,
+	SIX_LOCK_write = 2,
 };
 
 enum sk_action {
@@ -29998,7 +31813,7 @@ enum spectre_v4_policy {
 };
 
 enum squashfs_param {
-	Opt_errors___4 = 0,
+	Opt_errors___5 = 0,
 	Opt_threads = 1,
 };
 
@@ -31835,7 +33650,7 @@ enum wq_misc_consts {
 	WORK_CPU_UNBOUND = 24,
 	WORK_BUSY_PENDING = 1,
 	WORK_BUSY_RUNNING = 2,
-	WORKER_DESC_LEN = 24,
+	WORKER_DESC_LEN = 32,
 };
 
 enum wqe_state {
@@ -31844,6 +33659,14 @@ enum wqe_state {
 	wqe_state_pending = 2,
 	wqe_state_done = 3,
 	wqe_state_error = 4,
+};
+
+enum write_point_state {
+	WRITE_POINT_stopped = 0,
+	WRITE_POINT_waiting_io = 1,
+	WRITE_POINT_waiting_work = 2,
+	WRITE_POINT_running = 3,
+	WRITE_POINT_STATE_NR = 4,
 };
 
 enum writeback_stat_item {
@@ -32650,6 +34473,8 @@ typedef u32 acpi_status;
 
 typedef unsigned int autofs_wqt_t;
 
+typedef unsigned int bch_str_hash_flags_t;
+
 typedef unsigned int blk_insert_t;
 
 typedef unsigned int blk_mode_t;
@@ -32954,6 +34779,8 @@ typedef u64 sector_t;
 
 typedef __u64 timeu64_t;
 
+typedef u64 u96;
+
 typedef u64 u_int64_t;
 
 typedef unsigned long long uint64_t___2;
@@ -33034,6 +34861,8 @@ typedef __u16 __virtio16;
 
 typedef u16 access_mask_t;
 
+typedef u16 btree_path_idx_t;
+
 typedef __u16 comp_t;
 
 typedef __kernel_gid16_t gid16_t;
@@ -33041,6 +34870,8 @@ typedef __kernel_gid16_t gid16_t;
 typedef __u16 ip_set_id_t;
 
 typedef u16 layer_mask_t;
+
+typedef u16 open_bucket_idx_t;
 
 typedef unsigned short pci_bus_flags_t;
 
@@ -33398,6 +35229,18 @@ typedef struct {
 } Indirect;
 
 typedef struct {
+	unsigned int hashTable[32768];
+	unsigned short chainTable[65536];
+	const unsigned char *end;
+	const unsigned char *base;
+	const unsigned char *dictBase;
+	unsigned int dictLimit;
+	unsigned int lowLimit;
+	unsigned int nextToUpdate;
+	unsigned int compressionLevel;
+} LZ4HC_CCtx_internal;
+
+typedef struct {
 	const uint8_t *externalDict;
 	size_t extDictSize;
 	const uint8_t *prefixEnd;
@@ -33408,6 +35251,11 @@ typedef union {
 	unsigned long long table[4];
 	LZ4_streamDecode_t_internal internal_donotuse;
 } LZ4_streamDecode_t;
+
+typedef union {
+	size_t table[32774];
+	LZ4HC_CCtx_internal internal_donotuse;
+} LZ4_streamHC_t;
 
 typedef struct {
 	uint32_t hashTable[4096];
@@ -33487,6 +35335,11 @@ typedef struct {
 	__le64 UniqueId;
 	char FileName[0];
 } SEARCH_ID_FULL_DIR_INFO;
+
+typedef struct {
+	__le64 k0;
+	__le64 k1;
+} SIPHASH_KEY;
 
 typedef struct {
 	__u16 Day: 5;
@@ -33839,6 +35692,12 @@ typedef struct {
 } __kernel_fsid_t;
 
 typedef struct {
+	__u8 b[16];
+} uuid_t;
+
+typedef uuid_t __uuid_t;
+
+typedef struct {
 	U32 tableTime;
 	U32 decode256Time;
 } algo_time_t;
@@ -33848,6 +35707,65 @@ typedef struct {
 } atomic64_t;
 
 typedef atomic64_t atomic_long_t;
+
+typedef struct {
+	__le16 e_tag;
+	__le16 e_perm;
+	__le32 e_id;
+} bch_acl_entry;
+
+typedef struct {
+	__le32 a_version;
+} bch_acl_header;
+
+typedef struct {
+	__le64 lo;
+	__le64 hi;
+} bch_le128;
+
+struct genradix_root;
+
+struct __genradix {
+	struct genradix_root *root;
+};
+
+struct memquota_counter {
+	u64 v;
+	u64 hardlimit;
+	u64 softlimit;
+	s64 timer;
+	int warns;
+	int warning_issued;
+};
+
+struct bch_memquota {
+	struct memquota_counter c[2];
+};
+
+typedef struct {
+	struct __genradix tree;
+	struct bch_memquota type[0];
+} bch_memquota_table;
+
+struct bch_sb_error_entry_cpu {
+	u64 id: 16;
+	u64 nr: 48;
+	u64 last_error_time;
+};
+
+typedef struct {
+	size_t nr;
+	size_t size;
+	struct bch_sb_error_entry_cpu *data;
+	struct bch_sb_error_entry_cpu preallocated[0];
+} bch_sb_errors_cpu;
+
+typedef struct {
+	size_t nr;
+	size_t size;
+	unsigned long *data;
+	unsigned long preallocated[0];
+} bch_stacktrace;
 
 typedef struct {
 	__be64 a;
@@ -34010,8 +35928,53 @@ typedef struct {
 } copy_stateid_t;
 
 typedef struct {
+	size_t nr;
+	size_t size;
+	char *data;
+	char preallocated[0];
+} darray_char;
+
+struct bch_fs;
+
+typedef struct {
+	size_t nr;
+	size_t size;
+	struct bch_fs **data;
+	struct bch_fs *preallocated[0];
+} darray_fs;
+
+typedef struct {
+	size_t nr;
+	size_t size;
+	char **data;
+	char *preallocated[0];
+} darray_str;
+
+typedef struct {
+	size_t nr;
+	size_t size;
+	u32 *data;
+	u32 preallocated[0];
+} darray_u32;
+
+typedef struct {
+	size_t nr;
+	size_t size;
+	u64 *data;
+	u64 preallocated[0];
+} darray_u64;
+
+typedef struct {
 	unsigned long bits[1];
 } dma_cap_mask_t;
+
+struct ec_stripe_heap_entry;
+
+typedef struct {
+	size_t size;
+	size_t used;
+	struct ec_stripe_heap_entry *data;
+} ec_stripes_heap;
 
 typedef struct {
 	__u8 b[16];
@@ -34039,6 +36002,50 @@ typedef struct {
 	unsigned long *res_out;
 	unsigned long *res_ex;
 } fd_set_bits;
+
+typedef struct {
+	size_t nr;
+	size_t size;
+	struct folio **data;
+	struct folio *preallocated[0];
+} folios;
+
+struct bpos {
+	__u32 snapshot;
+	__u64 offset;
+	__u64 inode;
+} __attribute__((packed));
+
+struct bch_extent_ptr {
+	__u64 type: 1;
+	__u64 cached: 1;
+	__u64 unused: 1;
+	__u64 unwritten: 1;
+	__u64 offset: 44;
+	__u64 dev: 8;
+	__u64 gen: 8;
+};
+
+struct found_btree_node {
+	bool range_updated: 1;
+	bool overwritten: 1;
+	u8 btree_id;
+	u8 level;
+	unsigned int sectors_written;
+	u32 seq;
+	u64 cookie;
+	struct bpos min_key;
+	struct bpos max_key;
+	unsigned int nr_ptrs;
+	struct bch_extent_ptr ptrs[4];
+};
+
+typedef struct {
+	size_t nr;
+	size_t size;
+	struct found_btree_node *data;
+	struct found_btree_node preallocated[0];
+} found_btree_nodes;
 
 typedef struct {
 	unsigned int t391;
@@ -34074,6 +36081,14 @@ typedef struct {
 typedef struct {
 	unsigned long key[2];
 } hsiphash_key_t;
+
+struct io_timer;
+
+typedef struct {
+	size_t size;
+	size_t used;
+	struct io_timer **data;
+} io_timer_heap;
 
 typedef struct {
 	unsigned int __softirq_pending;
@@ -34161,6 +36176,24 @@ typedef struct {
 	unsigned long flags;
 } mm_context_t;
 
+struct move_bucket_key {
+	struct bpos bucket;
+	u8 gen;
+	long: 0;
+};
+
+struct move_bucket {
+	struct move_bucket_key k;
+	unsigned int sectors;
+};
+
+typedef struct {
+	size_t nr;
+	size_t size;
+	struct move_bucket *data;
+	struct move_bucket preallocated[0];
+} move_buckets;
+
 typedef struct {} netdevice_tracker;
 
 typedef struct {} netns_tracker;
@@ -34184,6 +36217,18 @@ typedef struct {
 typedef struct {
 	u64 pme;
 } pagemap_entry_t;
+
+struct pathbuf_entry {
+	u64 inum;
+	u32 snapshot;
+};
+
+typedef struct {
+	size_t nr;
+	size_t size;
+	struct pathbuf_entry *data;
+	struct pathbuf_entry preallocated[0];
+} pathbuf;
 
 struct raw_spinlock {
 	arch_spinlock_t raw_lock;
@@ -34233,6 +36278,17 @@ typedef struct {
 	} arg;
 	int error;
 } read_descriptor_t;
+
+struct reflink_gc {
+	u64 offset;
+	u32 size;
+	u32 refcount;
+};
+
+typedef struct {
+	struct __genradix tree;
+	struct reflink_gc type[0];
+} reflink_gc_table;
 
 struct encoded_page;
 
@@ -34298,6 +36354,13 @@ typedef struct {
 	u64 key[2];
 } siphash_key_t;
 
+typedef struct {
+	size_t nr;
+	size_t size;
+	u32 *data;
+	u32 preallocated[0];
+} snapshot_id_list;
+
 struct wait_queue_head {
 	spinlock_t lock;
 	struct list_head head;
@@ -34317,6 +36380,11 @@ typedef struct {
 } substring_t;
 
 typedef struct {
+	u32 subvol;
+	u64 inum;
+} subvol_inum;
+
+typedef struct {
 	unsigned long val;
 } swp_entry_t;
 
@@ -34334,6 +36402,15 @@ typedef struct {
 } te1_settings;
 
 typedef struct {
+	atomic_long_t v;
+	wait_queue_head_t wait;
+} two_state_lock_t;
+
+typedef struct {
+	unsigned __int128 v;
+} u128_u;
+
+typedef struct {
 	local64_t v;
 } u64_stats_t;
 
@@ -34345,10 +36422,6 @@ typedef struct {
 	unsigned int t2;
 	unsigned int n2;
 } x25_hdlc_proto;
-
-typedef struct {
-	__u8 b[16];
-} uuid_t;
 
 typedef struct {
 	gid_t val;
@@ -34991,6 +37064,8 @@ struct callback_head {
 	void (*func)(struct callback_head *);
 };
 
+struct lock_class_key {};
+
 struct Qdisc_ops;
 
 struct qdisc_size_table;
@@ -35038,6 +37113,7 @@ struct Qdisc {
 	spinlock_t seqlock;
 	struct callback_head rcu;
 	netdevice_tracker dev_tracker;
+	struct lock_class_key root_lock_key;
 	long: 64;
 	long: 64;
 	long: 64;
@@ -36043,6 +38119,14 @@ struct _NEGOTIATE_MESSAGE {
 
 typedef struct _NEGOTIATE_MESSAGE NEGOTIATE_MESSAGE;
 
+struct _SIPHASH_CTX {
+	u64 v[4];
+	u8 buf[8];
+	u32 bytes;
+};
+
+typedef struct _SIPHASH_CTX SIPHASH_CTX;
+
 struct __aio_sigset {
 	const sigset_t __attribute__((btf_type_tag("user"))) *sigmask;
 	size_t sigsetsize;
@@ -36116,12 +38200,6 @@ struct arm64_ftr_reg;
 struct __ftr_reg_entry {
 	u32 sys_id;
 	struct arm64_ftr_reg *reg;
-};
-
-struct genradix_root;
-
-struct __genradix {
-	struct genradix_root *root;
 };
 
 struct pmu;
@@ -37012,6 +39090,14 @@ struct ad_bond_info {
 	u16 aggregator_identifier;
 };
 
+struct ad_info {
+	__u16 aggregator_id;
+	__u16 ports;
+	__u16 actor_key;
+	__u16 partner_key;
+	__u8 partner_system[6];
+};
+
 struct port;
 
 struct slave;
@@ -37716,6 +39802,15 @@ struct alb_bond_info {
 	u32 rlb_update_delay_counter;
 	u32 rlb_update_retry_counter;
 	u8 rlb_rebalance;
+};
+
+struct bonding;
+
+struct alb_walk_data {
+	struct bonding *bond;
+	struct slave *slave;
+	const u8 *mac_addr;
+	bool strict_match;
 };
 
 struct hlist_nulls_node {
@@ -38574,15 +40669,30 @@ struct arm64_midr_revidr {
 
 struct arm_cpuidle_irq_context {};
 
-struct mhu_db_link {
+struct mhu_link {
 	unsigned int irq;
 	void *tx_reg;
 	void *rx_reg;
 };
 
-struct mbox_chan_ops;
+struct mbox_controller;
 
-struct mbox_chan;
+struct mbox_client;
+
+struct mbox_chan {
+	struct mbox_controller *mbox;
+	unsigned int txdone_method;
+	struct mbox_client *cl;
+	struct completion tx_complete;
+	void *active_req;
+	unsigned int msg_count;
+	unsigned int msg_free;
+	void *msg_data[20];
+	spinlock_t lock;
+	void *con_priv;
+};
+
+struct mbox_chan_ops;
 
 struct of_phandle_args;
 
@@ -38602,37 +40712,22 @@ struct mbox_controller {
 
 struct arm_mhu {
 	void *base;
-	struct mhu_db_link mlink[3];
+	struct mhu_link mlink[3];
+	struct mbox_chan chan[3];
 	struct mbox_controller mbox;
-	struct device *dev;
 };
 
-struct mhu_link {
+struct mhu_db_link {
 	unsigned int irq;
 	void *tx_reg;
 	void *rx_reg;
 };
 
-struct mbox_client;
-
-struct mbox_chan {
-	struct mbox_controller *mbox;
-	unsigned int txdone_method;
-	struct mbox_client *cl;
-	struct completion tx_complete;
-	void *active_req;
-	unsigned int msg_count;
-	unsigned int msg_free;
-	void *msg_data[20];
-	spinlock_t lock;
-	void *con_priv;
-};
-
 struct arm_mhu___2 {
 	void *base;
-	struct mhu_link mlink[3];
-	struct mbox_chan chan[3];
+	struct mhu_db_link mlink[3];
 	struct mbox_controller mbox;
+	struct device *dev;
 };
 
 struct perf_cpu_pmu_context;
@@ -38774,6 +40869,18 @@ struct arp_eth_header {
 	unsigned char ar_tha[6];
 	unsigned char ar_tip[4];
 };
+
+struct arp_pkt {
+	__be16 hw_addr_space;
+	__be16 prot_addr_space;
+	u8 hw_addr_len;
+	u8 prot_addr_len;
+	__be16 op_code;
+	u8 mac_src[6];
+	__be32 ip_src;
+	u8 mac_dst[6];
+	__be32 ip_dst;
+} __attribute__((packed));
 
 struct arphdr {
 	__be16 ar_hrd;
@@ -39156,6 +41263,16 @@ struct async {
 	int status;
 	u8 bulk_addr;
 	u8 bulk_status;
+};
+
+struct async_btree_rewrite {
+	struct bch_fs *c;
+	struct work_struct work;
+	struct list_head list;
+	enum btree_id btree_id;
+	unsigned int level;
+	struct bpos pos;
+	__le64 seq;
 };
 
 struct btrfs_work;
@@ -39600,7 +41717,6 @@ struct ax88179_data {
 	u32 wol_supported;
 	u32 wolopts;
 	u8 disconnecting;
-	u8 initialized;
 };
 
 struct ax88179_int_data {
@@ -39968,52 +42084,1639 @@ struct bb_reg_def {
 	u32 rf_rbpi;
 };
 
-struct gendisk;
+struct bbpos {
+	enum btree_id btree;
+	struct bpos pos;
+};
 
-struct request_queue;
+struct bbuf {
+	void *b;
+	enum {
+		BB_NONE = 0,
+		BB_VMAP = 1,
+		BB_KMALLOC = 2,
+		BB_MEMPOOL = 3,
+	} type;
+	int rw;
+};
 
-struct disk_stats;
+struct bcachefs_fid {
+	u64 inum;
+	u32 subvol;
+	u32 gen;
+};
 
-struct blk_holder_ops;
+struct bcachefs_fid_with_parent {
+	struct bcachefs_fid fid;
+	struct bcachefs_fid dir;
+};
 
-struct partition_meta_info;
+struct bch2_checksum_state {
+	union {
+		u64 seed;
+		struct xxh64_state h64state;
+	};
+	unsigned int type;
+};
 
-struct block_device {
-	sector_t bd_start_sect;
-	sector_t bd_nr_sectors;
-	struct gendisk *bd_disk;
-	struct request_queue *bd_queue;
-	struct disk_stats __attribute__((btf_type_tag("percpu"))) *bd_stats;
-	unsigned long bd_stamp;
-	bool bd_read_only;
-	u8 bd_partno;
-	bool bd_write_holder;
-	bool bd_has_submit_bio;
-	dev_t bd_dev;
-	struct inode *bd_inode;
-	atomic_t bd_openers;
-	spinlock_t bd_size_lock;
-	void *bd_claiming;
-	void *bd_holder;
-	const struct blk_holder_ops *bd_holder_ops;
-	struct mutex bd_holder_lock;
-	int bd_holders;
-	struct kobject *bd_holder_dir;
-	atomic_t bd_fsfreeze_count;
-	struct mutex bd_fsfreeze_mutex;
-	struct partition_meta_info *bd_meta_info;
-	bool bd_ro_warned;
-	int bd_writers;
-	struct device bd_device;
+struct disk_reservation {
+	u64 sectors;
+	u32 gen;
+	unsigned int nr_replicas;
+};
+
+struct quota_res {
+	u64 sectors;
+};
+
+struct bch2_folio_reservation {
+	struct disk_reservation disk;
+	struct quota_res quota;
+};
+
+struct bch2_metadata_version {
+	u16 version;
+	const char *name;
+};
+
+struct mean_and_variance {
+	s64 n;
+	s64 sum;
+	u128_u sum_squares;
+};
+
+struct mean_and_variance_weighted {
+	s64 mean;
+	u64 variance;
+};
+
+struct time_stat_buffer;
+
+struct bch2_time_stats {
+	spinlock_t lock;
+	bool have_quantiles;
+	u64 min_duration;
+	u64 max_duration;
+	u64 total_duration;
+	u64 max_freq;
+	u64 min_freq;
+	u64 last_event;
+	u64 last_event_start;
+	struct mean_and_variance duration_stats;
+	struct mean_and_variance freq_stats;
+	struct mean_and_variance_weighted duration_stats_weighted;
+	struct mean_and_variance_weighted freq_stats_weighted;
+	struct time_stat_buffer __attribute__((btf_type_tag("percpu"))) *buffer;
+	long: 64;
+};
+
+struct quantile_entry {
+	u64 m;
+	u64 step;
+};
+
+struct quantiles {
+	struct quantile_entry entries[15];
+};
+
+struct bch2_time_stats_quantiles {
+	struct bch2_time_stats stats;
+	struct quantiles quantiles;
+};
+
+struct bch_val {
+	__u64 __nothing[0];
+};
+
+struct bch_alloc {
+	struct bch_val v;
+	__u8 fields;
+	__u8 gen;
+	__u8 data[0];
+};
+
+struct bch_alloc_v2 {
+	struct bch_val v;
+	__u8 nr_fields;
+	__u8 gen;
+	__u8 oldest_gen;
+	__u8 data_type;
+	__u8 data[0];
+};
+
+struct bch_alloc_v3 {
+	struct bch_val v;
+	__le64 journal_seq;
+	__le32 flags;
+	__u8 nr_fields;
+	__u8 gen;
+	__u8 oldest_gen;
+	__u8 data_type;
+	__u8 data[0];
+};
+
+struct bch_alloc_v4 {
+	struct bch_val v;
+	__u64 journal_seq;
+	__u32 flags;
+	__u8 gen;
+	__u8 oldest_gen;
+	__u8 data_type;
+	__u8 stripe_redundancy;
+	__u32 dirty_sectors;
+	__u32 cached_sectors;
+	__u64 io_time[2];
+	__u32 stripe;
+	__u32 nr_external_backpointers;
+	__u64 fragmentation_lru;
+};
+
+struct bch_backpointer {
+	struct bch_val v;
+	__u8 btree_id;
+	__u8 level;
+	__u8 data_type;
+	__u64 bucket_offset: 40;
+	__u32 bucket_len;
+	struct bpos pos;
+};
+
+struct bch_btree_ptr {
+	struct bch_val v;
+	__u64 _data[0];
+	struct bch_extent_ptr start[0];
+};
+
+struct bch_btree_ptr_v2 {
+	struct bch_val v;
+	__u64 mem_ptr;
+	__le64 seq;
+	__le16 sectors_written;
+	__le16 flags;
+	struct bpos min_key;
+	__u64 _data[0];
+	struct bch_extent_ptr start[0];
+};
+
+struct bch_bucket_gens {
+	struct bch_val v;
+	u8 gens[256];
+};
+
+struct bch_compression_opt {
+	u8 type: 4;
+	u8 level: 4;
+};
+
+struct bch_cookie {
+	struct bch_val v;
+	__le64 cookie;
+};
+
+struct bch_csum {
+	__le64 lo;
+	__le64 hi;
+};
+
+struct thread_with_file {
+	struct task_struct *task;
+	int ret;
+	bool done;
+};
+
+struct bch_ioctl_data {
+	__u16 op;
+	__u8 start_btree;
+	__u8 end_btree;
+	__u32 flags;
+	struct bpos start_pos;
+	struct bpos end_pos;
+	union {
+		struct {
+			__u32 dev;
+			__u32 pad;
+		} migrate;
+		struct {
+			__u64 pad[8];
+		};
+	};
+};
+
+struct bch_move_stats {
+	enum bch_data_type data_type;
+	struct bbpos pos;
+	char name[32];
+	atomic64_t keys_moved;
+	atomic64_t keys_raced;
+	atomic64_t sectors_seen;
+	atomic64_t sectors_moved;
+	atomic64_t sectors_raced;
+};
+
+struct bch_data_ctx {
+	struct thread_with_file thr;
+	struct bch_fs *c;
+	struct bch_ioctl_data arg;
+	struct bch_move_stats stats;
+};
+
+struct bch_member_cpu {
+	u64 nbuckets;
+	u16 first_bucket;
+	u16 bucket_size;
+	u16 group;
+	u8 state;
+	u8 discard;
+	u8 data_allowed;
+	u8 durability;
+	u8 freespace_initialized;
+	u8 valid;
+	u8 btree_bitmap_shift;
+	u64 btree_allocated_bitmap;
+};
+
+struct bch_sb;
+
+struct block_device;
+
+struct bio;
+
+struct bch_sb_handle {
+	struct bch_sb *sb;
+	struct file *s_bdev_file;
+	struct block_device *bdev;
+	char *sb_name;
+	struct bio *bio;
+	void *holder;
+	size_t buffer_size;
+	blk_mode_t mode;
+	unsigned int have_layout: 1;
+	unsigned int have_bio: 1;
+	unsigned int fs_sb: 1;
+	u64 seq;
+};
+
+struct bch_devs_mask {
+	unsigned long d[1];
+};
+
+typedef void *mempool_alloc_t(gfp_t, void *);
+
+typedef void mempool_free_t(void *, void *);
+
+struct mempool_s {
+	spinlock_t lock;
+	int min_nr;
+	int curr_nr;
+	void **elements;
+	void *pool_data;
+	mempool_alloc_t *alloc;
+	mempool_free_t *free;
+	wait_queue_head_t wait;
+};
+
+typedef struct mempool_s mempool_t;
+
+struct bio_list {
+	struct bio *head;
+	struct bio *tail;
+};
+
+struct bio_alloc_cache;
+
+struct bio_set {
+	struct kmem_cache *bio_slab;
+	unsigned int front_pad;
+	struct bio_alloc_cache __attribute__((btf_type_tag("percpu"))) *cache;
+	mempool_t bio_pool;
+	mempool_t bvec_pool;
+	unsigned int back_pad;
+	spinlock_t rescue_lock;
+	struct bio_list rescue_list;
+	struct work_struct rescue_work;
+	struct workqueue_struct *rescue_workqueue;
+	struct hlist_node cpuhp_dead;
+};
+
+typedef void closure_fn(struct work_struct *);
+
+struct closure_syncer;
+
+struct closure {
+	union {
+		struct {
+			struct workqueue_struct *wq;
+			struct closure_syncer *s;
+			struct llist_node list;
+			closure_fn *fn;
+		};
+		struct work_struct work;
+	};
+	struct closure *parent;
+	atomic_t remaining;
+	bool closure_get_happened;
+};
+
+struct journal_bio;
+
+struct journal_device {
+	u64 *bucket_seq;
+	unsigned int sectors_free;
+	unsigned int discard_idx;
+	unsigned int dirty_idx_ondisk;
+	unsigned int dirty_idx;
+	unsigned int cur_idx;
+	unsigned int nr;
+	u64 *buckets;
+	struct journal_bio *bio[4];
+	struct closure read;
+};
+
+struct bucket_array;
+
+struct bucket_gens;
+
+struct bch_dev_usage;
+
+struct io_count;
+
+struct bch_dev {
+	struct kobject kobj;
+	struct percpu_ref ref;
+	struct completion ref_completion;
+	struct percpu_ref io_ref;
+	struct completion io_ref_completion;
+	struct bch_fs *fs;
+	u8 dev_idx;
+	struct bch_member_cpu mi;
+	atomic64_t errors[3];
+	__uuid_t uuid;
+	char name[32];
+	struct bch_sb_handle disk_sb;
+	struct bch_sb *sb_read_scratch;
+	int sb_write_error;
+	dev_t dev;
+	atomic_t flush_seq;
+	struct bch_devs_mask self;
+	struct bio_set replica_set;
+	struct bucket_array __attribute__((btf_type_tag("rcu"))) *buckets_gc;
+	struct bucket_gens __attribute__((btf_type_tag("rcu"))) *bucket_gens;
+	u8 *oldest_gen;
+	unsigned long *buckets_nouse;
+	struct rw_semaphore bucket_lock;
+	struct bch_dev_usage *usage_base;
+	struct bch_dev_usage __attribute__((btf_type_tag("percpu"))) *usage[4];
+	struct bch_dev_usage __attribute__((btf_type_tag("percpu"))) *usage_gc;
+	u64 new_fs_bucket_idx;
+	u64 alloc_cursor;
+	unsigned int nr_open_buckets;
+	unsigned int nr_btree_reserve;
+	size_t inc_gen_needs_gc;
+	size_t inc_gen_really_needs_gc;
+	size_t buckets_waiting_on_journal;
+	atomic64_t rebalance_work;
+	struct journal_device journal;
+	u64 prev_journal_sector;
+	struct work_struct io_error_work;
+	atomic64_t cur_latency[2];
+	long: 64;
+	struct bch2_time_stats_quantiles io_latency[2];
+	atomic_t congested;
+	u64 congested_last;
+	struct io_count __attribute__((btf_type_tag("percpu"))) *io_done;
+	long: 64;
+};
+
+struct bch_dev_io_failures {
+	u8 dev;
+	u8 idx;
+	u8 nr_failed;
+	u8 nr_retries;
+};
+
+struct bch_dev_usage {
+	struct {
+		u64 buckets;
+		u64 sectors;
+		u64 fragmented;
+	} d[10];
+};
+
+struct bch_devs_list {
+	u8 nr;
+	u8 data[16];
+};
+
+struct bch_dirent {
+	struct bch_val v;
+	union {
+		__le64 d_inum;
+		struct {
+			__le32 d_child_subvol;
+			__le32 d_parent_subvol;
+		};
+	};
+	__u8 d_type;
+	__u8 d_name[0];
+};
+
+struct bch_disk_group {
+	__u8 label[32];
+	__le64 flags[2];
+};
+
+struct bch_disk_group_cpu {
+	bool deleted;
+	u16 parent;
+	u8 label[32];
+	struct bch_devs_mask devs;
+};
+
+struct bch_disk_groups_cpu {
+	struct callback_head rcu;
+	unsigned int nr;
+	struct bch_disk_group_cpu entries[0];
+};
+
+struct bch_key {
+	__le64 key[4];
+};
+
+struct bch_encrypted_key {
+	__le64 magic;
+	struct bch_key key;
+};
+
+struct bch_error {
+	struct bch_val v;
+};
+
+struct bch_extent_crc32 {
+	__u32 type: 2;
+	__u32 _compressed_size: 7;
+	__u32 _uncompressed_size: 7;
+	__u32 offset: 7;
+	__u32 _unused: 1;
+	__u32 csum_type: 4;
+	__u32 compression_type: 4;
+	__u32 csum;
+};
+
+struct bch_extent_crc64 {
+	__u64 type: 3;
+	__u64 _compressed_size: 9;
+	__u64 _uncompressed_size: 9;
+	__u64 offset: 9;
+	__u64 nonce: 10;
+	__u64 csum_type: 4;
+	__u64 compression_type: 4;
+	__u64 csum_hi: 16;
+	__u64 csum_lo;
+};
+
+struct bch_extent_crc128 {
+	__u64 type: 4;
+	__u64 _compressed_size: 13;
+	__u64 _uncompressed_size: 13;
+	__u64 offset: 13;
+	__u64 nonce: 13;
+	__u64 csum_type: 4;
+	__u64 compression_type: 4;
+	struct bch_csum csum;
+};
+
+struct bch_extent_stripe_ptr {
+	__u64 type: 5;
+	__u64 block: 8;
+	__u64 redundancy: 4;
+	__u64 idx: 47;
+};
+
+struct bch_extent_rebalance {
+	__u64 type: 6;
+	__u64 unused: 34;
+	__u64 compression: 8;
+	__u64 target: 16;
+};
+
+union bch_extent_entry {
+	unsigned long type;
+	struct bch_extent_ptr ptr;
+	struct bch_extent_crc32 crc32;
+	struct bch_extent_crc64 crc64;
+	struct bch_extent_crc128 crc128;
+	struct bch_extent_stripe_ptr stripe_ptr;
+	struct bch_extent_rebalance rebalance;
+};
+
+struct bch_extent {
+	struct bch_val v;
+	__u64 _data[0];
+	union bch_extent_entry start[0];
+};
+
+union bch_extent_crc {
+	u8 type;
+	struct bch_extent_crc32 crc32;
+	struct bch_extent_crc64 crc64;
+	struct bch_extent_crc128 crc128;
+};
+
+struct bch_extent_crc_unpacked {
+	u32 compressed_size;
+	u32 uncompressed_size;
+	u32 live_size;
+	u8 csum_type;
+	u8 compression_type;
+	u16 offset;
+	u16 nonce;
+	struct bch_csum csum;
+};
+
+struct bch_folio_sector {
+	u8 nr_replicas: 4;
+	u8 replicas_reserved: 4;
+	u8 state;
+};
+
+struct bch_folio {
+	spinlock_t lock;
+	atomic_t write_count;
+	bool uptodate;
+	struct bch_folio_sector s[0];
+};
+
+struct bch_replicas_entry_v1;
+
+struct bch_replicas_cpu {
+	unsigned int nr;
+	unsigned int entry_size;
+	struct bch_replicas_entry_v1 *entries;
+};
+
+struct journal_entry_res {
+	unsigned int u64s;
+};
+
+struct bch_opts {
+	unsigned int block_size_defined: 1;
+	unsigned int btree_node_size_defined: 1;
+	unsigned int errors_defined: 1;
+	unsigned int metadata_replicas_defined: 1;
+	unsigned int data_replicas_defined: 1;
+	unsigned int metadata_replicas_required_defined: 1;
+	unsigned int data_replicas_required_defined: 1;
+	unsigned int encoded_extent_max_defined: 1;
+	unsigned int metadata_checksum_defined: 1;
+	unsigned int data_checksum_defined: 1;
+	unsigned int compression_defined: 1;
+	unsigned int background_compression_defined: 1;
+	unsigned int str_hash_defined: 1;
+	unsigned int metadata_target_defined: 1;
+	unsigned int foreground_target_defined: 1;
+	unsigned int background_target_defined: 1;
+	unsigned int promote_target_defined: 1;
+	unsigned int erasure_code_defined: 1;
+	unsigned int inodes_32bit_defined: 1;
+	unsigned int shard_inode_numbers_defined: 1;
+	unsigned int inodes_use_key_cache_defined: 1;
+	unsigned int btree_node_mem_ptr_optimization_defined: 1;
+	unsigned int gc_reserve_percent_defined: 1;
+	unsigned int gc_reserve_bytes_defined: 1;
+	unsigned int root_reserve_percent_defined: 1;
+	unsigned int wide_macs_defined: 1;
+	unsigned int inline_data_defined: 1;
+	unsigned int acl_defined: 1;
+	unsigned int usrquota_defined: 1;
+	unsigned int grpquota_defined: 1;
+	unsigned int prjquota_defined: 1;
+	unsigned int degraded_defined: 1;
+	unsigned int very_degraded_defined: 1;
+	unsigned int no_splitbrain_check_defined: 1;
+	unsigned int discard_defined: 1;
+	unsigned int verbose_defined: 1;
+	unsigned int journal_flush_delay_defined: 1;
+	unsigned int journal_flush_disabled_defined: 1;
+	unsigned int journal_reclaim_delay_defined: 1;
+	unsigned int move_bytes_in_flight_defined: 1;
+	unsigned int move_ios_in_flight_defined: 1;
+	unsigned int fsck_defined: 1;
+	unsigned int fsck_memory_usage_percent_defined: 1;
+	unsigned int fix_errors_defined: 1;
+	unsigned int ratelimit_errors_defined: 1;
+	unsigned int nochanges_defined: 1;
+	unsigned int norecovery_defined: 1;
+	unsigned int recovery_pass_last_defined: 1;
+	unsigned int retain_recovery_info_defined: 1;
+	unsigned int read_entire_journal_defined: 1;
+	unsigned int read_journal_only_defined: 1;
+	unsigned int journal_transaction_names_defined: 1;
+	unsigned int noexcl_defined: 1;
+	unsigned int direct_io_defined: 1;
+	unsigned int sb_defined: 1;
+	unsigned int read_only_defined: 1;
+	unsigned int nostart_defined: 1;
+	unsigned int reconstruct_alloc_defined: 1;
+	unsigned int version_upgrade_defined: 1;
+	unsigned int buckets_nouse_defined: 1;
+	unsigned int stdio_defined: 1;
+	unsigned int project_defined: 1;
+	unsigned int nocow_defined: 1;
+	unsigned int nocow_enabled_defined: 1;
+	unsigned int no_data_io_defined: 1;
+	unsigned int fs_size_defined: 1;
+	unsigned int bucket_defined: 1;
+	unsigned int durability_defined: 1;
+	unsigned int btree_node_prefetch_defined: 1;
+	u16 block_size;
+	u32 btree_node_size;
+	u8 errors;
+	u8 metadata_replicas;
+	u8 data_replicas;
+	u8 metadata_replicas_required;
+	u8 data_replicas_required;
+	u32 encoded_extent_max;
+	u8 metadata_checksum;
+	u8 data_checksum;
+	u8 compression;
+	u8 background_compression;
+	u8 str_hash;
+	u16 metadata_target;
+	u16 foreground_target;
+	u16 background_target;
+	u16 promote_target;
+	u16 erasure_code;
+	u8 inodes_32bit;
+	u8 shard_inode_numbers;
+	u8 inodes_use_key_cache;
+	u8 btree_node_mem_ptr_optimization;
+	u8 gc_reserve_percent;
+	u64 gc_reserve_bytes;
+	u8 root_reserve_percent;
+	u8 wide_macs;
+	u8 inline_data;
+	u8 acl;
+	u8 usrquota;
+	u8 grpquota;
+	u8 prjquota;
+	u8 degraded;
+	u8 very_degraded;
+	u8 no_splitbrain_check;
+	u8 discard;
+	u8 verbose;
+	u32 journal_flush_delay;
+	u8 journal_flush_disabled;
+	u32 journal_reclaim_delay;
+	u32 move_bytes_in_flight;
+	u32 move_ios_in_flight;
+	u8 fsck;
+	u8 fsck_memory_usage_percent;
+	u8 fix_errors;
+	u8 ratelimit_errors;
+	u8 nochanges;
+	u8 norecovery;
+	u8 recovery_pass_last;
+	u8 retain_recovery_info;
+	u8 read_entire_journal;
+	u8 read_journal_only;
+	u8 journal_transaction_names;
+	u8 noexcl;
+	u8 direct_io;
+	u64 sb;
+	u8 read_only;
+	u8 nostart;
+	u8 reconstruct_alloc;
+	u8 version_upgrade;
+	u8 buckets_nouse;
+	u64 stdio;
+	u8 project;
+	u8 nocow;
+	u8 nocow_enabled;
+	u8 no_data_io;
+	u64 fs_size;
+	u32 bucket;
+	u8 durability;
+	u8 btree_node_prefetch;
+};
+
+struct bversion {
+	__u64 lo;
+	__u32 hi;
+} __attribute__((packed));
+
+struct bkey {
+	__u8 u64s;
+	__u8 format: 7;
+	__u8 needs_whiteout: 1;
+	__u8 type;
+	__u8 pad[1];
+	struct bversion version;
+	__u32 size;
+	struct bpos p;
+};
+
+struct bkey_i {
+	__u64 _data[0];
+	struct bkey k;
+	struct bch_val v;
+};
+
+struct btree;
+
+struct btree_root {
+	struct btree *b;
+	struct bkey_i key;
+	__u64 key_pad[9];
+	u8 level;
+	u8 alive;
+	s16 error;
+};
+
+typedef u32 (*rht_hashfn_t)(const void *, u32, u32);
+
+typedef u32 (*rht_obj_hashfn_t)(const void *, u32, u32);
+
+struct rhashtable_compare_arg;
+
+typedef int (*rht_obj_cmpfn_t)(struct rhashtable_compare_arg *, const void *);
+
+struct rhashtable_params {
+	u16 nelem_hint;
+	u16 key_len;
+	u16 key_offset;
+	u16 head_offset;
+	unsigned int max_size;
+	u16 min_size;
+	bool automatic_shrinking;
+	rht_hashfn_t hashfn;
+	rht_obj_hashfn_t obj_hashfn;
+	rht_obj_cmpfn_t obj_cmpfn;
+};
+
+struct bucket_table;
+
+struct rhashtable {
+	struct bucket_table __attribute__((btf_type_tag("rcu"))) *tbl;
+	unsigned int key_len;
+	unsigned int max_elems;
+	struct rhashtable_params p;
+	bool rhlist;
+	struct work_struct run_work;
+	struct mutex mutex;
+	spinlock_t lock;
+	atomic_t nelems;
+};
+
+struct llist_head {
+	struct llist_node *first;
+};
+
+struct closure_waitlist {
+	struct llist_head list;
+};
+
+struct shrinker;
+
+struct btree_cache {
+	struct rhashtable table;
+	bool table_init_done;
+	struct mutex lock;
+	struct list_head live;
+	struct list_head freeable;
+	struct list_head freed_pcpu;
+	struct list_head freed_nonpcpu;
+	unsigned int used;
+	unsigned int reserve;
+	atomic_t dirty;
+	struct shrinker *shrink;
+	struct task_struct *alloc_lock;
+	struct closure_waitlist alloc_wait;
+	struct bbpos pinned_nodes_start;
+	struct bbpos pinned_nodes_end;
+	u64 pinned_nodes_leaf_mask;
+	u64 pinned_nodes_interior_mask;
+};
+
+struct open_buckets {
+	open_bucket_idx_t nr;
+	open_bucket_idx_t v[15];
+};
+
+struct btree_alloc {
+	struct open_buckets ob;
+	struct bkey_i k;
+	__u64 k_pad[9];
+};
+
+struct btree_write_stats {
+	atomic64_t nr;
+	atomic64_t bytes;
+};
+
+struct seqmutex {
+	struct mutex lock;
+	u32 seq;
+};
+
+struct lockdep_map {};
+
+struct srcu_data;
+
+struct srcu_usage;
+
+struct srcu_struct {
+	unsigned int srcu_idx;
+	struct srcu_data __attribute__((btf_type_tag("percpu"))) *sda;
+	struct lockdep_map dep_map;
+	struct srcu_usage *srcu_sup;
+};
+
+struct btree_key_cache_freelist;
+
+struct btree_key_cache {
+	struct mutex lock;
+	struct rhashtable table;
+	bool table_init_done;
+	struct list_head freed_pcpu;
+	size_t nr_freed_pcpu;
+	struct list_head freed_nonpcpu;
+	size_t nr_freed_nonpcpu;
+	struct shrinker *shrink;
+	unsigned int shrink_iter;
+	struct btree_key_cache_freelist __attribute__((btf_type_tag("percpu"))) *pcpu_freed;
+	atomic_long_t nr_freed;
+	atomic_long_t nr_keys;
+	atomic_long_t nr_dirty;
+};
+
+struct wb_key_ref {
+	union {
+		struct {
+			unsigned int idx: 24;
+			u8 pos[20];
+			enum btree_id btree: 8;
+		};
+		struct {
+			u64 lo;
+			u64 mi;
+			u64 hi;
+		};
+	};
+};
+
+struct btree_write_buffered_key {
+	enum btree_id btree: 8;
+	u64 journal_seq: 56;
+	struct bkey_i k;
+	__u64 k_pad[4];
+};
+
+struct journal;
+
+struct journal_entry_pin;
+
+typedef int (*journal_pin_flush_fn)(struct journal *, struct journal_entry_pin *, u64);
+
+struct journal_entry_pin {
+	struct list_head list;
+	journal_pin_flush_fn flush;
+	u64 seq;
+};
+
+struct btree_write_buffer_keys {
+	struct {
+		size_t nr;
+		size_t size;
+		struct btree_write_buffered_key *data;
+		struct btree_write_buffered_key preallocated[0];
+	} keys;
+	struct journal_entry_pin pin;
+	struct mutex lock;
+};
+
+struct btree_write_buffer {
+	struct {
+		size_t nr;
+		size_t size;
+		struct wb_key_ref *data;
+		struct wb_key_ref preallocated[0];
+	} sorted;
+	struct btree_write_buffer_keys inc;
+	struct btree_write_buffer_keys flushing;
+	struct work_struct flush_work;
+};
+
+struct rcu_sync {
+	int gp_state;
+	int gp_count;
+	wait_queue_head_t gp_wait;
+	struct callback_head cb_head;
+};
+
+struct rcuwait {
+	struct task_struct __attribute__((btf_type_tag("rcu"))) *task;
+};
+
+struct percpu_rw_semaphore {
+	struct rcu_sync rss;
+	unsigned int __attribute__((btf_type_tag("percpu"))) *read_count;
+	struct rcuwait writer;
+	wait_queue_head_t waiters;
+	atomic_t block;
+};
+
+struct io_clock {
+	atomic64_t now;
+	u16 __attribute__((btf_type_tag("percpu"))) *pcpu_buf;
+	unsigned int max_slop;
+	spinlock_t timer_lock;
+	io_timer_heap timers;
+};
+
+struct ec_stripe_new;
+
+struct open_bucket {
+	spinlock_t lock;
+	atomic_t pin;
+	open_bucket_idx_t freelist;
+	open_bucket_idx_t hash;
+	u8 ec_idx;
+	enum bch_data_type data_type: 6;
+	unsigned int valid: 1;
+	unsigned int on_partial_list: 1;
+	u8 dev;
+	u8 gen;
+	u32 sectors_free;
+	u64 bucket;
+	struct ec_stripe_new *ec;
+};
+
+struct dev_stripe_state {
+	u64 next_alloc[64];
+};
+
+struct write_point {
+	struct {
+		struct hlist_node node;
+		struct mutex lock;
+		u64 last_used;
+		unsigned long write_point;
+		enum bch_data_type data_type;
+		unsigned int sectors_free;
+		struct open_buckets ptrs;
+		struct dev_stripe_state stripe;
+		u64 sectors_allocated;
+		long: 64;
+		long: 64;
+	};
+	struct {
+		struct work_struct index_update_work;
+		struct list_head writes;
+		spinlock_t writes_lock;
+		enum write_point_state state;
+		u64 last_state_change;
+		u64 time[4];
+		long: 64;
+		long: 64;
+		long: 64;
+		long: 64;
+	};
+};
+
+struct hlist_head {
+	struct hlist_node *first;
+};
+
+struct buckets_waiting_for_journal_table;
+
+struct buckets_waiting_for_journal {
+	struct mutex lock;
+	struct buckets_waiting_for_journal_table *t;
+};
+
+struct gc_pos {
+	enum gc_phase phase: 8;
+	enum btree_id btree: 8;
+	u16 level;
+	struct bpos pos;
+};
+
+struct semaphore {
+	raw_spinlock_t lock;
+	unsigned int count;
+	struct list_head wait_list;
+};
+
+struct nocow_lock_bucket {
+	struct closure_waitlist wait;
+	spinlock_t lock;
+	u64 b[4];
+	atomic_t l[4];
+};
+
+struct bucket_nocow_lock_table {
+	struct nocow_lock_bucket l[1024];
+};
+
+struct bch_ratelimit {
+	u64 next;
+	unsigned int rate;
+};
+
+struct bch_pd_controller {
+	struct bch_ratelimit rate;
+	unsigned long last_update;
+	s64 last_actual;
+	s64 smoothed_derivative;
+	unsigned int p_term_inverse;
+	unsigned int d_smooth;
+	unsigned int d_term;
+	s64 last_derivative;
+	s64 last_proportional;
+	s64 last_change;
+	s64 last_target;
+	bool backpressure;
+};
+
+struct bch_fs_rebalance {
+	struct task_struct __attribute__((btf_type_tag("rcu"))) *thread;
+	struct bch_pd_controller pd;
+	enum bch_rebalance_states state;
+	u64 wait_iotime_start;
+	u64 wait_iotime_end;
+	u64 wait_wallclock_start;
+	struct bch_move_stats work_stats;
+	struct bbpos scan_start;
+	struct bbpos scan_end;
+	struct bch_move_stats scan_stats;
+	unsigned int enabled: 1;
+};
+
+struct stripe {
+	size_t heap_idx;
+	u16 sectors;
+	u8 algorithm;
+	u8 nr_blocks;
+	u8 nr_redundant;
+	u8 blocks_nonempty;
+};
+
+struct bch_replicas_entry_v1 {
+	__u8 data_type;
+	__u8 nr_devs;
+	__u8 nr_required;
+	__u8 devs[0];
+};
+
+struct bch_replicas_padded {
+	struct bch_replicas_entry_v1 e;
+	u8 pad[16];
+};
+
+struct gc_stripe {
+	u16 sectors;
+	u8 nr_blocks;
+	u8 nr_redundant;
+	unsigned int alive: 1;
+	u16 block_sectors[16];
+	struct bch_extent_ptr ptrs[16];
+	struct bch_replicas_padded r;
+};
+
+struct quota_limit {
+	u32 timelimit;
+	u32 warnlimit;
+};
+
+struct bch_memquota_type {
+	struct quota_limit limits[2];
+	bch_memquota_table table;
+	struct mutex lock;
+};
+
+struct btree_debug {
+	unsigned int id;
+};
+
+union journal_res_state {
+	struct {
+		atomic64_t counter;
+	};
+	struct {
+		u64 v;
+	};
+	struct {
+		u64 cur_entry_offset: 20;
+		u64 idx: 2;
+		u64 unwritten_idx: 2;
+		u64 buf0_count: 10;
+		u64 buf1_count: 10;
+		u64 buf2_count: 10;
+		u64 buf3_count: 10;
+	};
+};
+
+struct jset;
+
+struct journal_buf {
+	struct closure io;
+	struct jset *data;
+	struct bkey_i key;
+	__u64 key_pad[4];
+	struct bch_devs_list devs_written;
+	struct closure_waitlist wait;
+	u64 last_seq;
+	long expires;
+	u64 flush_time;
+	unsigned int buf_size;
+	unsigned int sectors;
+	unsigned int disk_sectors;
+	unsigned int u64s_reserved;
+	bool noflush: 1;
+	bool must_flush: 1;
+	bool separate_flush: 1;
+	bool need_flush_to_write_buffer: 1;
+	bool write_started: 1;
+	bool write_allocated: 1;
+	bool write_done: 1;
+	u8 idx;
+};
+
+struct journal_space {
+	unsigned int next_entry;
+	unsigned int total;
+};
+
+struct journal_entry_pin_list;
+
+struct journal {
+	struct {
+		union journal_res_state reservations;
+		enum bch_watermark watermark;
+		long: 64;
+		long: 64;
+		long: 64;
+		long: 64;
+		long: 64;
+		long: 64;
+	};
+	unsigned long flags;
+	unsigned int cur_entry_u64s;
+	unsigned int cur_entry_sectors;
+	unsigned int entry_u64s_reserved;
+	enum journal_errors cur_entry_error;
+	unsigned int buf_size_want;
+	darray_u64 early_journal_entries;
+	struct mutex buf_lock;
+	struct journal_buf buf[4];
+	spinlock_t lock;
+	unsigned int blocked;
+	wait_queue_head_t wait;
+	struct closure_waitlist async_wait;
+	struct delayed_work write_work;
+	struct workqueue_struct *wq;
+	atomic64_t seq;
+	u64 seq_ondisk;
+	u64 flushed_seq_ondisk;
+	u64 last_seq_ondisk;
+	u64 err_seq;
+	u64 last_empty_seq;
+	struct {
+		u64 front;
+		u64 back;
+		u64 size;
+		u64 mask;
+		struct journal_entry_pin_list *data;
+	} pin;
+	struct journal_space space[4];
+	u64 replay_journal_seq;
+	u64 replay_journal_seq_end;
+	long: 64;
+	long: 64;
+	long: 64;
+	struct write_point wp;
+	spinlock_t err_lock;
+	struct mutex reclaim_lock;
+	wait_queue_head_t reclaim_wait;
+	struct task_struct *reclaim_thread;
+	bool reclaim_kicked;
+	unsigned long next_reclaim;
+	u64 nr_direct_reclaim;
+	u64 nr_background_reclaim;
+	unsigned long last_flushed;
+	struct journal_entry_pin *flush_in_progress;
+	bool flush_in_progress_dropped;
+	wait_queue_head_t pin_flush_wait;
+	struct mutex discard_lock;
+	bool can_discard;
+	unsigned long last_flush_write;
+	u64 write_start_time;
+	u64 nr_flush_writes;
+	u64 nr_noflush_writes;
+	u64 entry_bytes_written;
+	struct bch2_time_stats *flush_write_time;
+	struct bch2_time_stats *noflush_write_time;
+	struct bch2_time_stats *flush_seq_time;
+};
+
+struct journal_key;
+
+struct journal_keys {
+	size_t nr;
+	size_t size;
+	struct journal_key *data;
+	size_t gap;
+	atomic_t ref;
+	bool initial_ref_held;
+};
+
+struct find_btree_nodes {
+	int ret;
+	struct mutex lock;
+	found_btree_nodes nodes;
+};
+
+struct btree_transaction_stats {
+	struct bch2_time_stats duration;
+	struct bch2_time_stats lock_hold_times;
+	struct mutex lock;
+	unsigned int nr_max_paths;
+	unsigned int journal_entries_size;
+	unsigned int max_mem;
+	char *max_paths_text;
+	long: 64;
+};
+
+struct stdio_redirect;
+
+struct snapshot_table;
+
+struct btree_trans_buf;
+
+struct bch_fs_pcpu;
+
+struct bch_fs_usage;
+
+struct bch_fs_usage_online;
+
+struct journal_seq_blacklist_table;
+
+struct crypto_shash;
+
+struct btree_node;
+
+struct journal_replay;
+
+struct bch_fs {
+	struct closure cl;
+	struct list_head list;
+	struct kobject kobj;
+	struct kobject counters_kobj;
+	struct kobject internal;
+	struct kobject opts_dir;
+	struct kobject time_stats;
+	unsigned long flags;
+	int minor;
+	struct device *chardev;
+	struct super_block *vfs_sb;
+	dev_t dev;
+	char name[40];
+	struct stdio_redirect *stdio;
+	struct task_struct *stdio_filter;
+	struct rw_semaphore state_lock;
+	struct percpu_ref writes;
+	refcount_t ro_ref;
+	wait_queue_head_t ro_ref_wait;
+	struct work_struct read_only_work;
+	struct bch_dev __attribute__((btf_type_tag("rcu"))) *devs[64];
+	struct bch_replicas_cpu replicas;
+	struct bch_replicas_cpu replicas_gc;
+	struct mutex replicas_gc_lock;
+	mempool_t replicas_delta_pool;
+	struct journal_entry_res btree_root_journal_res;
+	struct journal_entry_res replicas_journal_res;
+	struct journal_entry_res clock_journal_res;
+	struct journal_entry_res dev_usage_journal_res;
+	struct bch_disk_groups_cpu __attribute__((btf_type_tag("rcu"))) *disk_groups;
+	struct bch_opts opts;
+	struct {
+		__uuid_t uuid;
+		__uuid_t user_uuid;
+		u16 version;
+		u16 version_min;
+		u16 version_upgrade_complete;
+		u8 nr_devices;
+		u8 clean;
+		u8 encryption_type;
+		u64 time_base_lo;
+		u32 time_base_hi;
+		unsigned int time_units_per_sec;
+		unsigned int nsec_per_time_unit;
+		u64 features;
+		u64 compat;
+		unsigned long errors_silent[5];
+		u64 btrees_lost_data;
+	} sb;
+	struct bch_sb_handle disk_sb;
+	unsigned short block_bits;
+	u16 btree_foreground_merge_threshold;
+	struct closure sb_write;
+	struct mutex sb_lock;
+	struct snapshot_table __attribute__((btf_type_tag("rcu"))) *snapshots;
+	struct mutex snapshot_table_lock;
+	struct rw_semaphore snapshot_create_lock;
+	struct work_struct snapshot_delete_work;
+	struct work_struct snapshot_wait_for_pagecache_and_delete_work;
+	snapshot_id_list snapshots_unlinked;
+	struct mutex snapshots_unlinked_lock;
+	struct bio_set btree_bio;
+	struct workqueue_struct *io_complete_wq;
+	struct btree_root btree_roots_known[20];
+	struct {
+		size_t nr;
+		size_t size;
+		struct btree_root *data;
+		struct btree_root preallocated[0];
+	} btree_roots_extra;
+	struct mutex btree_root_lock;
+	struct btree_cache btree_cache;
+	struct btree_alloc btree_reserve_cache[56];
+	unsigned int btree_reserve_cache_nr;
+	struct mutex btree_reserve_cache_lock;
+	mempool_t btree_interior_update_pool;
+	struct list_head btree_interior_update_list;
+	struct list_head btree_interior_updates_unwritten;
+	struct mutex btree_interior_update_lock;
+	struct closure_waitlist btree_interior_update_wait;
+	struct workqueue_struct *btree_interior_update_worker;
+	struct work_struct btree_interior_update_work;
+	struct workqueue_struct *btree_node_rewrite_worker;
+	struct list_head pending_node_rewrites;
+	struct mutex pending_node_rewrites_lock;
+	spinlock_t btree_write_error_lock;
+	struct btree_write_stats btree_write_stats[5];
+	struct seqmutex btree_trans_lock;
+	struct list_head btree_trans_list;
+	mempool_t btree_trans_pool;
+	mempool_t btree_trans_mem_pool;
+	struct btree_trans_buf __attribute__((btf_type_tag("percpu"))) *btree_trans_bufs;
+	struct srcu_struct btree_trans_barrier;
+	bool btree_trans_barrier_initialized;
+	struct btree_key_cache btree_key_cache;
+	unsigned int btree_key_cache_btrees;
+	struct btree_write_buffer btree_write_buffer;
+	struct workqueue_struct *btree_update_wq;
+	struct workqueue_struct *btree_io_complete_wq;
+	struct workqueue_struct *copygc_wq;
+	struct workqueue_struct *write_ref_wq;
+	struct bch_devs_mask rw_devs[10];
+	u64 capacity;
+	u32 capacity_gen;
+	unsigned int bucket_size_max;
+	atomic64_t sectors_available;
+	struct mutex sectors_available_lock;
+	struct bch_fs_pcpu __attribute__((btf_type_tag("percpu"))) *pcpu;
+	struct percpu_rw_semaphore mark_lock;
+	seqcount_t usage_lock;
+	struct bch_fs_usage *usage_base;
+	struct bch_fs_usage __attribute__((btf_type_tag("percpu"))) *usage[4];
+	struct bch_fs_usage __attribute__((btf_type_tag("percpu"))) *usage_gc;
+	u64 __attribute__((btf_type_tag("percpu"))) *online_reserved;
+	struct mutex usage_scratch_lock;
+	struct bch_fs_usage_online *usage_scratch;
+	struct io_clock io_clock[2];
+	struct journal_seq_blacklist_table *journal_seq_blacklist_table;
+	struct work_struct journal_seq_blacklist_gc_work;
+	spinlock_t freelist_lock;
+	struct closure_waitlist freelist_wait;
+	open_bucket_idx_t open_buckets_freelist;
+	open_bucket_idx_t open_buckets_nr_free;
+	struct closure_waitlist open_buckets_wait;
+	struct open_bucket open_buckets[1024];
+	open_bucket_idx_t open_buckets_hash[1024];
+	open_bucket_idx_t open_buckets_partial[1024];
+	open_bucket_idx_t open_buckets_partial_nr;
+	long: 64;
+	long: 64;
+	long: 64;
+	long: 64;
+	struct write_point btree_write_point;
+	struct write_point rebalance_write_point;
+	struct write_point write_points[32];
+	struct hlist_head write_points_hash[32];
+	struct mutex write_points_hash_lock;
+	unsigned int write_points_nr;
+	struct buckets_waiting_for_journal buckets_waiting_for_journal;
+	struct work_struct invalidate_work;
+	struct work_struct discard_work;
+	struct mutex discard_buckets_in_flight_lock;
+	struct {
+		size_t nr;
+		size_t size;
+		struct bpos *data;
+		struct bpos preallocated[0];
+	} discard_buckets_in_flight;
+	struct work_struct discard_fast_work;
+	struct task_struct *gc_thread;
+	atomic_t kick_gc;
+	unsigned long gc_count;
+	enum btree_id gc_gens_btree;
+	struct bpos gc_gens_pos;
+	seqcount_t gc_pos_lock;
+	struct gc_pos gc_pos;
+	struct rw_semaphore gc_lock;
+	struct mutex gc_gens_lock;
+	struct semaphore io_in_flight;
+	struct bio_set bio_read;
+	struct bio_set bio_read_split;
+	struct bio_set bio_write;
+	struct mutex bio_bounce_pages_lock;
+	mempool_t bio_bounce_pages;
+	long: 64;
+	long: 64;
+	long: 64;
+	struct bucket_nocow_lock_table nocow_locks;
+	struct rhashtable promote_table;
+	mempool_t compression_bounce[2];
+	mempool_t compress_workspace[6];
+	mempool_t decompress_workspace;
+	size_t zstd_workspace_size;
+	struct crypto_shash *sha256;
+	struct crypto_sync_skcipher *chacha20;
+	struct crypto_shash *poly1305;
+	atomic64_t key_version;
+	mempool_t large_bkey_pool;
+	struct list_head moving_context_list;
+	struct mutex moving_context_lock;
+	struct bch_fs_rebalance rebalance;
+	struct task_struct *copygc_thread;
+	long: 64;
+	long: 64;
+	long: 64;
+	long: 64;
+	long: 64;
+	long: 64;
+	long: 64;
+	struct write_point copygc_write_point;
+	s64 copygc_wait_at;
+	s64 copygc_wait;
+	bool copygc_running;
+	wait_queue_head_t copygc_running_wq;
+	struct {
+		struct __genradix tree;
+		struct stripe type[0];
+	} stripes;
+	struct {
+		struct __genradix tree;
+		struct gc_stripe type[0];
+	} gc_stripes;
+	struct hlist_head ec_stripes_new[32];
+	spinlock_t ec_stripes_new_lock;
+	ec_stripes_heap ec_stripes_heap;
+	struct mutex ec_stripes_heap_lock;
+	struct list_head ec_stripe_head_list;
+	struct mutex ec_stripe_head_lock;
+	struct list_head ec_stripe_new_list;
+	struct mutex ec_stripe_new_lock;
+	wait_queue_head_t ec_stripe_new_wait;
+	struct work_struct ec_stripe_create_work;
+	u64 ec_stripe_hint;
+	struct work_struct ec_stripe_delete_work;
+	struct bio_set ec_bioset;
+	reflink_gc_table reflink_gc_table;
+	size_t reflink_gc_nr;
+	struct list_head vfs_inodes_list;
+	struct mutex vfs_inodes_lock;
+	struct bio_set writepage_bioset;
+	struct bio_set dio_write_bioset;
+	struct bio_set dio_read_bioset;
+	struct bio_set nocow_flush_bioset;
+	struct bch_memquota_type quotas[3];
+	u64 journal_replay_seq_start;
+	u64 journal_replay_seq_end;
+	enum bch_recovery_pass curr_recovery_pass;
+	u64 recovery_passes_explicit;
+	u64 recovery_passes_complete;
+	enum bch_recovery_pass recovery_pass_done;
+	struct semaphore online_fsck_mutex;
+	struct dentry *fs_debug_dir;
+	struct dentry *btree_debug_dir;
+	struct btree_debug btree_debug[20];
+	struct btree *verify_data;
+	struct btree_node *verify_ondisk;
+	struct mutex verify_lock;
+	u64 *unused_inode_hints;
+	unsigned int inode_shard_bits;
+	mempool_t fill_iter;
+	mempool_t btree_bounce_pool;
+	long: 64;
+	struct journal journal;
+	struct {
+		struct __genradix tree;
+		struct journal_replay *type[0];
+	} journal_entries;
+	u64 journal_entries_base_seq;
+	struct journal_keys journal_keys;
+	struct list_head journal_iters;
+	struct find_btree_nodes found_btree_nodes;
+	u64 last_bucket_seq_cleanup;
+	u64 counters_on_mount[79];
+	u64 __attribute__((btf_type_tag("percpu"))) *counters;
+	unsigned int btree_gc_periodic: 1;
+	unsigned int copy_gc_enabled: 1;
+	bool promote_whole_extents;
+	long: 64;
+	struct bch2_time_stats times[23];
+	struct btree_transaction_stats btree_transaction_stats[128];
+	struct list_head fsck_error_msgs;
+	struct mutex fsck_error_msgs_lock;
+	bool fsck_alloc_msgs_err;
+	bch_sb_errors_cpu fsck_error_counts;
+	struct mutex fsck_error_counts_lock;
+	long: 64;
+	long: 64;
+	long: 64;
+	long: 64;
+};
+
+struct bch_fs_pcpu {
+	u64 sectors_available;
+};
+
+struct bch_fs_usage_base {
+	u64 hidden;
+	u64 btree;
+	u64 data;
+	u64 cached;
+	u64 reserved;
+	u64 nr_inodes;
+};
+
+struct bch_fs_usage {
+	struct bch_fs_usage_base b;
+	u64 persistent_reserved[4];
+	u64 replicas[0];
+};
+
+struct bch_fs_usage_online {
+	u64 online_reserved;
+	struct bch_fs_usage u;
+};
+
+struct bch_fs_usage_short {
+	u64 capacity;
+	u64 used;
+	u64 free;
+	u64 nr_inodes;
+};
+
+struct bch_hash_info;
+
+struct bkey_s_c;
+
+struct bch_hash_desc {
+	enum btree_id btree_id;
+	u8 key_type;
+	u64 (*hash_key)(const struct bch_hash_info *, const void *);
+	u64 (*hash_bkey)(const struct bch_hash_info *, struct bkey_s_c);
+	bool (*cmp_key)(struct bkey_s_c, const void *);
+	bool (*cmp_bkey)(struct bkey_s_c, struct bkey_s_c);
+	bool (*is_visible)(subvol_inum, struct bkey_s_c);
+};
+
+struct bch_hash_info {
+	u8 type;
+	SIPHASH_KEY siphash_key;
+};
+
+struct bch_indirect_inline_data {
+	struct bch_val v;
+	__le64 refcount;
+	u8 data[0];
+};
+
+struct bch_inline_data {
+	struct bch_val v;
+	u8 data[0];
+};
+
+struct bch_inode {
+	struct bch_val v;
+	__le64 bi_hash_seed;
+	__le32 bi_flags;
+	__le16 bi_mode;
+	__u8 fields[0];
+};
+
+struct bch_inode_generation {
+	struct bch_val v;
+	__le32 bi_generation;
+	__le32 pad;
 };
 
 struct timespec64 {
 	time64_t tv_sec;
 	long tv_nsec;
-};
-
-struct hlist_head {
-	struct hlist_node *first;
 };
 
 struct posix_acl;
@@ -40095,6 +43798,792 @@ struct inode {
 	__u32 i_fsnotify_mask;
 	struct fsnotify_mark_connector __attribute__((btf_type_tag("rcu"))) *i_fsnotify_marks;
 	void *i_private;
+};
+
+struct bch_qid {
+	u32 q[3];
+};
+
+struct bch_inode_unpacked {
+	u64 bi_inum;
+	u64 bi_journal_seq;
+	__le64 bi_hash_seed;
+	u64 bi_size;
+	u64 bi_sectors;
+	u64 bi_version;
+	u32 bi_flags;
+	u16 bi_mode;
+	u96 bi_atime;
+	u96 bi_ctime;
+	u96 bi_mtime;
+	u96 bi_otime;
+	u32 bi_uid;
+	u32 bi_gid;
+	u32 bi_nlink;
+	u32 bi_generation;
+	u32 bi_dev;
+	u8 bi_data_checksum;
+	u8 bi_compression;
+	u32 bi_project;
+	u8 bi_background_compression;
+	u8 bi_data_replicas;
+	u16 bi_promote_target;
+	u16 bi_foreground_target;
+	u16 bi_background_target;
+	u16 bi_erasure_code;
+	u16 bi_fields_set;
+	u64 bi_dir;
+	u64 bi_dir_offset;
+	u32 bi_subvol;
+	u32 bi_parent_subvol;
+	u8 bi_nocow;
+};
+
+struct bch_inode_info {
+	struct inode v;
+	struct list_head ei_vfs_inode_list;
+	unsigned long ei_flags;
+	struct mutex ei_update_lock;
+	u64 ei_quota_reserved;
+	unsigned long ei_last_dirtied;
+	two_state_lock_t ei_pagecache_lock;
+	struct mutex ei_quota_lock;
+	struct bch_qid ei_qid;
+	u32 ei_subvol;
+	struct bch_devs_mask ei_devs_need_flush;
+	struct bch_inode_unpacked ei_inode;
+};
+
+struct bch_inode_v2 {
+	struct bch_val v;
+	__le64 bi_journal_seq;
+	__le64 bi_hash_seed;
+	__le64 bi_flags;
+	__le16 bi_mode;
+	__u8 fields[0];
+};
+
+struct bch_inode_v3 {
+	struct bch_val v;
+	__le64 bi_journal_seq;
+	__le64 bi_hash_seed;
+	__le64 bi_flags;
+	__le64 bi_sectors;
+	__le64 bi_size;
+	__le64 bi_version;
+	__u8 fields[0];
+};
+
+struct bch_io_failures {
+	u8 nr;
+	struct bch_dev_io_failures devs[4];
+};
+
+struct bch_io_opts {
+	u8 data_checksum;
+	u8 compression;
+	u32 project;
+	u8 background_compression;
+	u8 data_replicas;
+	u16 promote_target;
+	u16 foreground_target;
+	u16 background_target;
+	u16 erasure_code;
+	u8 nocow;
+};
+
+struct bch_ioctl_data_progress {
+	__u8 data_type;
+	__u8 btree_id;
+	__u8 pad[2];
+	struct bpos pos;
+	__u64 sectors_done;
+	__u64 sectors_total;
+};
+
+struct bch_ioctl_data_event {
+	__u8 type;
+	__u8 pad[7];
+	union {
+		struct bch_ioctl_data_progress p;
+		__u64 pad2[15];
+	};
+};
+
+struct bch_ioctl_dev_usage_type {
+	__u64 buckets;
+	__u64 sectors;
+	__u64 fragmented;
+};
+
+struct bch_ioctl_dev_usage {
+	__u64 dev;
+	__u32 flags;
+	__u8 state;
+	__u8 pad[7];
+	__u32 bucket_size;
+	__u64 nr_buckets;
+	__u64 buckets_ec;
+	struct bch_ioctl_dev_usage_type d[10];
+};
+
+struct bch_ioctl_dev_usage_v2 {
+	__u64 dev;
+	__u32 flags;
+	__u8 state;
+	__u8 nr_data_types;
+	__u8 pad[6];
+	__u32 bucket_size;
+	__u64 nr_buckets;
+	struct bch_ioctl_dev_usage_type d[0];
+};
+
+struct bch_ioctl_disk {
+	__u32 flags;
+	__u32 pad;
+	__u64 dev;
+};
+
+struct bch_ioctl_disk_get_idx {
+	__u64 dev;
+};
+
+struct bch_ioctl_disk_resize {
+	__u32 flags;
+	__u32 pad;
+	__u64 dev;
+	__u64 nbuckets;
+};
+
+struct bch_ioctl_disk_resize_journal {
+	__u32 flags;
+	__u32 pad;
+	__u64 dev;
+	__u64 nbuckets;
+};
+
+struct bch_ioctl_disk_set_state {
+	__u32 flags;
+	__u8 new_state;
+	__u8 pad[3];
+	__u64 dev;
+};
+
+struct bch_replicas_usage {
+	__u64 sectors;
+	struct bch_replicas_entry_v1 r;
+} __attribute__((packed));
+
+struct bch_ioctl_fs_usage {
+	__u64 capacity;
+	__u64 used;
+	__u64 online_reserved;
+	__u64 persistent_reserved[4];
+	__u32 replica_entries_bytes;
+	__u32 pad;
+	struct bch_replicas_usage replicas[0];
+};
+
+struct bch_ioctl_fsck_offline {
+	__u64 flags;
+	__u64 opts;
+	__u64 nr_devs;
+	__u64 devs[0];
+};
+
+struct bch_ioctl_fsck_online {
+	__u64 flags;
+	__u64 opts;
+};
+
+struct bch_ioctl_query_uuid {
+	__uuid_t uuid;
+};
+
+struct bch_ioctl_read_super {
+	__u32 flags;
+	__u32 pad;
+	__u64 dev;
+	__u64 size;
+	__u64 sb;
+};
+
+struct bch_ioctl_subvolume {
+	__u32 flags;
+	__u32 dirfd;
+	__u16 mode;
+	__u16 pad[3];
+	__u64 dst_ptr;
+	__u64 src_ptr;
+};
+
+struct bch_logged_op_finsert {
+	struct bch_val v;
+	__u8 state;
+	__u8 pad[3];
+	__le32 subvol;
+	__le64 inum;
+	__le64 dst_offset;
+	__le64 src_offset;
+	__le64 pos;
+};
+
+struct btree_trans;
+
+struct bch_logged_op_fn {
+	u8 type;
+	int (*resume)(struct btree_trans *, struct bkey_i *);
+};
+
+struct bch_logged_op_truncate {
+	struct bch_val v;
+	__le32 subvol;
+	__le32 pad;
+	__le64 inum;
+	__le64 new_i_size;
+};
+
+struct bch_lru {
+	struct bch_val v;
+	__le64 idx;
+};
+
+struct bch_member {
+	__uuid_t uuid;
+	__le64 nbuckets;
+	__le16 first_bucket;
+	__le16 bucket_size;
+	__u8 btree_bitmap_shift;
+	__u8 pad[3];
+	__le64 last_mount;
+	__le64 flags;
+	__le32 iops[4];
+	__le64 errors[3];
+	__le64 errors_at_reset[3];
+	__le64 errors_reset_time;
+	__le64 seq;
+	__le64 btree_allocated_bitmap;
+};
+
+struct printbuf;
+
+struct bch_opt_fn {
+	int (*parse)(struct bch_fs *, const char *, u64 *, struct printbuf *);
+	void (*to_text)(struct printbuf *, struct bch_fs *, struct bch_sb *, u64);
+	int (*validate)(u64, struct printbuf *);
+};
+
+struct bch_option {
+	struct attribute attr;
+	u64 (*get_sb)(const struct bch_sb *);
+	void (*set_sb)(struct bch_sb *, u64);
+	enum opt_type type;
+	enum opt_flags flags;
+	u64 min;
+	u64 max;
+	const char * const *choices;
+	struct bch_opt_fn fn;
+	const char *hint;
+	const char *help;
+};
+
+struct bch_quota_counter {
+	__le64 hardlimit;
+	__le64 softlimit;
+};
+
+struct bch_quota {
+	struct bch_val v;
+	struct bch_quota_counter c[2];
+};
+
+typedef void bio_end_io_t(struct bio *);
+
+struct bvec_iter {
+	sector_t bi_sector;
+	unsigned int bi_size;
+	unsigned int bi_idx;
+	unsigned int bi_bvec_done;
+} __attribute__((packed));
+
+struct extent_ptr_decoded {
+	unsigned int idx;
+	bool has_ec;
+	struct bch_extent_crc_unpacked crc;
+	struct bch_extent_ptr ptr;
+	struct bch_extent_stripe_ptr ec;
+};
+
+struct bio_issue {
+	u64 value;
+};
+
+struct bio_vec {
+	struct page *bv_page;
+	unsigned int bv_len;
+	unsigned int bv_offset;
+};
+
+struct blkcg_gq;
+
+struct bio {
+	struct bio *bi_next;
+	struct block_device *bi_bdev;
+	blk_opf_t bi_opf;
+	unsigned short bi_flags;
+	unsigned short bi_ioprio;
+	enum rw_hint bi_write_hint;
+	blk_status_t bi_status;
+	atomic_t __bi_remaining;
+	struct bvec_iter bi_iter;
+	blk_qc_t bi_cookie;
+	bio_end_io_t *bi_end_io;
+	void *bi_private;
+	struct blkcg_gq *bi_blkg;
+	struct bio_issue bi_issue;
+	union {};
+	unsigned short bi_vcnt;
+	unsigned short bi_max_vecs;
+	atomic_t __bi_cnt;
+	struct bio_vec *bi_io_vec;
+	struct bio_set *bi_pool;
+	struct bio_vec bi_inline_vecs[0];
+};
+
+struct promote_op;
+
+struct bch_read_bio {
+	struct bch_fs *c;
+	u64 start_time;
+	u64 submit_time;
+	union {
+		struct bch_read_bio *parent;
+		bio_end_io_t *end_io;
+	};
+	struct bvec_iter bvec_iter;
+	unsigned int offset_into_extent;
+	u16 flags;
+	union {
+		struct {
+			u16 bounce: 1;
+			u16 split: 1;
+			u16 kmalloc: 1;
+			u16 have_ioref: 1;
+			u16 narrow_crcs: 1;
+			u16 hole: 1;
+			u16 retry: 2;
+			u16 context: 2;
+		};
+		u16 _state;
+	};
+	struct bch_devs_list devs_have;
+	struct extent_ptr_decoded pick;
+	u32 subvol;
+	struct bpos read_pos;
+	enum btree_id data_btree;
+	struct bpos data_pos;
+	struct bversion version;
+	struct promote_op *promote;
+	struct bch_io_opts opts;
+	struct work_struct work;
+	struct bio bio;
+};
+
+struct bch_reflink_p {
+	struct bch_val v;
+	__le64 idx;
+	__le32 front_pad;
+	__le32 back_pad;
+};
+
+struct bch_reflink_v {
+	struct bch_val v;
+	__le64 refcount;
+	union bch_extent_entry start[0];
+	__u64 _data[0];
+};
+
+struct bch_replicas_entry_v0 {
+	__u8 data_type;
+	__u8 nr_devs;
+	__u8 devs[0];
+};
+
+struct bch_reservation {
+	struct bch_val v;
+	__le32 generation;
+	__u8 nr_replicas;
+	__u8 pad[3];
+};
+
+struct bch_sb_layout {
+	__uuid_t magic;
+	__u8 layout_type;
+	__u8 sb_max_size_bits;
+	__u8 nr_superblocks;
+	__u8 pad[5];
+	__le64 sb_offset[61];
+};
+
+struct bch_sb_field {
+	__u64 _data[0];
+	__le32 u64s;
+	__le32 type;
+};
+
+struct bch_sb {
+	struct bch_csum csum;
+	__le16 version;
+	__le16 version_min;
+	__le16 pad[2];
+	__uuid_t magic;
+	__uuid_t uuid;
+	__uuid_t user_uuid;
+	__u8 label[32];
+	__le64 offset;
+	__le64 seq;
+	__le16 block_size;
+	__u8 dev_idx;
+	__u8 nr_devices;
+	__le32 u64s;
+	__le64 time_base_lo;
+	__le32 time_base_hi;
+	__le32 time_precision;
+	__le64 flags[7];
+	__le64 write_time;
+	__le64 features[2];
+	__le64 compat[2];
+	struct bch_sb_layout layout;
+	struct bch_sb_field start[0];
+	__le64 _data[0];
+};
+
+struct jset_entry {
+	__le16 u64s;
+	__u8 btree_id;
+	__u8 level;
+	__u8 type;
+	__u8 pad[3];
+	struct bkey_i start[0];
+	__u64 _data[0];
+};
+
+struct bch_sb_field_clean {
+	struct bch_sb_field field;
+	__le32 flags;
+	__le16 _read_clock;
+	__le16 _write_clock;
+	__le64 journal_seq;
+	struct jset_entry start[0];
+	__u64 _data[0];
+};
+
+struct bch_sb_field_counters {
+	struct bch_sb_field field;
+	__le64 d[0];
+};
+
+struct bch_sb_field_crypt {
+	struct bch_sb_field field;
+	__le64 flags;
+	__le64 kdf_flags;
+	struct bch_encrypted_key key;
+};
+
+struct bch_sb_field_disk_groups {
+	struct bch_sb_field field;
+	struct bch_disk_group entries[0];
+};
+
+struct bch_sb_field_downgrade_entry {
+	__le16 version;
+	__le64 recovery_passes[2];
+	__le16 nr_errors;
+	__le16 errors[0];
+} __attribute__((packed));
+
+struct bch_sb_field_downgrade {
+	struct bch_sb_field field;
+	struct bch_sb_field_downgrade_entry entries[0];
+};
+
+struct bch_sb_field_error_entry {
+	__le64 v;
+	__le64 last_error_time;
+};
+
+struct bch_sb_field_errors {
+	struct bch_sb_field field;
+	struct bch_sb_field_error_entry entries[0];
+};
+
+struct bch_sb_field_ext {
+	struct bch_sb_field field;
+	__le64 recovery_passes_required[2];
+	__le64 errors_silent[8];
+	__le64 btrees_lost_data;
+};
+
+struct bch_sb_field_journal {
+	struct bch_sb_field field;
+	__le64 buckets[0];
+};
+
+struct journal_seq_blacklist_entry {
+	__le64 start;
+	__le64 end;
+};
+
+struct bch_sb_field_journal_seq_blacklist {
+	struct bch_sb_field field;
+	struct journal_seq_blacklist_entry start[0];
+};
+
+struct bch_sb_field_journal_v2_entry {
+	__le64 start;
+	__le64 nr;
+};
+
+struct bch_sb_field_journal_v2 {
+	struct bch_sb_field field;
+	struct bch_sb_field_journal_v2_entry d[0];
+};
+
+struct bch_sb_field_members_v1 {
+	struct bch_sb_field field;
+	struct bch_member _members[0];
+};
+
+struct bch_sb_field_members_v2 {
+	struct bch_sb_field field;
+	__le16 member_bytes;
+	u8 pad[6];
+	struct bch_member _members[0];
+};
+
+struct bch_sb_field_ops {
+	int (*validate)(struct bch_sb *, struct bch_sb_field *, struct printbuf *);
+	void (*to_text)(struct printbuf *, struct bch_sb *, struct bch_sb_field *);
+};
+
+struct bch_sb_quota_counter {
+	__le32 timelimit;
+	__le32 warnlimit;
+};
+
+struct bch_sb_quota_type {
+	__le64 flags;
+	struct bch_sb_quota_counter c[2];
+};
+
+struct bch_sb_field_quota {
+	struct bch_sb_field field;
+	struct bch_sb_quota_type q[3];
+};
+
+struct bch_sb_field_replicas {
+	struct bch_sb_field field;
+	struct bch_replicas_entry_v1 entries[0];
+};
+
+struct bch_sb_field_replicas_v0 {
+	struct bch_sb_field field;
+	struct bch_replicas_entry_v0 entries[0];
+};
+
+struct bch_snapshot {
+	struct bch_val v;
+	__le32 flags;
+	__le32 parent;
+	__le32 children[2];
+	__le32 subvol;
+	__le32 tree;
+	__le32 depth;
+	__le32 skip[3];
+	bch_le128 btime;
+};
+
+struct bch_snapshot_tree {
+	struct bch_val v;
+	__le32 master_subvol;
+	__le32 root_snapshot;
+};
+
+struct bch_str_hash_ctx {
+	union {
+		u32 crc32c;
+		u64 crc64;
+		SIPHASH_CTX siphash;
+	};
+};
+
+struct bch_stripe {
+	struct bch_val v;
+	__le16 sectors;
+	__u8 algorithm;
+	__u8 nr_blocks;
+	__u8 nr_redundant;
+	__u8 csum_granularity_bits;
+	__u8 csum_type;
+	__u8 pad;
+	struct bch_extent_ptr ptrs[0];
+};
+
+struct bch_subvolume {
+	struct bch_val v;
+	__le32 flags;
+	__le32 snapshot;
+	__le64 inode;
+	__le32 creation_parent;
+	__le32 fs_path_parent;
+	bch_le128 otime;
+};
+
+struct bch_write_bio {
+	union {
+		struct {
+			struct bch_fs *c;
+			struct bch_write_bio *parent;
+			u64 submit_time;
+			u64 inode_offset;
+			struct bch_devs_list failed;
+			u8 dev;
+			unsigned int split: 1;
+			unsigned int bounce: 1;
+			unsigned int put_bio: 1;
+			unsigned int have_ioref: 1;
+			unsigned int nocow: 1;
+			unsigned int used_mempool: 1;
+			unsigned int first_btree_write: 1;
+		};
+		struct {
+			struct bch_fs *c;
+			struct bch_write_bio *parent;
+			u64 submit_time;
+			u64 inode_offset;
+			struct bch_devs_list failed;
+			u8 dev;
+			unsigned int split: 1;
+			unsigned int bounce: 1;
+			unsigned int put_bio: 1;
+			unsigned int have_ioref: 1;
+			unsigned int nocow: 1;
+			unsigned int used_mempool: 1;
+			unsigned int first_btree_write: 1;
+		} wbio;
+	};
+	struct bio bio;
+};
+
+struct write_point_specifier {
+	unsigned long v;
+};
+
+struct keylist {
+	union {
+		struct bkey_i *keys;
+		u64 *keys_p;
+	};
+	union {
+		struct bkey_i *top;
+		u64 *top_p;
+	};
+};
+
+struct bch_write_op {
+	struct closure cl;
+	struct bch_fs *c;
+	void (*end_io)(struct bch_write_op *);
+	u64 start_time;
+	unsigned int written;
+	u16 flags;
+	s16 error;
+	unsigned int compression_opt: 8;
+	unsigned int csum_type: 4;
+	unsigned int nr_replicas: 4;
+	unsigned int nr_replicas_required: 4;
+	unsigned int watermark: 3;
+	unsigned int incompressible: 1;
+	unsigned int stripe_waited: 1;
+	struct bch_devs_list devs_have;
+	u16 target;
+	u16 nonce;
+	struct bch_io_opts opts;
+	u32 subvol;
+	struct bpos pos;
+	struct bversion version;
+	struct bch_extent_crc_unpacked crc;
+	struct write_point_specifier write_point;
+	struct write_point *wp;
+	struct list_head wp_list;
+	struct disk_reservation res;
+	struct open_buckets open_buckets;
+	u64 new_i_size;
+	s64 i_sectors_delta;
+	struct bch_devs_mask failed;
+	struct keylist insert_keys;
+	u64 inline_keys[52];
+	struct bch_devs_mask *devs_need_flush;
+	struct bch_write_bio wbio;
+};
+
+struct bch_writepage_io {
+	struct bch_inode_info *inode;
+	struct bch_write_op op;
+};
+
+struct bch_writepage_state {
+	struct bch_writepage_io *io;
+	struct bch_io_opts opts;
+	struct bch_folio_sector *tmp;
+	unsigned int tmp_sectors;
+};
+
+struct bch_xattr {
+	struct bch_val v;
+	__u8 x_type;
+	__u8 x_name_len;
+	__le16 x_val_len;
+	__u8 x_name[0];
+};
+
+struct gendisk;
+
+struct request_queue;
+
+struct disk_stats;
+
+struct blk_holder_ops;
+
+struct partition_meta_info;
+
+struct block_device {
+	sector_t bd_start_sect;
+	sector_t bd_nr_sectors;
+	struct gendisk *bd_disk;
+	struct request_queue *bd_queue;
+	struct disk_stats __attribute__((btf_type_tag("percpu"))) *bd_stats;
+	unsigned long bd_stamp;
+	bool bd_read_only;
+	u8 bd_partno;
+	bool bd_write_holder;
+	bool bd_has_submit_bio;
+	dev_t bd_dev;
+	struct inode *bd_inode;
+	atomic_t bd_openers;
+	spinlock_t bd_size_lock;
+	void *bd_claiming;
+	void *bd_holder;
+	const struct blk_holder_ops *bd_holder_ops;
+	struct mutex bd_holder_lock;
+	int bd_holders;
+	struct kobject *bd_holder_dir;
+	atomic_t bd_fsfreeze_count;
+	struct mutex bd_fsfreeze_mutex;
+	struct partition_meta_info *bd_meta_info;
+	bool bd_ro_warned;
+	int bd_writers;
+	struct device bd_device;
 };
 
 struct bdev_inode {
@@ -40605,55 +45094,6 @@ struct binfmt_misc {
 	bool enabled;
 };
 
-struct bvec_iter {
-	sector_t bi_sector;
-	unsigned int bi_size;
-	unsigned int bi_idx;
-	unsigned int bi_bvec_done;
-} __attribute__((packed));
-
-struct bio;
-
-typedef void bio_end_io_t(struct bio *);
-
-struct bio_issue {
-	u64 value;
-};
-
-struct bio_vec {
-	struct page *bv_page;
-	unsigned int bv_len;
-	unsigned int bv_offset;
-};
-
-struct blkcg_gq;
-
-struct bio_set;
-
-struct bio {
-	struct bio *bi_next;
-	struct block_device *bi_bdev;
-	blk_opf_t bi_opf;
-	unsigned short bi_flags;
-	unsigned short bi_ioprio;
-	enum rw_hint bi_write_hint;
-	blk_status_t bi_status;
-	atomic_t __bi_remaining;
-	struct bvec_iter bi_iter;
-	blk_qc_t bi_cookie;
-	bio_end_io_t *bi_end_io;
-	void *bi_private;
-	struct blkcg_gq *bi_blkg;
-	struct bio_issue bi_issue;
-	union {};
-	unsigned short bi_vcnt;
-	unsigned short bi_max_vecs;
-	atomic_t __bi_cnt;
-	struct bio_vec *bi_io_vec;
-	struct bio_set *bi_pool;
-	struct bio_vec bi_inline_vecs[0];
-};
-
 struct bio_alloc_cache {
 	struct bio *free_list;
 	struct bio *free_list_irq;
@@ -40664,11 +45104,6 @@ struct bio_alloc_cache {
 struct bio_entry {
 	struct bio *bio;
 	struct list_head list;
-};
-
-struct bio_list {
-	struct bio *head;
-	struct bio *tail;
 };
 
 struct iovec {
@@ -40707,53 +45142,22 @@ struct bio_map_data {
 	struct iovec iov[0];
 };
 
-struct f2fs_sb_info;
-
 struct bio_post_read_ctx {
-	struct bio *bio;
-	struct f2fs_sb_info *sbi;
-	struct work_struct work;
-	unsigned int enabled_steps;
-	bool decompression_attempted;
-	block_t fs_blkaddr;
-};
-
-struct bio_post_read_ctx___2 {
 	struct bio *bio;
 	struct work_struct work;
 	unsigned int cur_step;
 	unsigned int enabled_steps;
 };
 
-typedef void *mempool_alloc_t(gfp_t, void *);
+struct f2fs_sb_info;
 
-typedef void mempool_free_t(void *, void *);
-
-struct mempool_s {
-	spinlock_t lock;
-	int min_nr;
-	int curr_nr;
-	void **elements;
-	void *pool_data;
-	mempool_alloc_t *alloc;
-	mempool_free_t *free;
-	wait_queue_head_t wait;
-};
-
-typedef struct mempool_s mempool_t;
-
-struct bio_set {
-	struct kmem_cache *bio_slab;
-	unsigned int front_pad;
-	struct bio_alloc_cache __attribute__((btf_type_tag("percpu"))) *cache;
-	mempool_t bio_pool;
-	mempool_t bvec_pool;
-	unsigned int back_pad;
-	spinlock_t rescue_lock;
-	struct bio_list rescue_list;
-	struct work_struct rescue_work;
-	struct workqueue_struct *rescue_workqueue;
-	struct hlist_node cpuhp_dead;
+struct bio_post_read_ctx___2 {
+	struct bio *bio;
+	struct f2fs_sb_info *sbi;
+	struct work_struct work;
+	unsigned int enabled_steps;
+	bool decompression_attempted;
+	block_t fs_blkaddr;
 };
 
 struct bio_slab {
@@ -40824,6 +45228,653 @@ struct bitmap_port {
 
 struct bitmap_port_adt_elem {
 	u16 id;
+};
+
+struct bkey_alloc_unpacked {
+	u64 journal_seq;
+	u8 gen;
+	u8 oldest_gen;
+	u8 data_type;
+	bool need_discard: 1;
+	bool need_inc_gen: 1;
+	u64 read_time;
+	u64 write_time;
+	u32 dirty_sectors;
+	u32 cached_sectors;
+	u32 stripe;
+	u8 stripe_redundancy;
+};
+
+struct bkey_buf {
+	struct bkey_i *k;
+	u64 onstack[12];
+};
+
+struct six_lock {
+	atomic_t state;
+	u32 seq;
+	unsigned int intent_lock_recurse;
+	struct task_struct *owner;
+	unsigned int __attribute__((btf_type_tag("percpu"))) *readers;
+	raw_spinlock_t wait_lock;
+	struct list_head wait_list;
+};
+
+struct btree_bkey_cached_common {
+	struct six_lock lock;
+	u8 level;
+	u8 btree_id;
+	bool cached;
+};
+
+struct bkey_cached_key {
+	u32 btree_id;
+	struct bpos pos;
+};
+
+struct rhash_head {
+	struct rhash_head __attribute__((btf_type_tag("rcu"))) *next;
+};
+
+struct bkey_cached {
+	struct btree_bkey_cached_common c;
+	unsigned long flags;
+	unsigned long btree_trans_barrier_seq;
+	u16 u64s;
+	bool valid;
+	struct bkey_cached_key key;
+	struct rhash_head hash;
+	struct list_head list;
+	struct journal_entry_pin journal;
+	u64 seq;
+	struct bkey_i *k;
+};
+
+struct bkey_float {
+	u8 exponent;
+	u8 key_offset;
+	u16 mantissa;
+};
+
+struct bkey_format {
+	__u8 key_u64s;
+	__u8 nr_fields;
+	__u8 bits_per_field[6];
+	__le64 field_offset[6];
+};
+
+struct bkey_format_state {
+	u64 field_min[6];
+	u64 field_max[6];
+};
+
+struct bkey_i_alloc_v4 {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_alloc_v4 v;
+};
+
+struct bkey_i_backpointer {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_backpointer v;
+};
+
+struct bkey_i_btree_ptr {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_btree_ptr v;
+};
+
+struct bkey_i_btree_ptr_v2 {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_btree_ptr_v2 v;
+};
+
+struct bkey_i_bucket_gens {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_bucket_gens v;
+};
+
+struct bkey_i_cookie {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_cookie v;
+};
+
+struct bkey_i_dirent {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_dirent v;
+};
+
+struct bkey_i_error {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_error v;
+};
+
+struct bkey_i_extent {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_extent v;
+};
+
+struct bkey_i_inline_data {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_inline_data v;
+};
+
+struct bkey_i_inode_generation {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_inode_generation v;
+};
+
+struct bkey_i_inode_v3 {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_inode_v3 v;
+};
+
+struct bkey_i_logged_op_finsert {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_logged_op_finsert v;
+};
+
+struct bkey_i_logged_op_truncate {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_logged_op_truncate v;
+};
+
+struct bkey_i_quota {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_quota v;
+};
+
+struct bkey_i_reflink_p {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_reflink_p v;
+};
+
+struct bkey_i_reservation {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_reservation v;
+};
+
+struct bkey_i_snapshot {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_snapshot v;
+};
+
+struct bkey_i_snapshot_tree {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_snapshot_tree v;
+};
+
+struct bkey_i_stripe {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_stripe v;
+};
+
+struct bkey_i_subvolume {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_subvolume v;
+};
+
+struct bkey_i_xattr {
+	union {
+		struct bkey k;
+		struct bkey_i k_i;
+	};
+	struct bch_xattr v;
+};
+
+struct bkey_inode_buf {
+	struct bkey_i_inode_v3 inode;
+	u8 _pad[303];
+};
+
+struct bkey_s;
+
+struct bkey_ops {
+	int (*key_invalid)(struct bch_fs *, struct bkey_s_c, enum bkey_invalid_flags, struct printbuf *);
+	void (*val_to_text)(struct printbuf *, struct bch_fs *, struct bkey_s_c);
+	void (*__swab)(struct bkey_s);
+	bool (*key_normalize)(struct bch_fs *, struct bkey_s);
+	bool (*key_merge)(struct bch_fs *, struct bkey_s, struct bkey_s_c);
+	int (*trigger)(struct btree_trans *, enum btree_id, unsigned int, struct bkey_s_c, struct bkey_s, unsigned int);
+	void (*compat)(enum btree_id, unsigned int, unsigned int, int, struct bkey_s);
+	unsigned int min_val_size;
+};
+
+struct bkey_packed {
+	__u64 _data[0];
+	__u8 u64s;
+	__u8 format: 7;
+	__u8 needs_whiteout: 1;
+	__u8 type;
+	__u8 key_start[0];
+	__u8 pad[37];
+};
+
+struct bkey_ptrs {
+	union bch_extent_entry *start;
+	union bch_extent_entry *end;
+};
+
+struct bkey_ptrs_c {
+	const union bch_extent_entry *start;
+	const union bch_extent_entry *end;
+};
+
+struct bkey_s_c {
+	const struct bkey *k;
+	const struct bch_val *v;
+};
+
+struct bkey_s {
+	union {
+		struct {
+			struct bkey *k;
+			struct bch_val *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_backpointer {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_backpointer *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_backpointer {
+	union {
+		struct {
+			struct bkey *k;
+			struct bch_backpointer *v;
+		};
+		struct bkey_s_c_backpointer c;
+		struct bkey_s s;
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_btree_ptr_v2 {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_btree_ptr_v2 *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_btree_ptr_v2 {
+	union {
+		struct {
+			struct bkey *k;
+			struct bch_btree_ptr_v2 *v;
+		};
+		struct bkey_s_c_btree_ptr_v2 c;
+		struct bkey_s s;
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_alloc {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_alloc *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_alloc_v2 {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_alloc_v2 *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_alloc_v3 {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_alloc_v3 *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_alloc_v4 {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_alloc_v4 *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_btree_ptr {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_btree_ptr *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_bucket_gens {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_bucket_gens *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_cookie {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_cookie *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_dirent {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_dirent *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_extent {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_extent *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_indirect_inline_data {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_indirect_inline_data *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_inline_data {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_inline_data *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_inode {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_inode *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_inode_generation {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_inode_generation *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_inode_v2 {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_inode_v2 *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_inode_v3 {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_inode_v3 *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_logged_op_finsert {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_logged_op_finsert *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_logged_op_truncate {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_logged_op_truncate *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_quota {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_quota *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_reflink_p {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_reflink_p *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_reflink_v {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_reflink_v *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_reservation {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_reservation *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_snapshot {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_snapshot *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_snapshot_tree {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_snapshot_tree *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_stripe {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_stripe *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_subvolume {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_subvolume *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_c_xattr {
+	union {
+		struct {
+			const struct bkey *k;
+			const struct bch_xattr *v;
+		};
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_extent {
+	union {
+		struct {
+			struct bkey *k;
+			struct bch_extent *v;
+		};
+		struct bkey_s_c_extent c;
+		struct bkey_s s;
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_reflink_p {
+	union {
+		struct {
+			struct bkey *k;
+			struct bch_reflink_p *v;
+		};
+		struct bkey_s_c_reflink_p c;
+		struct bkey_s s;
+		struct bkey_s_c s_c;
+	};
+};
+
+struct bkey_s_reservation {
+	union {
+		struct {
+			struct bkey *k;
+			struct bch_reservation *v;
+		};
+		struct bkey_s_c_reservation c;
+		struct bkey_s s;
+		struct bkey_s_c s_c;
+	};
 };
 
 struct bl_dev_msg {
@@ -41163,8 +46214,6 @@ struct cgroup_subsys_state {
 
 struct blkcg_policy_data;
 
-struct llist_head;
-
 struct blkcg {
 	struct cgroup_subsys_state css;
 	spinlock_t lock;
@@ -41370,6 +46419,66 @@ struct bmp_buf {
 	u64 new_valid;
 };
 
+struct bond_marker {
+	u8 subtype;
+	u8 version_number;
+	u8 tlv_type;
+	u8 marker_length;
+	u16 requester_port;
+	struct mac_addr requester_system;
+	u32 requester_transaction_id;
+	u16 pad;
+	u8 tlv_type_terminator;
+	u8 terminator_length;
+	u8 reserved_90[90];
+} __attribute__((packed));
+
+struct ethhdr {
+	unsigned char h_dest[6];
+	unsigned char h_source[6];
+	__be16 h_proto;
+};
+
+struct bond_marker_header {
+	struct ethhdr hdr;
+	struct bond_marker marker;
+};
+
+struct class_attribute {
+	struct attribute attr;
+	ssize_t (*show)(const struct class *, const struct class_attribute *, char *);
+	ssize_t (*store)(const struct class *, const struct class_attribute *, const char *, size_t);
+};
+
+struct proc_dir_entry;
+
+struct bond_net {
+	struct net *net;
+	struct list_head dev_list;
+	struct proc_dir_entry *proc_dir;
+	struct class_attribute class_attr_bonding_masters;
+};
+
+struct bond_opt_value {
+	char *string;
+	u64 value;
+	u32 flags;
+	union {
+		char extra[16];
+		struct net_device *slave_dev;
+	};
+};
+
+struct bond_option {
+	int id;
+	const char *name;
+	const char *desc;
+	u32 flags;
+	unsigned long unsuppmodes;
+	const struct bond_opt_value *values;
+	int (*set)(struct bonding *, const struct bond_opt_value *);
+};
+
 struct reciprocal_value {
 	u32 m;
 	u8 sh1;
@@ -41417,6 +46526,11 @@ struct bond_up_slave {
 	struct slave *arr[0];
 };
 
+struct bond_vlan_tag {
+	__be16 vlan_proto;
+	unsigned short vlan_id;
+};
+
 struct rtnl_link_stats64 {
 	__u64 rx_packets;
 	__u64 tx_packets;
@@ -41444,8 +46558,6 @@ struct rtnl_link_stats64 {
 	__u64 rx_nohandler;
 	__u64 rx_otherhost_dropped;
 };
-
-struct proc_dir_entry;
 
 struct bonding {
 	struct net_device *dev;
@@ -42251,6 +47363,7 @@ struct sk_buff {
 			__u8 offload_fwd_mark: 1;
 			__u8 offload_l3_fwd_mark: 1;
 			__u8 redirected: 1;
+			__u8 from_ingress: 1;
 			__u8 nf_skip_egress: 1;
 			__u8 slow_gro: 1;
 			__u16 tc_index;
@@ -42321,6 +47434,7 @@ struct sk_buff {
 			__u8 offload_fwd_mark: 1;
 			__u8 offload_l3_fwd_mark: 1;
 			__u8 redirected: 1;
+			__u8 from_ingress: 1;
 			__u8 nf_skip_egress: 1;
 			__u8 slow_gro: 1;
 			__u16 tc_index;
@@ -43150,8 +48264,6 @@ struct bpf_lru {
 	long: 64;
 	long: 64;
 };
-
-struct lock_class_key {};
 
 struct bucket;
 
@@ -44129,14 +49241,6 @@ struct bpf_map_ops {
 	const struct bpf_iter_seq_info *iter_seq_info;
 };
 
-struct llist_head {
-	struct llist_node *first;
-};
-
-struct rcuwait {
-	struct task_struct __attribute__((btf_type_tag("rcu"))) *task;
-};
-
 struct irq_work {
 	struct __call_single_node node;
 	void (*func)(struct irq_work *);
@@ -44256,10 +49360,6 @@ struct bpf_offload_dev {
 	const struct bpf_prog_offload_ops *ops;
 	struct list_head netdevs;
 	void *priv;
-};
-
-struct rhash_head {
-	struct rhash_head __attribute__((btf_type_tag("rcu"))) *next;
 };
 
 struct bpf_offload_netdev {
@@ -45650,7 +50750,7 @@ struct bpf_ringbuf {
 	long: 64;
 	long: 64;
 	unsigned long producer_pos;
-	long: 64;
+	unsigned long pending_pos;
 	long: 64;
 	long: 64;
 	long: 64;
@@ -46875,6 +51975,7 @@ struct bpf_verifier_env {
 	u64 scratched_stack_slots;
 	u64 prev_log_pos;
 	u64 prev_insn_print_pos;
+	struct bpf_reg_state fake_reg[2];
 	char tmp_str_buf[320];
 };
 
@@ -47252,6 +52353,33 @@ struct bsd_acct_struct {
 	struct pid_namespace *ns;
 	struct work_struct work;
 	struct completion done;
+};
+
+struct bset {
+	__le64 seq;
+	__le64 journal_seq;
+	__le32 flags;
+	__le16 version;
+	__le16 u64s;
+	struct bkey_packed start[0];
+	__u64 _data[0];
+};
+
+struct bset_stats {
+	struct {
+		size_t nr;
+		size_t bytes;
+	} sets[3];
+	size_t floats;
+	size_t failed;
+};
+
+struct bset_tree {
+	u16 size;
+	u16 extra;
+	u16 data_offset;
+	u16 aux_data_offset;
+	u16 end_offset;
 };
 
 struct bsg_buffer {
@@ -47741,6 +52869,328 @@ struct btf_verifier_env {
 	enum resolve_mode resolve_mode;
 };
 
+struct btree_nr_keys {
+	u16 live_u64s;
+	u16 bset_u64s[3];
+	u16 packed_keys;
+	u16 unpacked_keys;
+};
+
+struct btree_write {
+	struct journal_entry_pin journal;
+};
+
+struct btree {
+	struct btree_bkey_cached_common c;
+	struct rhash_head hash;
+	u64 hash_val;
+	unsigned long flags;
+	u16 written;
+	u8 nsets;
+	u8 nr_key_bits;
+	u16 version_ondisk;
+	struct bkey_format format;
+	struct btree_node *data;
+	void *aux_data;
+	struct bset_tree set[3];
+	struct btree_nr_keys nr;
+	u16 sib_u64s[2];
+	u16 whiteout_u64s;
+	u8 byte_order;
+	u8 unpack_fn_len;
+	struct btree_write writes[2];
+	struct bkey_i key;
+	__u64 key_pad[9];
+	struct list_head write_blocked;
+	unsigned long will_make_reachable;
+	struct open_buckets ob;
+	struct list_head list;
+};
+
+struct btree_node_iter_set {
+	u16 k;
+	u16 end;
+};
+
+struct btree_node_iter {
+	struct btree_node_iter_set data[3];
+};
+
+struct journal_iter {
+	struct list_head list;
+	enum btree_id btree_id;
+	unsigned int level;
+	size_t idx;
+	struct journal_keys *keys;
+};
+
+struct btree_and_journal_iter {
+	struct btree_trans *trans;
+	struct btree *b;
+	struct btree_node_iter node_iter;
+	long: 0;
+	struct bkey unpacked;
+	struct journal_iter journal;
+	struct bpos pos;
+	bool at_end;
+	bool prefetch;
+};
+
+struct btree_insert_entry {
+	unsigned int flags;
+	u8 bkey_type;
+	enum btree_id btree_id: 8;
+	u8 level: 4;
+	bool cached: 1;
+	bool insert_trigger_run: 1;
+	bool overwrite_trigger_run: 1;
+	bool key_cache_already_flushed: 1;
+	u8 old_btree_u64s;
+	btree_path_idx_t path;
+	struct bkey_i *k;
+	struct bkey old_k;
+	const struct bch_val *old_v;
+	unsigned long ip_allocated;
+};
+
+struct btree_iter {
+	struct btree_trans *trans;
+	btree_path_idx_t path;
+	btree_path_idx_t update_path;
+	btree_path_idx_t key_cache_path;
+	enum btree_id btree_id: 8;
+	u8 min_depth;
+	u16 flags;
+	unsigned int snapshot;
+	struct bpos pos;
+	long: 0;
+	struct bkey k;
+	size_t journal_idx;
+};
+
+struct btree_key_cache_freelist {
+	struct bkey_cached *objs[16];
+	unsigned int nr;
+};
+
+struct btree_node {
+	struct bch_csum csum;
+	__le64 magic;
+	__le64 flags;
+	struct bpos min_key;
+	struct bpos max_key;
+	struct bch_extent_ptr _ptr;
+	struct bkey_format format;
+	union {
+		struct bset keys;
+		struct {
+			__u8 pad[22];
+			__le16 u64s;
+			__u64 _data[0];
+		};
+	};
+};
+
+struct btree_node_entry {
+	struct bch_csum csum;
+	union {
+		struct bset keys;
+		struct {
+			__u8 pad[22];
+			__le16 u64s;
+			__u64 _data[0];
+		};
+	};
+};
+
+struct btree_node_read_all {
+	struct closure cl;
+	struct bch_fs *c;
+	struct btree *b;
+	unsigned int nr;
+	void *buf[4];
+	struct bio *bio[4];
+	blk_status_t err[4];
+};
+
+struct btree_path_level {
+	struct btree *b;
+	struct btree_node_iter iter;
+	u32 lock_seq;
+};
+
+struct btree_path {
+	btree_path_idx_t sorted_idx;
+	u8 ref;
+	u8 intent_ref;
+	struct bpos pos;
+	enum btree_id btree_id: 5;
+	bool cached: 1;
+	bool preserve: 1;
+	enum btree_path_uptodate uptodate: 2;
+	bool should_be_locked: 1;
+	unsigned int level: 3;
+	unsigned int locks_want: 3;
+	u8 nodes_locked;
+	struct btree_path_level l[4];
+};
+
+struct btree_read_bio {
+	struct bch_fs *c;
+	struct btree *b;
+	struct btree_node_read_all *ra;
+	u64 start_time;
+	unsigned int have_ioref: 1;
+	unsigned int idx: 7;
+	struct extent_ptr_decoded pick;
+	struct work_struct work;
+	struct bio bio;
+};
+
+struct six_lock_waiter {
+	struct list_head list;
+	struct task_struct *task;
+	enum six_lock_type lock_want;
+	bool lock_acquired;
+	u64 start_time;
+};
+
+struct journal_res {
+	bool ref;
+	u8 idx;
+	u16 u64s;
+	u32 offset;
+	u64 seq;
+};
+
+struct btree_trans_paths {
+	unsigned long nr_paths;
+	struct btree_path paths[0];
+};
+
+struct btree_trans_commit_hook;
+
+struct replicas_delta_list;
+
+struct btree_trans {
+	struct bch_fs *c;
+	unsigned long *paths_allocated;
+	struct btree_path *paths;
+	btree_path_idx_t *sorted;
+	struct btree_insert_entry *updates;
+	void *mem;
+	unsigned int mem_top;
+	unsigned int mem_bytes;
+	btree_path_idx_t nr_sorted;
+	btree_path_idx_t nr_paths;
+	btree_path_idx_t nr_paths_max;
+	u8 fn_idx;
+	u8 nr_updates;
+	u8 lock_must_abort;
+	bool lock_may_not_fail: 1;
+	bool srcu_held: 1;
+	bool used_mempool: 1;
+	bool in_traverse_all: 1;
+	bool paths_sorted: 1;
+	bool memory_allocation_failure: 1;
+	bool journal_transaction_names: 1;
+	bool journal_replay_not_finished: 1;
+	bool notrace_relock_fail: 1;
+	bool write_locked: 1;
+	int: 14;
+	enum bch_errcode restarted: 16;
+	u32 restart_count;
+	u64 last_begin_time;
+	unsigned long last_begin_ip;
+	unsigned long last_restarted_ip;
+	unsigned long srcu_lock_time;
+	const char *fn;
+	struct btree_bkey_cached_common *locking;
+	struct six_lock_waiter locking_wait;
+	int srcu_idx;
+	u16 journal_entries_u64s;
+	u16 journal_entries_size;
+	struct jset_entry *journal_entries;
+	struct btree_trans_commit_hook *hooks;
+	struct journal_entry_pin *journal_pin;
+	struct journal_res journal_res;
+	u64 *journal_seq;
+	struct disk_reservation *disk_res;
+	struct bch_fs_usage_base fs_usage_delta;
+	unsigned int journal_u64s;
+	unsigned int extra_disk_res;
+	struct replicas_delta_list *fs_usage_deltas;
+	struct list_head list;
+	struct closure ref;
+	unsigned long _paths_allocated[1];
+	struct btree_trans_paths trans_paths;
+	struct btree_path _paths[64];
+	btree_path_idx_t _sorted[68];
+	struct btree_insert_entry _updates[64];
+};
+
+struct btree_trans_buf {
+	struct btree_trans *trans;
+};
+
+typedef int btree_trans_commit_hook_fn(struct btree_trans *, struct btree_trans_commit_hook *);
+
+struct btree_trans_commit_hook {
+	btree_trans_commit_hook_fn *fn;
+	struct btree_trans_commit_hook *next;
+};
+
+struct prealloc_nodes {
+	struct btree *b[8];
+	unsigned int nr;
+};
+
+struct btree_update {
+	struct closure cl;
+	struct bch_fs *c;
+	u64 start_time;
+	unsigned long ip_started;
+	struct list_head list;
+	struct list_head unwritten_list;
+	enum btree_update_mode mode;
+	enum bch_watermark watermark;
+	unsigned int nodes_written: 1;
+	unsigned int took_gc_lock: 1;
+	enum btree_id btree_id;
+	unsigned int update_level_start;
+	unsigned int update_level_end;
+	struct disk_reservation disk_res;
+	struct btree *b;
+	struct list_head write_blocked_list;
+	struct journal_entry_pin journal;
+	struct prealloc_nodes prealloc_nodes[2];
+	struct keylist old_keys;
+	u64 _old_keys[112];
+	struct keylist new_keys;
+	u64 _new_keys[112];
+	struct btree *new_nodes[8];
+	unsigned int nr_new_nodes;
+	struct btree *old_nodes[8];
+	__le64 old_nodes_seq[8];
+	unsigned int nr_old_nodes;
+	open_bucket_idx_t open_buckets[32];
+	open_bucket_idx_t nr_open_buckets;
+	unsigned int journal_u64s;
+	u64 journal_entries[120];
+	struct keylist parent_keys;
+	u64 inline_keys[42];
+};
+
+struct btree_write_bio {
+	struct work_struct work;
+	struct bkey_i key;
+	__u64 key_pad[9];
+	void *data;
+	unsigned int data_bytes;
+	unsigned int sector_offset;
+	struct bch_write_bio wbio;
+};
+
 struct btrfs_delayed_root;
 
 struct btrfs_async_delayed_work {
@@ -48146,8 +53596,6 @@ struct btrfs_commit_stats {
 	u64 last_commit_dur;
 	u64 total_commit_dur;
 };
-
-struct shrinker;
 
 struct btrfs_compr_pool {
 	struct shrinker *shrinker;
@@ -48764,12 +54212,6 @@ struct btrfs_fs_devices {
 	enum btrfs_read_policy read_policy;
 };
 
-struct semaphore {
-	raw_spinlock_t lock;
-	unsigned int count;
-	struct list_head wait_list;
-};
-
 struct queue_limits {
 	enum blk_bounce bounce;
 	unsigned long seg_boundary_mask;
@@ -48806,8 +54248,6 @@ struct queue_limits {
 	unsigned int dma_alignment;
 };
 
-struct lockdep_map {};
-
 struct btrfs_transaction;
 
 struct btrfs_super_block;
@@ -48817,8 +54257,6 @@ struct btrfs_stripe_hash_table;
 struct reloc_control;
 
 struct btrfs_subpage_info;
-
-struct crypto_shash;
 
 struct btrfs_fs_info {
 	u8 chunk_tree_uuid[16];
@@ -50180,6 +55618,17 @@ struct btrfs_zoned_device_info {
 	struct blk_zone sb_zones[6];
 };
 
+struct bucket___2 {
+	u8 lock;
+	u8 gen_valid: 1;
+	u8 data_type: 7;
+	u8 gen;
+	u8 stripe_redundancy;
+	u32 stripe;
+	u32 dirty_sectors;
+	u32 cached_sectors;
+};
+
 struct hlist_nulls_head {
 	struct hlist_nulls_node *first;
 };
@@ -50187,6 +55636,33 @@ struct hlist_nulls_head {
 struct bucket {
 	struct hlist_nulls_head head;
 	raw_spinlock_t raw_lock;
+};
+
+struct bucket_alloc_state {
+	u64 buckets_seen;
+	u64 skipped_open;
+	u64 skipped_need_journal_commit;
+	u64 skipped_nocow;
+	u64 skipped_nouse;
+};
+
+struct bucket_array {
+	struct callback_head rcu;
+	u16 first_bucket;
+	size_t nbuckets;
+	struct bucket___2 b[0];
+};
+
+struct bucket_gens {
+	struct callback_head rcu;
+	u16 first_bucket;
+	size_t nbuckets;
+	u8 b[0];
+};
+
+struct bucket_hashed {
+	u64 dev_bucket;
+	u64 journal_seq;
 };
 
 struct bucket_item {
@@ -50205,6 +55681,28 @@ struct bucket_table {
 	struct lockdep_map dep_map;
 	long: 64;
 	struct rhash_lock_head __attribute__((btf_type_tag("rcu"))) *buckets[0];
+};
+
+struct bucket_to_lock {
+	struct bpos b;
+	unsigned int gen;
+	struct nocow_lock_bucket *l;
+};
+
+struct move_bucket_in_flight;
+
+struct buckets_in_flight {
+	struct rhashtable table;
+	struct move_bucket_in_flight *first;
+	struct move_bucket_in_flight *last;
+	size_t nr;
+	size_t sectors;
+};
+
+struct buckets_waiting_for_journal_table {
+	unsigned int bits;
+	u64 hash_seeds[3];
+	struct bucket_hashed d[0];
 };
 
 struct buffer_data_page {
@@ -54058,12 +59556,6 @@ struct ckpt_req_control {
 	unsigned int peak_time;
 };
 
-struct class_attribute {
-	struct attribute attr;
-	ssize_t (*show)(const struct class *, const struct class_attribute *, char *);
-	ssize_t (*store)(const struct class *, const struct class_attribute *, const char *, size_t);
-};
-
 struct class_attribute_string {
 	struct class_attribute attr;
 	char *str;
@@ -54443,15 +59935,6 @@ struct srcu_usage {
 	struct srcu_struct *srcu_ssp;
 };
 
-struct srcu_data;
-
-struct srcu_struct {
-	unsigned int srcu_idx;
-	struct srcu_data __attribute__((btf_type_tag("percpu"))) *sda;
-	struct lockdep_map dep_map;
-	struct srcu_usage *srcu_sup;
-};
-
 struct srcu_notifier_head {
 	struct mutex mutex;
 	struct srcu_usage srcuu;
@@ -54606,6 +60089,11 @@ struct close_cancelled_open {
 	struct work_struct work;
 	__u64 mid;
 	__u16 cmd;
+};
+
+struct closure_syncer {
+	struct task_struct *task;
+	int done;
 };
 
 struct cls_bpf_head {
@@ -54841,39 +60329,6 @@ struct cls_fl_filter {
 	struct net_device *hw_dev;
 	refcount_t refcnt;
 	bool deleted;
-};
-
-typedef u32 (*rht_hashfn_t)(const void *, u32, u32);
-
-typedef u32 (*rht_obj_hashfn_t)(const void *, u32, u32);
-
-struct rhashtable_compare_arg;
-
-typedef int (*rht_obj_cmpfn_t)(struct rhashtable_compare_arg *, const void *);
-
-struct rhashtable_params {
-	u16 nelem_hint;
-	u16 key_len;
-	u16 key_offset;
-	u16 head_offset;
-	unsigned int max_size;
-	u16 min_size;
-	bool automatic_shrinking;
-	rht_hashfn_t hashfn;
-	rht_obj_hashfn_t obj_hashfn;
-	rht_obj_cmpfn_t obj_cmpfn;
-};
-
-struct rhashtable {
-	struct bucket_table __attribute__((btf_type_tag("rcu"))) *tbl;
-	unsigned int key_len;
-	unsigned int max_elems;
-	struct rhashtable_params p;
-	bool rhlist;
-	struct work_struct run_work;
-	struct mutex mutex;
-	spinlock_t lock;
-	atomic_t nelems;
 };
 
 struct cls_fl_head {
@@ -55678,6 +61133,12 @@ struct compressed_bio {
 		struct work_struct write_end_work;
 	};
 	struct btrfs_bio bbio;
+};
+
+struct compression_type_stats {
+	u64 nr_extents;
+	u64 sectors_compressed;
+	u64 sectors_uncompressed;
 };
 
 struct compstat;
@@ -56623,6 +62084,18 @@ struct cpuset_migrate_mm_work {
 	struct mm_struct *mm;
 	nodemask_t from;
 	nodemask_t to;
+};
+
+struct cpuset_remove_tasks_struct {
+	struct work_struct work;
+	struct cpuset *cs;
+};
+
+struct crc_split {
+	struct bch_extent_crc_unpacked *crc;
+	unsigned int len;
+	unsigned int csum_type;
+	struct bch_csum csum;
 };
 
 struct create_context {
@@ -57812,6 +63285,26 @@ struct data_reloc_warn {
 	int mirror_num;
 };
 
+struct data_update_opts {
+	unsigned int rewrite_ptrs;
+	unsigned int kill_ptrs;
+	u16 target;
+	u8 extra_replicas;
+	unsigned int btree_insert_flags;
+	unsigned int write_flags;
+};
+
+struct moving_context;
+
+struct data_update {
+	enum btree_id btree_id;
+	struct bkey_buf k;
+	struct data_update_opts data_opts;
+	struct moving_context *ctxt;
+	struct bch_move_stats *stats;
+	struct bch_write_op op;
+};
+
 struct llc_sap;
 
 struct packet_type;
@@ -58285,6 +63778,11 @@ struct detached_freelist {
 	void *freelist;
 	int cnt;
 	struct kmem_cache *s;
+};
+
+struct dev_alloc_list {
+	unsigned int nr;
+	u8 devs[64];
 };
 
 struct dev_cgroup {
@@ -58915,6 +64413,14 @@ struct dio {
 	long: 64;
 };
 
+struct dio_read {
+	struct closure cl;
+	struct kiocb *req;
+	long ret;
+	bool should_dirty;
+	struct bch_read_bio rbio;
+};
+
 typedef int get_block_t(struct inode *, sector_t, struct buffer_head *, int);
 
 struct dio_submit {
@@ -58942,6 +64448,23 @@ struct dio_submit {
 	unsigned int tail;
 	size_t from;
 	size_t to;
+};
+
+struct dio_write {
+	struct kiocb *req;
+	struct address_space *mapping;
+	struct bch_inode_info *inode;
+	struct mm_struct *mm;
+	const struct iovec *iov;
+	unsigned int loop: 1;
+	unsigned int extending: 1;
+	unsigned int sync: 1;
+	unsigned int flush: 1;
+	struct quota_res quota_res;
+	u64 written;
+	struct iov_iter iter;
+	struct iovec inline_vecs[2];
+	struct bch_write_op op;
 };
 
 struct dioattr {
@@ -59006,6 +64529,15 @@ struct dirty_throttle_control {
 	unsigned long wb_thresh;
 	unsigned long wb_bg_thresh;
 	unsigned long pos_ratio;
+};
+
+struct discard_buckets_state {
+	u64 seen;
+	u64 open;
+	u64 need_journal_commit;
+	u64 discarded;
+	struct bch_dev *ca;
+	u64 need_journal_commit_this_dev;
 };
 
 struct discard_info {
@@ -60167,6 +65699,37 @@ struct dump_ctx {
 	struct allowedips_node *next_allowedip;
 };
 
+struct printbuf {
+	char *buf;
+	unsigned int size;
+	unsigned int pos;
+	unsigned int last_newline;
+	unsigned int last_field;
+	unsigned int indent;
+	u8 atomic;
+	bool allocation_failure: 1;
+	bool heap_allocated: 1;
+	enum printbuf_si si_units: 1;
+	bool human_readable_units: 1;
+	bool has_indent_or_tabstops: 1;
+	bool suppress_indent_tabstop_handling: 1;
+	u8 nr_tabstops;
+	u8 cur_tabstop;
+	u8 _tabstops[6];
+};
+
+struct dump_iter {
+	struct bch_fs *c;
+	enum btree_id id;
+	struct bpos from;
+	struct bpos prev_node;
+	u64 iter;
+	struct printbuf buf;
+	char __attribute__((btf_type_tag("user"))) *ubuf;
+	size_t size;
+	ssize_t ret;
+};
+
 struct duplicate_extents_to_file {
 	__u64 PersistentFileHandle;
 	__u64 VolatileFileHandle;
@@ -60675,6 +66238,73 @@ struct ebt_template {
 	char name[32];
 	struct module *owner;
 	int (*table_init)(struct net *);
+};
+
+struct ec_stripe_buf;
+
+struct ec_bio {
+	struct bch_dev *ca;
+	struct ec_stripe_buf *buf;
+	size_t idx;
+	struct bio bio;
+};
+
+struct ec_stripe_buf {
+	unsigned int offset;
+	unsigned int size;
+	unsigned long valid[1];
+	void *data[16];
+	struct bkey_i key;
+	__u64 key_pad[255];
+};
+
+struct ec_stripe_head {
+	struct list_head list;
+	struct mutex lock;
+	unsigned int target;
+	unsigned int algo;
+	unsigned int redundancy;
+	enum bch_watermark watermark;
+	struct bch_devs_mask devs;
+	unsigned int nr_active_devs;
+	unsigned int blocksize;
+	struct dev_stripe_state block_stripe;
+	struct dev_stripe_state parity_stripe;
+	struct ec_stripe_new *s;
+};
+
+struct ec_stripe_heap_entry {
+	size_t idx;
+	unsigned int blocks_nonempty;
+};
+
+struct ec_stripe_new {
+	struct bch_fs *c;
+	struct ec_stripe_head *h;
+	struct mutex lock;
+	struct list_head list;
+	struct hlist_node hash;
+	u64 idx;
+	struct closure iodone;
+	atomic_t ref[2];
+	int err;
+	u8 nr_data;
+	u8 nr_parity;
+	bool allocated;
+	bool pending;
+	bool have_existing_stripe;
+	unsigned long blocks_gotten[1];
+	unsigned long blocks_allocated[1];
+	open_bucket_idx_t blocks[16];
+	struct disk_reservation res;
+	struct ec_stripe_buf new_stripe;
+	struct ec_stripe_buf existing_stripe;
+};
+
+struct echo_info {
+	struct in_addr ms_addr_ip4;
+	struct in_addr peer_addr_ip4;
+	u8 gtp_version;
 };
 
 struct eee_config {
@@ -61610,12 +67240,6 @@ struct esp_skb_cb {
 struct esr_context {
 	struct _aarch64_ctx head;
 	__u64 esr;
-};
-
-struct ethhdr {
-	unsigned char h_dest[6];
-	unsigned char h_source[6];
-	__be16 h_proto;
 };
 
 struct ethnl_request_ops;
@@ -63569,21 +69193,6 @@ struct ext4_renament {
 	int dir_inlined;
 };
 
-struct rcu_sync {
-	int gp_state;
-	int gp_count;
-	wait_queue_head_t gp_wait;
-	struct callback_head cb_head;
-};
-
-struct percpu_rw_semaphore {
-	struct rcu_sync rss;
-	unsigned int __attribute__((btf_type_tag("percpu"))) *read_count;
-	struct rcuwait writer;
-	wait_queue_head_t waiters;
-	atomic_t block;
-};
-
 struct ext4_super_block;
 
 struct journal_s;
@@ -64057,6 +69666,37 @@ struct extent_changeset {
 	struct ulist range_changed;
 };
 
+struct snapshots_seen_entry {
+	u32 id;
+	u32 equiv;
+};
+
+struct snapshots_seen {
+	struct bpos pos;
+	struct {
+		size_t nr;
+		size_t size;
+		struct snapshots_seen_entry *data;
+		struct snapshots_seen_entry preallocated[0];
+	} ids;
+};
+
+struct extent_end {
+	u32 snapshot;
+	u64 offset;
+	struct snapshots_seen seen;
+};
+
+struct extent_ends {
+	struct bpos last_pos;
+	struct {
+		size_t nr;
+		size_t size;
+		struct extent_end *data;
+		struct extent_end preallocated[0];
+	} e;
+};
+
 struct extent_info {
 	unsigned int fofs;
 	unsigned int len;
@@ -64152,6 +69792,12 @@ struct extent_tree_info {
 	struct list_head zombie_list;
 	atomic_t total_zombie_tree;
 	atomic_t total_ext_node;
+};
+
+struct extents_to_bp_state {
+	struct bpos bucket_start;
+	struct bpos bucket_end;
+	struct bkey_buf last_flushed;
 };
 
 struct external_name {
@@ -66530,6 +72176,12 @@ struct filter_pred {
 	int op;
 };
 
+struct find_btree_nodes_worker {
+	struct closure *cl;
+	struct find_btree_nodes *f;
+	struct bch_dev *ca;
+};
+
 struct find_free_extent_ctl {
 	u64 ram_bytes;
 	u64 num_bytes;
@@ -66664,6 +72316,14 @@ struct fl_flow_tmplt {
 struct flags {
 	int flag;
 	char *name[2];
+};
+
+struct flags_set {
+	unsigned int mask;
+	unsigned int flags;
+	unsigned int projid;
+	bool set_projinherit;
+	bool projinherit;
 };
 
 struct flex_groups {
@@ -67116,6 +72776,19 @@ struct flow_offload_action {
 	struct flow_action action;
 };
 
+struct flow_offload_work {
+	struct list_head list;
+	enum flow_cls_command cmd;
+	struct nf_flowtable *flowtable;
+	struct flow_offload *flow;
+	struct work_struct work;
+};
+
+struct flow_ports {
+	__be16 source;
+	__be16 dest;
+};
+
 struct flow_rule {
 	struct flow_match match;
 	struct flow_action action;
@@ -67336,6 +73009,12 @@ struct folio_referenced_arg {
 	int referenced;
 	unsigned long vm_flags;
 	struct mem_cgroup *memcg;
+};
+
+struct folio_vec {
+	struct folio *fv_folio;
+	size_t fv_offset;
+	size_t fv_len;
 };
 
 struct follow_page_context {
@@ -67963,6 +73642,45 @@ struct fscache_volume {
 	unsigned long flags;
 	u8 coherency_len;
 	u8 coherency[0];
+};
+
+struct fsck_err_state {
+	struct list_head list;
+	const char *fmt;
+	u64 nr;
+	bool ratelimited;
+	int ret;
+	int fix;
+	char *last_msg;
+};
+
+struct stdio_buf {
+	spinlock_t lock;
+	wait_queue_head_t wait;
+	darray_char buf;
+};
+
+struct stdio_redirect {
+	struct stdio_buf input;
+	struct stdio_buf output;
+	spinlock_t input_lock;
+	wait_queue_head_t input_wait;
+	darray_char input_buf;
+	bool done;
+};
+
+struct thread_with_stdio_ops;
+
+struct thread_with_stdio {
+	struct thread_with_file thr;
+	struct stdio_redirect stdio;
+	const struct thread_with_stdio_ops *ops;
+};
+
+struct fsck_thread {
+	struct thread_with_stdio thr;
+	struct bch_fs *c;
+	struct bch_opts opts;
 };
 
 struct fsctl_get_dfs_referral_req {
@@ -69849,6 +75567,11 @@ struct get_key_cookie {
 	int idx;
 };
 
+struct get_locks_fail {
+	unsigned int l;
+	struct btree *b;
+};
+
 struct getbmapx {
 	__s64 bmv_offset;
 	__s64 bmv_block;
@@ -69865,22 +75588,22 @@ struct getcpu_cache {
 	unsigned long blob[16];
 };
 
-struct getdents_callback {
-	struct dir_context ctx;
-	char *name;
-	u64 ino;
-	int found;
-	int sequence;
-};
-
 struct linux_dirent;
 
-struct getdents_callback___2 {
+struct getdents_callback {
 	struct dir_context ctx;
 	struct linux_dirent __attribute__((btf_type_tag("user"))) *current_dir;
 	int prev_reclen;
 	int count;
 	int error;
+};
+
+struct getdents_callback___2 {
+	struct dir_context ctx;
+	char *name;
+	u64 ino;
+	int found;
+	int sequence;
 };
 
 struct linux_dirent64;
@@ -69926,14 +75649,14 @@ struct ghash_ctx {
 };
 
 struct ghash_desc_ctx {
-	u8 buffer[16];
-	u32 bytes;
-};
-
-struct ghash_desc_ctx___2 {
 	u64 digest[2];
 	u8 buf[16];
 	u32 count;
+};
+
+struct ghash_desc_ctx___2 {
+	u8 buffer[16];
+	u32 bytes;
 };
 
 union gic_base {
@@ -70558,9 +76281,82 @@ struct gssx_res_accept_sec_context {
 	struct gssx_option_array options;
 };
 
+struct gtp0_header {
+	__u8 flags;
+	__u8 type;
+	__be16 length;
+	__be16 seq;
+	__be16 flow;
+	__u8 number;
+	__u8 spare[3];
+	__be64 tid;
+} __attribute__((packed));
+
+struct gtp_ie {
+	__u8 tag;
+	__u8 val;
+};
+
+struct gtp0_packet {
+	struct gtp0_header gtp0_h;
+	struct gtp_ie ie;
+};
+
+struct gtp1_header {
+	__u8 flags;
+	__u8 type;
+	__be16 length;
+	__be32 tid;
+};
+
+struct gtp1_header_long {
+	__u8 flags;
+	__u8 type;
+	__be16 length;
+	__be32 tid;
+	__be16 seq;
+	__u8 npdu;
+	__u8 next;
+};
+
+struct gtp1u_packet {
+	struct gtp1_header_long gtp1u_h;
+	struct gtp_ie ie;
+} __attribute__((packed));
+
+struct gtp_dev {
+	struct list_head list;
+	struct sock *sk0;
+	struct sock *sk1u;
+	u8 sk_created;
+	struct net_device *dev;
+	struct net *net;
+	unsigned int role;
+	unsigned int hash_size;
+	struct hlist_head *tid_hash;
+	struct hlist_head *addr_hash;
+	u8 restart_count;
+};
+
+struct gtp_net {
+	struct list_head gtp_dev_list;
+};
+
 struct gtp_pdu_session_info {
 	u8 pdu_type;
 	u8 qfi;
+};
+
+struct pdp_ctx;
+
+struct gtp_pktinfo {
+	struct sock *sk;
+	struct iphdr *iph;
+	struct flowi4 fl4;
+	struct rtable *rt;
+	struct pdp_ctx *pctx;
+	struct net_device *dev;
+	__be16 gtph_port;
 };
 
 struct guehdr {
@@ -75802,6 +81598,11 @@ struct icmpv6msg_mib_device {
 	atomic_long_t mibs[512];
 };
 
+struct id {
+	__u16 id;
+	__be16 proto;
+};
+
 struct ida_bitmap {
 	unsigned long bitmap[16];
 };
@@ -78783,6 +84584,41 @@ struct ifaddrmsg {
 	__u32 ifa_index;
 };
 
+struct ifb_q_private;
+
+struct ifb_dev_private {
+	struct ifb_q_private *tx_private;
+};
+
+struct ifb_q_stats {
+	u64 packets;
+	u64 bytes;
+	struct u64_stats_sync sync;
+};
+
+struct ifb_q_private {
+	struct net_device *dev;
+	struct tasklet_struct ifb_tasklet;
+	int tasklet_pending;
+	int txqnum;
+	struct sk_buff_head rq;
+	struct sk_buff_head tq;
+	struct ifb_q_stats rx_stats;
+	struct ifb_q_stats tx_stats;
+	long: 64;
+	long: 64;
+	long: 64;
+	long: 64;
+	long: 64;
+	long: 64;
+	long: 64;
+};
+
+struct ifb_q_stats_desc {
+	char desc[32];
+	size_t offset;
+};
+
 struct ifbond {
 	__s32 bond_mode;
 	__s32 num_slaves;
@@ -79907,6 +85743,12 @@ struct inode_fs_paths {
 	struct btrfs_data_container *fspath;
 };
 
+struct inode_new_size {
+	loff_t new_size;
+	u64 now;
+	unsigned int fields;
+};
+
 struct mnt_idmap;
 
 struct kstat;
@@ -79948,10 +85790,36 @@ struct inode_operations {
 	long: 64;
 };
 
+struct inode_opt_set {
+	int id;
+	u64 v;
+	bool defined;
+};
+
 struct inode_switch_wbs_context {
 	struct rcu_work work;
 	struct bdi_writeback *new_wb;
 	struct inode *inodes[0];
+};
+
+struct inode_walker_entry {
+	struct bch_inode_unpacked inode;
+	u32 snapshot;
+	bool seen_this_pos;
+	u64 count;
+};
+
+struct inode_walker {
+	bool first_this_inode;
+	bool recalculate_sums;
+	int: 0;
+	struct bpos last_pos;
+	struct {
+		size_t nr;
+		size_t size;
+		struct inode_walker_entry *data;
+		struct inode_walker_entry preallocated[0];
+	} inodes;
 };
 
 struct inodes_stat_t {
@@ -80362,6 +86230,20 @@ struct io_cb_cancel_data {
 	bool cancel_all;
 };
 
+typedef void (*io_timer_fn)(struct io_timer *);
+
+struct io_timer {
+	io_timer_fn fn;
+	unsigned long expire;
+};
+
+struct io_clock_wait {
+	struct io_timer io_timer;
+	struct timer_list cpu_timer;
+	struct task_struct *task;
+	int expired;
+};
+
 struct io_close {
 	struct file *file;
 	int fd;
@@ -80401,6 +86283,10 @@ struct io_context {
 	atomic_long_t refcount;
 	atomic_t active_ref;
 	unsigned short ioprio;
+};
+
+struct io_count {
+	u64 sectors[20];
 };
 
 struct io_cq {
@@ -85251,6 +91137,12 @@ struct jitterentropy {
 	struct shash_desc *sdesc;
 };
 
+struct journal_bio {
+	struct bch_dev *ca;
+	unsigned int buf_idx;
+	struct bio bio;
+};
+
 struct journal_block_tag3_s {
 	__be32 t_blocknr;
 	__be32 t_flags;
@@ -85269,6 +91161,13 @@ struct journal_block_tag_s {
 
 typedef struct journal_block_tag_s journal_block_tag_t;
 
+struct journal_entry_pin_list {
+	struct list_head list[3];
+	struct list_head flushed;
+	atomic_t count;
+	struct bch_devs_list devs;
+};
+
 struct journal_head {
 	struct buffer_head *b_bh;
 	spinlock_t b_state_lock;
@@ -85286,6 +91185,70 @@ struct journal_head {
 	struct journal_head *b_cpprev;
 	struct jbd2_buffer_trigger_type *b_triggers;
 	struct jbd2_buffer_trigger_type *b_frozen_triggers;
+};
+
+struct journal_key {
+	u64 journal_seq;
+	u32 journal_offset;
+	enum btree_id btree_id: 8;
+	unsigned int level: 8;
+	bool allocated;
+	bool overwritten;
+	struct bkey_i *k;
+};
+
+struct journal_keys_to_wb {
+	struct btree_write_buffer_keys *wb;
+	size_t room;
+	u64 seq;
+};
+
+struct journal_list {
+	struct closure cl;
+	u64 last_seq;
+	struct mutex lock;
+	int ret;
+};
+
+struct journal_ptr {
+	bool csum_good;
+	u8 dev;
+	u32 bucket;
+	u32 bucket_offset;
+	u64 sector;
+};
+
+struct journal_read_buf {
+	void *data;
+	size_t size;
+};
+
+struct jset {
+	struct bch_csum csum;
+	__le64 magic;
+	__le64 seq;
+	__le32 version;
+	__le32 flags;
+	__le32 u64s;
+	__u8 encrypted_start[0];
+	__le16 _read_clock;
+	__le16 _write_clock;
+	__le64 last_seq;
+	struct jset_entry start[0];
+	__u64 _data[0];
+};
+
+struct journal_replay {
+	struct {
+		size_t nr;
+		size_t size;
+		struct journal_ptr *data;
+		struct journal_ptr preallocated[8];
+	} ptrs;
+	bool csum_good;
+	bool ignore_blacklisted;
+	bool ignore_not_dirty;
+	struct jset j;
 };
 
 struct transaction_run_stats_s {
@@ -85387,6 +91350,17 @@ struct journal_s {
 	int (*j_bmap)(struct journal_s *, sector_t *);
 };
 
+struct journal_seq_blacklist_table_entry {
+	u64 start;
+	u64 end;
+	bool dirty;
+};
+
+struct journal_seq_blacklist_table {
+	size_t nr;
+	struct journal_seq_blacklist_table_entry entries[0];
+};
+
 struct journal_superblock_s {
 	journal_header_t s_header;
 	__be32 s_blocksize;
@@ -85410,6 +91384,65 @@ struct journal_superblock_s {
 	__u32 s_padding[40];
 	__be32 s_checksum;
 	__u8 s_users[768];
+};
+
+struct jset_entry_blacklist {
+	struct jset_entry entry;
+	__le64 seq;
+};
+
+struct jset_entry_blacklist_v2 {
+	struct jset_entry entry;
+	__le64 start;
+	__le64 end;
+};
+
+struct jset_entry_clock {
+	struct jset_entry entry;
+	__u8 rw;
+	__u8 pad[7];
+	__le64 time;
+};
+
+struct jset_entry_data_usage {
+	struct jset_entry entry;
+	__le64 v;
+	struct bch_replicas_entry_v1 r;
+} __attribute__((packed));
+
+struct jset_entry_datetime {
+	struct jset_entry entry;
+	__le64 seconds;
+};
+
+struct jset_entry_dev_usage_type {
+	__le64 buckets;
+	__le64 sectors;
+	__le64 fragmented;
+};
+
+struct jset_entry_dev_usage {
+	struct jset_entry entry;
+	__le32 dev;
+	__u32 pad;
+	__le64 _buckets_ec;
+	__le64 _buckets_unavailable;
+	struct jset_entry_dev_usage_type d[0];
+};
+
+struct jset_entry_log {
+	struct jset_entry entry;
+	u8 d[0];
+};
+
+struct jset_entry_ops {
+	int (*validate)(struct bch_fs *, struct jset *, struct jset_entry *, unsigned int, int, enum bkey_invalid_flags);
+	void (*to_text)(struct printbuf *, struct bch_fs *, struct jset_entry *);
+};
+
+struct jset_entry_usage {
+	struct jset_entry entry;
+	__le64 v;
 };
 
 struct jump_entry {
@@ -87050,6 +93083,11 @@ struct l3mdev_ops {
 	struct dst_entry * (*l3mdev_link_scope_lookup)(const struct net_device *, struct flowi6 *);
 };
 
+struct lacpdu_header {
+	struct ethhdr hdr;
+	struct lacpdu lacpdu;
+};
+
 struct landlock_ruleset;
 
 struct landlock_cred_security {
@@ -87216,6 +93254,13 @@ struct le_str {
 	u8 len;
 	u8 unused;
 	__le16 name[0];
+};
+
+struct learning_pkt {
+	u8 mac_dst[6];
+	u8 mac_src[6];
+	__be16 type;
+	u8 padding[46];
 };
 
 struct lease_manager_operations {
@@ -87617,6 +93662,20 @@ struct load_info {
 struct local_ports {
 	u32 range;
 	bool warned;
+};
+
+struct trans_waiting_for_lock {
+	struct btree_trans *trans;
+	struct btree_bkey_cached_common *node_want;
+	enum six_lock_type lock_want;
+	u8 path_idx;
+	u8 level;
+	u64 lock_start_time;
+};
+
+struct lock_graph {
+	struct trans_waiting_for_lock g[8];
+	unsigned int nr;
 };
 
 struct lock_manager {
@@ -89178,7 +95237,7 @@ struct mgmt_frame_regs {
 };
 
 struct mhu_db_channel {
-	struct arm_mhu *mhu;
+	struct arm_mhu___2 *mhu;
 	unsigned int pchan;
 	unsigned int doorbell;
 };
@@ -90051,6 +96110,13 @@ struct movable_operations {
 	void (*putback_page)(struct page *);
 };
 
+struct move_bucket_in_flight {
+	struct move_bucket_in_flight *next;
+	struct rhash_head hash;
+	struct move_bucket bucket;
+	atomic_t count;
+};
+
 struct move_charge_struct {
 	spinlock_t lock;
 	struct mm_struct *mm;
@@ -90071,6 +96137,39 @@ struct move_extent {
 	__u64 donor_start;
 	__u64 len;
 	__u64 moved_len;
+};
+
+struct moving_context {
+	struct btree_trans *trans;
+	struct list_head list;
+	void *fn;
+	struct bch_ratelimit *rate;
+	struct bch_move_stats *stats;
+	struct write_point_specifier wp;
+	bool wait_on_copygc;
+	bool write_error;
+	struct closure cl;
+	struct mutex lock;
+	struct list_head reads;
+	struct list_head ios;
+	atomic_t read_sectors;
+	atomic_t write_sectors;
+	atomic_t read_ios;
+	atomic_t write_ios;
+	wait_queue_head_t wait;
+};
+
+struct moving_io {
+	struct list_head read_list;
+	struct list_head io_list;
+	struct move_bucket_in_flight *b;
+	struct closure cl;
+	bool read_completed;
+	unsigned int read_sectors;
+	unsigned int write_sectors;
+	struct bch_read_bio rbio;
+	struct data_update write;
+	struct bio_vec bi_inline_vecs[0];
 };
 
 struct mp_adapter {
@@ -91672,6 +97771,7 @@ struct netns_nf {
 	struct proc_dir_entry *proc_netfilter;
 	const struct nf_logger __attribute__((btf_type_tag("rcu"))) *nf_loggers[11];
 	struct ctl_table_header *nf_log_dir_header;
+	struct ctl_table_header *nf_lwtnl_dir_header;
 	struct nf_hook_entries __attribute__((btf_type_tag("rcu"))) *hooks_ipv4[5];
 	struct nf_hook_entries __attribute__((btf_type_tag("rcu"))) *hooks_ipv6[5];
 	struct nf_hook_entries __attribute__((btf_type_tag("rcu"))) *hooks_arp[3];
@@ -91690,10 +97790,12 @@ struct nf_tcp_net {
 	u8 tcp_be_liberal;
 	u8 tcp_max_retrans;
 	u8 tcp_ignore_invalid_rst;
+	unsigned int offload_timeout;
 };
 
 struct nf_udp_net {
 	unsigned int timeouts[2];
+	unsigned int offload_timeout;
 };
 
 struct nf_icmp_net {
@@ -91742,6 +97844,12 @@ struct netns_ct {
 
 struct netns_nftables {
 	u8 gencursor;
+};
+
+struct nf_flow_table_stat;
+
+struct netns_ft {
+	struct nf_flow_table_stat __attribute__((btf_type_tag("percpu"))) *stat;
 };
 
 struct netns_bpf {
@@ -91894,8 +98002,14 @@ struct net {
 	struct netns_nf nf;
 	struct netns_ct ct;
 	struct netns_nftables nft;
+	struct netns_ft ft;
 	struct net_generic __attribute__((btf_type_tag("rcu"))) *gen;
 	struct netns_bpf bpf;
+	long: 64;
+	long: 64;
+	long: 64;
+	long: 64;
+	long: 64;
 	long: 64;
 	long: 64;
 	struct netns_xfrm xfrm;
@@ -94119,9 +100233,37 @@ struct nf_flow_match {
 	struct nf_flow_key mask;
 };
 
+struct nf_flow_route {
+	struct {
+		struct dst_entry *dst;
+		struct {
+			u32 ifindex;
+			struct {
+				u16 id;
+				__be16 proto;
+			} encap[2];
+			u8 num_encaps: 2;
+			u8 ingress_vlans: 2;
+		} in;
+		struct {
+			u32 ifindex;
+			u32 hw_ifindex;
+			u8 h_source[6];
+			u8 h_dest[6];
+		} out;
+		enum flow_offload_xmit_type xmit_type;
+	} tuple[2];
+};
+
 struct nf_flow_rule {
 	struct nf_flow_match match;
 	struct flow_rule *rule;
+};
+
+struct nf_flow_table_stat {
+	unsigned int count_wq_add;
+	unsigned int count_wq_del;
+	unsigned int count_wq_stats;
 };
 
 struct nf_flowtable_type;
@@ -94136,6 +100278,12 @@ struct nf_flowtable {
 	struct flow_block flow_block;
 	struct rw_semaphore flow_block_lock;
 	possible_net_t net;
+};
+
+struct nf_flowtable_ctx {
+	const struct net_device *in;
+	u32 offset;
+	u32 hdrsize;
 };
 
 struct nf_flowtable_type {
@@ -99152,6 +105300,12 @@ struct nft_flow_match {
 	struct nft_flow_key mask;
 };
 
+struct nft_flowtable;
+
+struct nft_flow_offload {
+	struct nft_flowtable *flowtable;
+};
+
 struct nft_flow_rule {
 	__be16 proto;
 	struct nft_flow_match match;
@@ -99186,6 +105340,18 @@ struct nft_flowtable_hook {
 	u32 num;
 	int priority;
 	struct list_head list;
+};
+
+struct nft_forward_info {
+	const struct net_device *indev;
+	const struct net_device *outdev;
+	const struct net_device *hw_outdev;
+	struct id encap[2];
+	u8 num_encaps;
+	u8 ingress_vlans;
+	u8 h_source[6];
+	u8 h_dest[6];
+	enum flow_offload_xmit_type xmit_type;
 };
 
 struct nft_hash {
@@ -100321,6 +106487,18 @@ struct nldev_fill_res_entry {
 	u32 id;
 };
 
+struct nlink {
+	u64 inum;
+	u32 snapshot;
+	u32 count;
+};
+
+struct nlink_table {
+	size_t nr;
+	size_t size;
+	struct nlink *d;
+};
+
 struct nlm_cookie {
 	unsigned char data[32];
 	unsigned int len;
@@ -100537,6 +106715,12 @@ struct nmi_ctx {
 	unsigned int cnt;
 };
 
+struct nocow_flush {
+	struct closure *cl;
+	struct bch_dev *ca;
+	struct bio bio;
+};
+
 struct node_groups {
 	unsigned int id;
 	union {
@@ -100601,6 +106785,10 @@ struct noise_static_identity {
 	u8 static_private[32];
 	struct rw_semaphore lock;
 	bool has_identity;
+};
+
+struct nonce {
+	__le32 d[4];
 };
 
 struct notification {
@@ -101187,6 +107375,12 @@ struct octet_string {
 };
 
 struct of_bus {
+	void (*count_cells)(const void *, int, int *, int *);
+	u64 (*map)(__be32 *, const __be32 *, int, int, int);
+	int (*translate)(__be32 *, u64, int);
+};
+
+struct of_bus___2 {
 	const char *name;
 	const char *addresses;
 	int (*match)(struct device_node *);
@@ -101195,12 +107389,6 @@ struct of_bus {
 	int (*translate)(__be32 *, u64, int);
 	int flag_cells;
 	unsigned int (*get_flags)(const __be32 *);
-};
-
-struct of_bus___2 {
-	void (*count_cells)(const void *, int, int *, int *);
-	u64 (*map)(__be32 *, const __be32 *, int, int, int);
-	int (*translate)(__be32 *, u64, int);
 };
 
 struct of_clk_provider {
@@ -101252,7 +107440,7 @@ struct of_pci_range {
 
 struct of_pci_range_parser {
 	struct device_node *node;
-	struct of_bus *bus;
+	struct of_bus___2 *bus;
 	const __be32 *range;
 	const __be32 *end;
 	int na;
@@ -101312,6 +107500,12 @@ struct of_timer_irq {
 struct offset_ctx {
 	struct maple_tree mt;
 	unsigned long next_offset;
+};
+
+struct old_bkey_type {
+	u8 btree_node_type;
+	u8 old;
+	u8 new;
 };
 
 struct old_timespec32 {
@@ -102233,6 +108427,13 @@ struct pacct_struct {
 	u64 ac_stime;
 	unsigned long ac_minflt;
 	unsigned long ac_majflt;
+};
+
+struct pack_state {
+	const struct bkey_format *format;
+	unsigned int bits;
+	u64 w;
+	u64 *p;
 };
 
 struct packet_cb {
@@ -103389,6 +109590,29 @@ struct pde_opener {
 
 struct pdev_archdata {};
 
+struct pdp_ctx {
+	struct hlist_node hlist_tid;
+	struct hlist_node hlist_addr;
+	union {
+		struct {
+			u64 tid;
+			u16 flow;
+		} v0;
+		struct {
+			u32 i_tei;
+			u32 o_tei;
+		} v1;
+	} u;
+	u8 gtp_version;
+	u16 af;
+	struct in_addr ms_addr_ip4;
+	struct in_addr peer_addr_ip4;
+	struct sock *sk;
+	struct net_device *dev;
+	atomic_t tx_seq;
+	struct callback_head callback_head;
+};
+
 struct pending_dir_move {
 	struct rb_node node;
 	struct list_head list;
@@ -103418,14 +109642,28 @@ struct per_cpu_pages {
 	u8 flags;
 	u8 alloc_factor;
 	short free_count;
-	struct list_head lists[13];
-	long: 64;
-	long: 64;
+	struct list_head lists[14];
 };
 
 struct per_cpu_zonestat {
 	s8 vm_stat_diff[11];
 	s8 stat_threshold;
+};
+
+struct snapshot_io_opts_entry {
+	u32 snapshot;
+	struct bch_io_opts io_opts;
+};
+
+struct per_snapshot_io_opts {
+	u64 cur_inum;
+	struct bch_io_opts fs_io_opts;
+	struct {
+		size_t nr;
+		size_t size;
+		struct snapshot_io_opts_entry *data;
+		struct snapshot_io_opts_entry preallocated[0];
+	} d;
 };
 
 struct swap_cluster_info {
@@ -104817,6 +111055,9 @@ union pkthdr {
 		u8 type;
 		u8 code;
 	} icmphdr;
+	struct {
+		u8 type;
+	} igmphdr;
 };
 
 union pkthdr___2 {
@@ -104828,9 +111069,6 @@ union pkthdr___2 {
 		u8 type;
 		u8 code;
 	} icmphdr;
-	struct {
-		u8 type;
-	} igmphdr;
 };
 
 struct rtc_device;
@@ -105188,6 +111426,11 @@ struct poly1305_desc_ctx {
 };
 
 struct polyval_desc_ctx {
+	u8 buffer[16];
+	u32 bytes;
+};
+
+struct polyval_desc_ctx___2 {
 	union {
 		u8 buffer[16];
 		be128 buffer128;
@@ -105195,17 +111438,12 @@ struct polyval_desc_ctx {
 	u32 bytes;
 };
 
-struct polyval_desc_ctx___2 {
-	u8 buffer[16];
-	u32 bytes;
-};
-
 struct polyval_tfm_ctx {
-	struct gf128mul_4k *gf128;
+	u8 key_powers[128];
 };
 
 struct polyval_tfm_ctx___2 {
-	u8 key_powers[128];
+	struct gf128mul_4k *gf128;
 };
 
 struct worker_pool;
@@ -106332,6 +112570,15 @@ struct prog_test_ref_kfunc {
 	refcount_t cnt;
 };
 
+struct promote_op {
+	struct callback_head rcu;
+	u64 start_time;
+	struct rhash_head hash;
+	struct bpos pos;
+	struct data_update write;
+	struct bio_vec bi_inline_vecs[0];
+};
+
 struct prop_handler {
 	struct hlist_node node;
 	const char *xattr_name;
@@ -107090,6 +113337,14 @@ struct quota_info {
 struct quota_module_name {
 	int qm_fmt_id;
 	char *qm_mod_name;
+};
+
+struct quota_msgs {
+	u8 nr;
+	struct {
+		u8 qtype;
+		u8 msg;
+	} m[6];
 };
 
 struct quotactl_ops {
@@ -108164,6 +114419,12 @@ struct readdir_data {
 	int full;
 };
 
+struct readpages_iter {
+	struct address_space *mapping;
+	unsigned int idx;
+	folios folios;
+};
+
 struct reboot_mode_driver {
 	struct device *dev;
 	struct list_head head;
@@ -108313,6 +114574,11 @@ struct recovery_info {
 	int nr_replays;
 	int nr_revokes;
 	int nr_revoke_hits;
+};
+
+struct recovery_pass_fn {
+	int (*fn)(struct bch_fs *);
+	unsigned int when;
 };
 
 struct recv_thread_args {
@@ -108810,6 +115076,21 @@ struct repcodes_s {
 };
 
 typedef struct repcodes_s repcodes_t;
+
+struct replicas_delta {
+	s64 delta;
+	struct bch_replicas_entry_v1 r;
+} __attribute__((packed));
+
+struct replicas_delta_list {
+	unsigned int size;
+	unsigned int used;
+	struct {} memset_start;
+	u64 nr_inodes;
+	u64 persistent_reserved[4];
+	struct {} memset_end;
+	struct replicas_delta d[0];
+};
 
 struct req {
 	struct req *next;
@@ -109345,6 +115626,11 @@ struct rng_alg {
 	void (*set_ent)(struct crypto_rng *, const u8 *, unsigned int);
 	unsigned int seedsize;
 	struct crypto_alg base;
+};
+
+struct ro_aux_tree {
+	u8 nothing[0];
+	struct bkey_float f[0];
 };
 
 struct robust_list {
@@ -112059,6 +118345,12 @@ struct rusage {
 	__kernel_long_t ru_nsignals;
 	__kernel_long_t ru_nvcsw;
 	__kernel_long_t ru_nivcsw;
+};
+
+struct rw_aux_tree {
+	u16 offset;
+	int: 0;
+	struct bpos k;
 };
 
 struct rwsem_waiter {
@@ -117351,6 +123643,17 @@ struct siw_user_mmap_entry {
 	void *address;
 };
 
+struct six_lock_count {
+	unsigned int n[3];
+};
+
+struct six_lock_vals {
+	u32 lock_val;
+	u32 lock_fail;
+	u32 held_mask;
+	enum six_lock_type unlock_wakeup;
+};
+
 struct zs_size_stat {
 	unsigned long objs[14];
 };
@@ -117661,6 +123964,11 @@ struct slave {
 	struct delayed_work notify_work;
 	struct kobject kobj;
 	struct rtnl_link_stats64 slave_stats;
+};
+
+struct slave_attribute {
+	struct attribute attr;
+	ssize_t (*show)(struct slave *, char *);
 };
 
 struct slcompress {
@@ -119747,6 +126055,38 @@ struct smpboot_thread_data {
 	struct smp_hotplug_thread *ht;
 };
 
+struct snapshot_t {
+	u32 parent;
+	u32 skip[3];
+	u32 depth;
+	u32 children[2];
+	u32 subvol;
+	u32 tree;
+	u32 equiv;
+	unsigned long is_ancestor[2];
+};
+
+struct snapshot_table {
+	struct callback_head rcu;
+	size_t nr;
+	struct {
+		struct {} __empty_s;
+		struct snapshot_t s[0];
+	};
+};
+
+struct snapshot_tree_reconstruct {
+	enum btree_id btree;
+	struct bpos cur_pos;
+	snapshot_id_list cur_ids;
+	struct {
+		size_t nr;
+		size_t size;
+		snapshot_id_list *data;
+		snapshot_id_list preallocated[0];
+	} trees;
+};
+
 struct snmp_mib {
 	const char *name;
 	int entry;
@@ -120095,6 +126435,23 @@ struct software_node_ref_args {
 	const struct software_node *node;
 	unsigned int nargs;
 	u64 args[8];
+};
+
+struct sort_iter_set {
+	struct bkey_packed *k;
+	struct bkey_packed *end;
+};
+
+struct sort_iter {
+	struct btree *b;
+	unsigned int used;
+	unsigned int size;
+	struct sort_iter_set data[0];
+};
+
+struct sort_iter_stack {
+	struct sort_iter iter;
+	struct sort_iter_set sets[4];
 };
 
 struct spaceBitmapDesc {
@@ -121048,6 +127405,11 @@ struct subsys_private {
 	struct lock_class_key lock_key;
 };
 
+struct subvolume_unlink_hook {
+	struct btree_trans_commit_hook h;
+	u32 subvol;
+};
+
 struct sunrpc_net {
 	struct proc_dir_entry *proc_net_rpc;
 	struct cache_detail *ip_map_cache;
@@ -121828,6 +128190,11 @@ struct symsearch {
 	enum mod_license license;
 };
 
+struct synonym {
+	const char *s1;
+	const char *s2;
+};
+
 struct synproxy_stats;
 
 struct synproxy_net {
@@ -122087,6 +128454,18 @@ struct tap_queue {
 	struct ptr_ring ring;
 };
 
+struct target {
+	enum {
+		TARGET_NULL = 0,
+		TARGET_DEV = 1,
+		TARGET_GROUP = 2,
+	} type;
+	union {
+		unsigned int dev;
+		unsigned int group;
+	};
+};
+
 struct task_delay_info {
 	raw_spinlock_t lock;
 	u64 blkio_start;
@@ -122195,6 +128574,8 @@ struct thread_struct {
 	u64 sctlr_user;
 	u64 svcr;
 	u64 tpidr2_el0;
+	u64 actlr;
+	long: 64;
 };
 
 struct uprobe_task;
@@ -122397,8 +128778,6 @@ struct task_struct {
 	struct llist_head kretprobe_instances;
 	long: 64;
 	struct thread_struct thread;
-	long: 64;
-	long: 64;
 	long: 64;
 	long: 64;
 	long: 64;
@@ -123849,6 +130228,12 @@ struct thread_deferred_req {
 	struct completion completion;
 };
 
+struct thread_with_stdio_ops {
+	void (*exit)(struct thread_with_stdio *);
+	int (*fn)(struct thread_with_stdio *);
+	long (*unlocked_ioctl)(struct thread_with_stdio *, unsigned int, unsigned long);
+};
+
 struct throtl_service_queue {
 	struct throtl_service_queue *parent_sq;
 	struct list_head queued[2];
@@ -124009,6 +130394,21 @@ struct time_namespace {
 	struct timens_offsets offsets;
 	struct page *vvar_page;
 	bool frozen_offsets;
+};
+
+struct time_stat_buffer_entry {
+	u64 start;
+	u64 end;
+};
+
+struct time_stat_buffer {
+	unsigned int nr;
+	struct time_stat_buffer_entry entries[31];
+};
+
+struct time_unit {
+	const char *name;
+	u64 nsecs;
 };
 
 struct timedia_struct {
@@ -125502,6 +131902,8 @@ struct trace_event_data_offsets_api_stop_tx_ba_session {};
 
 struct trace_event_data_offsets_balance_dirty_pages {};
 
+struct trace_event_data_offsets_bch_fs {};
+
 struct trace_event_data_offsets_bdi_dirty_ratelimit {};
 
 struct trace_event_data_offsets_binder_buffer_class {};
@@ -125537,6 +131939,8 @@ struct trace_event_data_offsets_binder_txn_latency_free {};
 struct trace_event_data_offsets_binder_update_page_range {};
 
 struct trace_event_data_offsets_binder_wait_for_work {};
+
+struct trace_event_data_offsets_bio {};
 
 struct trace_event_data_offsets_block_bio {};
 
@@ -125581,6 +131985,8 @@ struct trace_event_data_offsets_bpf_xdp_link_attach_failed {
 	const void *msg_ptr_;
 };
 
+struct trace_event_data_offsets_bpos {};
+
 struct trace_event_data_offsets_br_fdb_add {
 	u32 dev;
 	const void *dev_ptr_;
@@ -125604,6 +132010,22 @@ struct trace_event_data_offsets_br_mdb_full {
 	u32 dev;
 	const void *dev_ptr_;
 };
+
+struct trace_event_data_offsets_btree_cache_scan {};
+
+struct trace_event_data_offsets_btree_node {};
+
+struct trace_event_data_offsets_btree_node_nofs {};
+
+struct trace_event_data_offsets_btree_node_write {};
+
+struct trace_event_data_offsets_btree_path_relock_fail {};
+
+struct trace_event_data_offsets_btree_path_upgrade_fail {};
+
+struct trace_event_data_offsets_btree_reserve_get_fail {};
+
+struct trace_event_data_offsets_btree_trans {};
 
 struct trace_event_data_offsets_btrfs__block_group {};
 
@@ -125709,6 +132131,12 @@ struct trace_event_data_offsets_btrfs_workqueue {
 struct trace_event_data_offsets_btrfs_workqueue_done {};
 
 struct trace_event_data_offsets_btrfs_writepage_end_io_hook {};
+
+struct trace_event_data_offsets_bucket_alloc {};
+
+struct trace_event_data_offsets_bucket_evacuate {};
+
+struct trace_event_data_offsets_bucket_invalidate {};
 
 struct trace_event_data_offsets_cache_event {
 	u32 name;
@@ -125908,6 +132336,10 @@ struct trace_event_data_offsets_contention_begin {};
 
 struct trace_event_data_offsets_contention_end {};
 
+struct trace_event_data_offsets_copygc {};
+
+struct trace_event_data_offsets_copygc_wait {};
+
 struct trace_event_data_offsets_cpu {};
 
 struct trace_event_data_offsets_cpu_frequency_limits {};
@@ -125971,6 +132403,8 @@ struct trace_event_data_offsets_devres {
 	u32 devname;
 	const void *devname_ptr_;
 };
+
+struct trace_event_data_offsets_discard_buckets {};
 
 struct trace_event_data_offsets_dma_fence {
 	u32 driver;
@@ -126262,7 +132696,11 @@ struct trace_event_data_offsets_erofs_read_folio {};
 
 struct trace_event_data_offsets_erofs_readpages {};
 
+struct trace_event_data_offsets_error_downcast {};
+
 struct trace_event_data_offsets_error_report_template {};
+
+struct trace_event_data_offsets_evacuate_bucket {};
 
 struct trace_event_data_offsets_exit_mmap {};
 
@@ -126622,6 +133060,11 @@ struct trace_event_data_offsets_free_extent_state {};
 
 struct trace_event_data_offsets_free_vmap_area_noflush {};
 
+struct trace_event_data_offsets_fs_str {
+	u32 str;
+	const void *str_ptr_;
+};
+
 struct trace_event_data_offsets_generic_add_lease {};
 
 struct trace_event_data_offsets_global_dirty_state {};
@@ -126826,6 +133269,10 @@ struct trace_event_data_offsets_jbd2_update_log_tail {};
 
 struct trace_event_data_offsets_jbd2_write_superblock {};
 
+struct trace_event_data_offsets_journal_reclaim_finish {};
+
+struct trace_event_data_offsets_journal_reclaim_start {};
+
 struct trace_event_data_offsets_kcompactd_wake_template {};
 
 struct trace_event_data_offsets_key_handle {};
@@ -127024,6 +133471,8 @@ struct trace_event_data_offsets_module_request {
 	u32 name;
 	const void *name_ptr_;
 };
+
+struct trace_event_data_offsets_move_data {};
 
 struct trace_event_data_offsets_mpath_evt {};
 
@@ -127669,6 +134118,8 @@ struct trace_event_data_offsets_page_pool_state_release {};
 
 struct trace_event_data_offsets_page_pool_update_nid {};
 
+struct trace_event_data_offsets_path_downgrade {};
+
 struct trace_event_data_offsets_percpu_alloc_percpu {};
 
 struct trace_event_data_offsets_percpu_alloc_percpu_fail {};
@@ -127971,6 +134422,8 @@ struct trace_event_data_offsets_rdev_update_owe_info {
 	u32 ie;
 	const void *ie_ptr_;
 };
+
+struct trace_event_data_offsets_read_nopromote {};
 
 struct trace_event_data_offsets_reclaim_retry_zone {};
 
@@ -128685,6 +135138,32 @@ struct trace_event_data_offsets_tmigr_update_events {};
 
 struct trace_event_data_offsets_track_foreign_dirty {};
 
+struct trace_event_data_offsets_trans_restart_journal_preres_get {};
+
+struct trace_event_data_offsets_trans_restart_key_cache_key_realloced {};
+
+struct trace_event_data_offsets_trans_restart_mem_realloced {};
+
+struct trace_event_data_offsets_trans_restart_split_race {};
+
+struct trace_event_data_offsets_trans_restart_upgrade {};
+
+struct trace_event_data_offsets_trans_restart_would_deadlock_write {};
+
+struct trace_event_data_offsets_trans_str {
+	u32 str;
+	const void *str_ptr_;
+};
+
+struct trace_event_data_offsets_trans_str_nocaller {
+	u32 str;
+	const void *str_ptr_;
+};
+
+struct trace_event_data_offsets_transaction_event {};
+
+struct trace_event_data_offsets_transaction_restart_iter {};
+
 struct trace_event_data_offsets_tunnel_only_evt {};
 
 struct trace_event_data_offsets_tx_rx_evt {};
@@ -128740,6 +135219,14 @@ struct trace_event_data_offsets_workqueue_queue_work {
 	u32 workqueue;
 	const void *workqueue_ptr_;
 };
+
+struct trace_event_data_offsets_write_buffer_flush {};
+
+struct trace_event_data_offsets_write_buffer_flush_slowpath {};
+
+struct trace_event_data_offsets_write_buffer_flush_sync {};
+
+struct trace_event_data_offsets_write_super {};
 
 struct trace_event_data_offsets_writeback_bdi_register {};
 
@@ -129402,6 +135889,12 @@ struct trace_event_raw_balance_dirty_pages {
 	char __data[0];
 };
 
+struct trace_event_raw_bch_fs {
+	struct trace_entry ent;
+	dev_t dev;
+	char __data[0];
+};
+
 struct trace_event_raw_bdi_dirty_ratelimit {
 	struct trace_entry ent;
 	char bdi[32];
@@ -129556,6 +136049,15 @@ struct trace_event_raw_binder_wait_for_work {
 	char __data[0];
 };
 
+struct trace_event_raw_bio {
+	struct trace_entry ent;
+	dev_t dev;
+	sector_t sector;
+	unsigned int nr_sector;
+	char rwbs[6];
+	char __data[0];
+};
+
 struct trace_event_raw_block_bio {
 	struct trace_entry ent;
 	dev_t dev;
@@ -129681,6 +136183,14 @@ struct trace_event_raw_bpf_xdp_link_attach_failed {
 	char __data[0];
 };
 
+struct trace_event_raw_bpos {
+	struct trace_entry ent;
+	u64 p_inode;
+	u64 p_offset;
+	u32 p_snapshot;
+	char __data[0];
+};
+
 struct trace_event_raw_br_fdb_add {
 	struct trace_entry ent;
 	u8 ndm_flags;
@@ -129718,6 +136228,99 @@ struct trace_event_raw_br_mdb_full {
 	__u8 src[16];
 	__u8 grp[16];
 	__u8 grpmac[6];
+	char __data[0];
+};
+
+struct trace_event_raw_btree_cache_scan {
+	struct trace_entry ent;
+	long nr_to_scan;
+	long can_free;
+	long ret;
+	char __data[0];
+};
+
+struct trace_event_raw_btree_node {
+	struct trace_entry ent;
+	dev_t dev;
+	char trans_fn[32];
+	u8 level;
+	u8 btree_id;
+	u64 pos_inode;
+	u64 pos_offset;
+	u32 pos_snapshot;
+	char __data[0];
+};
+
+struct trace_event_raw_btree_node_nofs {
+	struct trace_entry ent;
+	dev_t dev;
+	u8 level;
+	u8 btree_id;
+	u64 pos_inode;
+	u64 pos_offset;
+	u32 pos_snapshot;
+	char __data[0];
+};
+
+struct trace_event_raw_btree_node_write {
+	struct trace_entry ent;
+	enum btree_node_type type;
+	unsigned int bytes;
+	unsigned int sectors;
+	char __data[0];
+};
+
+struct trace_event_raw_btree_path_relock_fail {
+	struct trace_entry ent;
+	char trans_fn[32];
+	unsigned long caller_ip;
+	u8 btree_id;
+	u8 level;
+	u64 pos_inode;
+	u64 pos_offset;
+	u32 pos_snapshot;
+	char node[24];
+	u8 self_read_count;
+	u8 self_intent_count;
+	u8 read_count;
+	u8 intent_count;
+	u32 iter_lock_seq;
+	u32 node_lock_seq;
+	char __data[0];
+};
+
+struct trace_event_raw_btree_path_upgrade_fail {
+	struct trace_entry ent;
+	char trans_fn[32];
+	unsigned long caller_ip;
+	u8 btree_id;
+	u8 level;
+	u64 pos_inode;
+	u64 pos_offset;
+	u32 pos_snapshot;
+	u8 locked;
+	u8 self_read_count;
+	u8 self_intent_count;
+	u8 read_count;
+	u8 intent_count;
+	u32 iter_lock_seq;
+	u32 node_lock_seq;
+	char __data[0];
+};
+
+struct trace_event_raw_btree_reserve_get_fail {
+	struct trace_entry ent;
+	char trans_fn[32];
+	unsigned long caller_ip;
+	size_t required;
+	char ret[32];
+	char __data[0];
+};
+
+struct trace_event_raw_btree_trans {
+	struct trace_entry ent;
+	dev_t dev;
+	char trans_fn[32];
 	char __data[0];
 };
 
@@ -130278,6 +136881,42 @@ struct trace_event_raw_btrfs_writepage_end_io_hook {
 	u64 end;
 	int uptodate;
 	u64 root_objectid;
+	char __data[0];
+};
+
+struct trace_event_raw_bucket_alloc {
+	struct trace_entry ent;
+	u8 dev;
+	char reserve[16];
+	u64 bucket;
+	u64 free;
+	u64 avail;
+	u64 copygc_wait_amount;
+	s64 copygc_waiting_for;
+	u64 seen;
+	u64 open;
+	u64 need_journal_commit;
+	u64 nouse;
+	bool nonblocking;
+	u64 nocow;
+	char err[32];
+	char __data[0];
+};
+
+struct trace_event_raw_bucket_evacuate {
+	struct trace_entry ent;
+	dev_t dev;
+	u32 dev_idx;
+	u64 bucket;
+	char __data[0];
+};
+
+struct trace_event_raw_bucket_invalidate {
+	struct trace_entry ent;
+	dev_t dev;
+	u32 dev_idx;
+	u32 sectors;
+	u64 bucket;
 	char __data[0];
 };
 
@@ -130899,6 +137538,24 @@ struct trace_event_raw_contention_end {
 	char __data[0];
 };
 
+struct trace_event_raw_copygc {
+	struct trace_entry ent;
+	dev_t dev;
+	u64 sectors_moved;
+	u64 sectors_not_moved;
+	u64 buckets_moved;
+	u64 buckets_not_moved;
+	char __data[0];
+};
+
+struct trace_event_raw_copygc_wait {
+	struct trace_entry ent;
+	dev_t dev;
+	u64 wait_amount;
+	u64 until;
+	char __data[0];
+};
+
 struct trace_event_raw_cpu {
 	struct trace_entry ent;
 	u32 state;
@@ -131071,6 +137728,17 @@ struct trace_event_raw_devres {
 	void *node;
 	const char *name;
 	size_t size;
+	char __data[0];
+};
+
+struct trace_event_raw_discard_buckets {
+	struct trace_entry ent;
+	dev_t dev;
+	u64 seen;
+	u64 open;
+	u64 need_journal_commit;
+	u64 discarded;
+	char err[16];
 	char __data[0];
 };
 
@@ -131951,10 +138619,30 @@ struct trace_event_raw_erofs_readpages {
 	char __data[0];
 };
 
+struct trace_event_raw_error_downcast {
+	struct trace_entry ent;
+	char bch_err[32];
+	char std_err[32];
+	char ip[32];
+	char __data[0];
+};
+
 struct trace_event_raw_error_report_template {
 	struct trace_entry ent;
 	enum error_detector error_detector;
 	unsigned long id;
+	char __data[0];
+};
+
+struct trace_event_raw_evacuate_bucket {
+	struct trace_entry ent;
+	dev_t dev;
+	u64 member;
+	u64 bucket;
+	u32 sectors;
+	u32 bucket_size;
+	u64 fragmentation;
+	int ret;
 	char __data[0];
 };
 
@@ -133610,6 +140298,13 @@ struct trace_event_raw_free_vmap_area_noflush {
 	char __data[0];
 };
 
+struct trace_event_raw_fs_str {
+	struct trace_entry ent;
+	dev_t dev;
+	u32 __data_loc_str;
+	char __data[0];
+};
+
 struct trace_event_raw_generic_add_lease {
 	struct trace_entry ent;
 	unsigned long i_ino;
@@ -134451,6 +141146,27 @@ struct trace_event_raw_jbd2_write_superblock {
 	char __data[0];
 };
 
+struct trace_event_raw_journal_reclaim_finish {
+	struct trace_entry ent;
+	dev_t dev;
+	u64 nr_flushed;
+	char __data[0];
+};
+
+struct trace_event_raw_journal_reclaim_start {
+	struct trace_entry ent;
+	dev_t dev;
+	bool direct;
+	bool kicked;
+	u64 min_nr;
+	u64 min_key_cache;
+	u64 btree_cache_dirty;
+	u64 btree_cache_total;
+	u64 btree_key_cache_dirty;
+	u64 btree_key_cache_total;
+	char __data[0];
+};
+
 struct trace_event_raw_kcompactd_wake_template {
 	struct trace_entry ent;
 	int nid;
@@ -135205,6 +141921,17 @@ struct trace_event_raw_module_request {
 	unsigned long ip;
 	bool wait;
 	u32 __data_loc_name;
+	char __data[0];
+};
+
+struct trace_event_raw_move_data {
+	struct trace_entry ent;
+	dev_t dev;
+	u64 keys_moved;
+	u64 keys_raced;
+	u64 sectors_seen;
+	u64 sectors_moved;
+	u64 sectors_raced;
 	char __data[0];
 };
 
@@ -137204,6 +143931,19 @@ struct trace_event_raw_page_pool_update_nid {
 	char __data[0];
 };
 
+struct trace_event_raw_path_downgrade {
+	struct trace_entry ent;
+	char trans_fn[32];
+	unsigned long caller_ip;
+	unsigned int old_locks_want;
+	unsigned int new_locks_want;
+	unsigned int btree;
+	u64 pos_inode;
+	u64 pos_offset;
+	u32 pos_snapshot;
+	char __data[0];
+};
+
 struct trace_event_raw_percpu_alloc_percpu {
 	struct trace_entry ent;
 	unsigned long call_site;
@@ -138564,6 +145304,13 @@ struct trace_event_raw_rdev_update_owe_info {
 	u8 peer[6];
 	u16 status;
 	u32 __data_loc_ie;
+	char __data[0];
+};
+
+struct trace_event_raw_read_nopromote {
+	struct trace_entry ent;
+	dev_t dev;
+	char ret[32];
 	char __data[0];
 };
 
@@ -140492,6 +147239,103 @@ struct trace_event_raw_track_foreign_dirty {
 	char __data[0];
 };
 
+struct trace_event_raw_trans_restart_journal_preres_get {
+	struct trace_entry ent;
+	char trans_fn[32];
+	unsigned long caller_ip;
+	unsigned int flags;
+	char __data[0];
+};
+
+struct trace_event_raw_trans_restart_key_cache_key_realloced {
+	struct trace_entry ent;
+	char trans_fn[32];
+	unsigned long caller_ip;
+	enum btree_id btree_id;
+	u64 pos_inode;
+	u64 pos_offset;
+	u32 pos_snapshot;
+	u32 old_u64s;
+	u32 new_u64s;
+	char __data[0];
+};
+
+struct trace_event_raw_trans_restart_mem_realloced {
+	struct trace_entry ent;
+	char trans_fn[32];
+	unsigned long caller_ip;
+	unsigned long bytes;
+	char __data[0];
+};
+
+struct trace_event_raw_trans_restart_split_race {
+	struct trace_entry ent;
+	char trans_fn[32];
+	unsigned long caller_ip;
+	u8 level;
+	u16 written;
+	u16 blocks;
+	u16 u64s_remaining;
+	char __data[0];
+};
+
+struct trace_event_raw_trans_restart_upgrade {
+	struct trace_entry ent;
+	char trans_fn[32];
+	unsigned long caller_ip;
+	u8 btree_id;
+	u8 old_locks_want;
+	u8 new_locks_want;
+	u8 level;
+	u32 path_seq;
+	u32 node_seq;
+	u64 pos_inode;
+	u64 pos_offset;
+	u32 pos_snapshot;
+	char __data[0];
+};
+
+struct trace_event_raw_trans_restart_would_deadlock_write {
+	struct trace_entry ent;
+	char trans_fn[32];
+	char __data[0];
+};
+
+struct trace_event_raw_trans_str {
+	struct trace_entry ent;
+	dev_t dev;
+	char trans_fn[32];
+	unsigned long caller_ip;
+	u32 __data_loc_str;
+	char __data[0];
+};
+
+struct trace_event_raw_trans_str_nocaller {
+	struct trace_entry ent;
+	dev_t dev;
+	char trans_fn[32];
+	u32 __data_loc_str;
+	char __data[0];
+};
+
+struct trace_event_raw_transaction_event {
+	struct trace_entry ent;
+	char trans_fn[32];
+	unsigned long caller_ip;
+	char __data[0];
+};
+
+struct trace_event_raw_transaction_restart_iter {
+	struct trace_entry ent;
+	char trans_fn[32];
+	unsigned long caller_ip;
+	u8 btree_id;
+	u64 pos_inode;
+	u64 pos_offset;
+	u32 pos_snapshot;
+	char __data[0];
+};
+
 struct trace_event_raw_tunnel_only_evt {
 	struct trace_entry ent;
 	char name[20];
@@ -140705,6 +147549,36 @@ struct trace_event_raw_workqueue_queue_work {
 	u32 __data_loc_workqueue;
 	int req_cpu;
 	int cpu;
+	char __data[0];
+};
+
+struct trace_event_raw_write_buffer_flush {
+	struct trace_entry ent;
+	size_t nr;
+	size_t skipped;
+	size_t fast;
+	size_t size;
+	char __data[0];
+};
+
+struct trace_event_raw_write_buffer_flush_slowpath {
+	struct trace_entry ent;
+	size_t slowpath;
+	size_t total;
+	char __data[0];
+};
+
+struct trace_event_raw_write_buffer_flush_sync {
+	struct trace_entry ent;
+	char trans_fn[32];
+	unsigned long caller_ip;
+	char __data[0];
+};
+
+struct trace_event_raw_write_super {
+	struct trace_entry ent;
+	dev_t dev;
+	unsigned long ip;
 	char __data[0];
 };
 
@@ -142489,6 +149363,11 @@ struct track {
 	unsigned long when;
 };
 
+struct trans_for_each_path_inorder_iter {
+	btree_path_idx_t sorted_idx;
+	btree_path_idx_t path_idx;
+};
+
 struct transaction_chp_stats_s {
 	unsigned long cs_chp_time;
 	__u32 cs_forced_to_close;
@@ -142754,6 +149633,7 @@ struct tty_operations {
 	void (*hangup)(struct tty_struct *);
 	int (*break_ctl)(struct tty_struct *, int);
 	void (*flush_buffer)(struct tty_struct *);
+	int (*ldisc_ok)(struct tty_struct *, int);
 	void (*set_ldisc)(struct tty_struct *);
 	void (*wait_until_sent)(struct tty_struct *, int);
 	void (*send_xchar)(struct tty_struct *, u8);
@@ -142988,6 +149868,11 @@ struct typec_connector {
 struct u32_fract {
 	__u32 numerator;
 	__u32 denominator;
+};
+
+struct u64_range {
+	u64 start;
+	u64 end;
 };
 
 struct uverbs_object_def;
@@ -143824,6 +150709,13 @@ struct unlink_psx_rq {
 	__le16 type;
 };
 
+struct unpack_state {
+	const struct bkey_format *format;
+	unsigned int bits;
+	u64 w;
+	const u64 *p;
+};
+
 struct unsol_bcast_probe_resp_data {
 	struct callback_head callback_head;
 	int len;
@@ -143844,6 +150736,13 @@ struct update_gid_event_work {
 
 struct update_util_data {
 	void (*func)(struct update_util_data *, u64, unsigned int);
+};
+
+struct upgrade_downgrade_entry {
+	u64 recovery_passes;
+	u16 version;
+	u16 nr_errors;
+	const u16 *errors;
 };
 
 union upper_chunk {
@@ -147050,6 +153949,7 @@ struct vm_unmapped_area_info {
 struct vma_list {
 	struct vm_area_struct *vma;
 	struct list_head head;
+	atomic_t mmap_count;
 };
 
 struct vma_lock {
@@ -147096,6 +153996,7 @@ struct vmap_block {
 	struct list_head free_list;
 	struct callback_head callback_head;
 	struct list_head purge;
+	unsigned int cpu;
 };
 
 struct vmap_block_queue {
@@ -147978,7 +154879,7 @@ struct worker {
 	unsigned long last_active;
 	unsigned int flags;
 	int id;
-	char desc[24];
+	char desc[32];
 	struct workqueue_struct *rescue_wq;
 };
 
@@ -148061,13 +154962,6 @@ struct workqueue_struct {
 };
 
 struct workspace {
-	void *mem;
-	void *buf;
-	void *cbuf;
-	struct list_head list;
-};
-
-struct workspace___2 {
 	z_stream strm;
 	char *buf;
 	unsigned int buf_size;
@@ -148075,7 +154969,7 @@ struct workspace___2 {
 	int level;
 };
 
-struct workspace___3 {
+struct workspace___2 {
 	void *mem;
 	size_t size;
 	char *buf;
@@ -148086,6 +154980,13 @@ struct workspace___3 {
 	struct list_head lru_list;
 	zstd_in_buffer in_buf;
 	zstd_out_buffer out_buf;
+};
+
+struct workspace___3 {
+	void *mem;
+	void *buf;
+	void *cbuf;
+	struct list_head list;
 };
 
 struct workspace_manager {
@@ -148138,6 +155039,11 @@ typedef void (*swap_func_t)(void *, void *, int);
 struct wrapper {
 	cmp_func_t cmp;
 	swap_func_t swap;
+};
+
+struct wrapper___2 {
+	cmp_func_t cmp;
+	swap_func_t swap_func;
 };
 
 struct writeback_control {
@@ -148301,6 +155207,12 @@ struct xattr {
 	size_t value_len;
 };
 
+struct xattr_buf {
+	char *buf;
+	size_t len;
+	size_t used;
+};
+
 struct xattr_handler {
 	const char *name;
 	const char *prefix;
@@ -148312,6 +155224,11 @@ struct xattr_handler {
 
 struct xattr_name {
 	char name[256];
+};
+
+struct xattr_search_key {
+	u8 type;
+	struct qstr name;
 };
 
 struct xbtree_afakeroot {
@@ -154841,6 +161758,8 @@ typedef void (*btf_trace_binder_wait_for_work)(void *, bool, bool, bool);
 
 typedef void (*btf_trace_binder_write_done)(void *, int);
 
+typedef void (*btf_trace_bkey_pack_pos_fail)(void *, const struct bpos *);
+
 typedef void (*btf_trace_block_bio_backmerge)(void *, struct bio *);
 
 typedef void (*btf_trace_block_bio_bounce)(void *, struct bio *);
@@ -154902,6 +161821,42 @@ typedef void (*btf_trace_break_lease_block)(void *, struct inode *, struct file_
 typedef void (*btf_trace_break_lease_noblock)(void *, struct inode *, struct file_lease *);
 
 typedef void (*btf_trace_break_lease_unblock)(void *, struct inode *, struct file_lease *);
+
+typedef void (*btf_trace_btree_cache_cannibalize)(void *, struct btree_trans *);
+
+typedef void (*btf_trace_btree_cache_cannibalize_lock)(void *, struct btree_trans *);
+
+typedef void (*btf_trace_btree_cache_cannibalize_lock_fail)(void *, struct btree_trans *);
+
+typedef void (*btf_trace_btree_cache_cannibalize_unlock)(void *, struct btree_trans *);
+
+typedef void (*btf_trace_btree_cache_reap)(void *, struct bch_fs *, struct btree *);
+
+typedef void (*btf_trace_btree_cache_scan)(void *, long, long, long);
+
+typedef void (*btf_trace_btree_node_alloc)(void *, struct btree_trans *, struct btree *);
+
+typedef void (*btf_trace_btree_node_compact)(void *, struct btree_trans *, struct btree *);
+
+typedef void (*btf_trace_btree_node_free)(void *, struct btree_trans *, struct btree *);
+
+typedef void (*btf_trace_btree_node_merge)(void *, struct btree_trans *, struct btree *);
+
+typedef void (*btf_trace_btree_node_read)(void *, struct btree_trans *, struct btree *);
+
+typedef void (*btf_trace_btree_node_rewrite)(void *, struct btree_trans *, struct btree *);
+
+typedef void (*btf_trace_btree_node_set_root)(void *, struct btree_trans *, struct btree *);
+
+typedef void (*btf_trace_btree_node_split)(void *, struct btree_trans *, struct btree *);
+
+typedef void (*btf_trace_btree_node_write)(void *, struct btree *, unsigned int, unsigned int);
+
+typedef void (*btf_trace_btree_path_relock_fail)(void *, struct btree_trans *, unsigned long, struct btree_path *, unsigned int);
+
+typedef void (*btf_trace_btree_path_upgrade_fail)(void *, struct btree_trans *, unsigned long, struct btree_path *, unsigned int);
+
+typedef void (*btf_trace_btree_reserve_get_fail)(void *, const char *, unsigned long, size_t, int);
 
 typedef void (*btf_trace_btrfs_add_block_group)(void *, const struct btrfs_fs_info *, const struct btrfs_block_group *, int);
 
@@ -155058,6 +162013,14 @@ typedef void (*btf_trace_btrfs_workqueue_alloc)(void *, const struct btrfs_workq
 typedef void (*btf_trace_btrfs_workqueue_destroy)(void *, const struct btrfs_workqueue *);
 
 typedef void (*btf_trace_btrfs_writepage_end_io_hook)(void *, const struct btrfs_inode *, u64, u64, int);
+
+typedef void (*btf_trace_bucket_alloc)(void *, struct bch_dev *, const char *, u64, u64, u64, u64, s64, struct bucket_alloc_state *, bool, const char *);
+
+typedef void (*btf_trace_bucket_alloc_fail)(void *, struct bch_dev *, const char *, u64, u64, u64, u64, s64, struct bucket_alloc_state *, bool, const char *);
+
+typedef void (*btf_trace_bucket_evacuate)(void *, struct bch_fs *, struct bpos *);
+
+typedef void (*btf_trace_bucket_invalidate)(void *, struct bch_fs *, unsigned int, u64, u32);
 
 typedef void (*btf_trace_cache_entry_expired)(void *, const struct cache_detail *, const struct cache_head *);
 
@@ -155261,6 +162224,10 @@ typedef void (*btf_trace_contention_begin)(void *, void *, unsigned int);
 
 typedef void (*btf_trace_contention_end)(void *, void *, int);
 
+typedef void (*btf_trace_copygc)(void *, struct bch_fs *, u64, u64, u64, u64);
+
+typedef void (*btf_trace_copygc_wait)(void *, struct bch_fs *, u64, u64);
+
 typedef void (*btf_trace_cpu_frequency)(void *, unsigned int, unsigned int);
 
 typedef void (*btf_trace_cpu_frequency_limits)(void *, struct cpufreq_policy *);
@@ -155299,6 +162266,8 @@ typedef void (*btf_trace_csd_function_exit)(void *, smp_call_func_t, call_single
 
 typedef void (*btf_trace_csd_queue_cpu)(void *, const unsigned int, unsigned long, smp_call_func_t, call_single_data_t *);
 
+typedef void (*btf_trace_data_update)(void *, struct bch_fs *, const char *);
+
 typedef void (*btf_trace_delete_session)(void *, struct l2tp_session *);
 
 typedef void (*btf_trace_delete_tunnel)(void *, struct l2tp_tunnel *);
@@ -155314,6 +162283,8 @@ typedef void (*btf_trace_device_pm_callback_end)(void *, struct device *, int);
 typedef void (*btf_trace_device_pm_callback_start)(void *, struct device *, const char *, int);
 
 typedef void (*btf_trace_devres_log)(void *, struct device *, const char *, void *, const char *, size_t);
+
+typedef void (*btf_trace_discard_buckets)(void *, struct bch_fs *, u64, u64, u64, u64, const char *);
 
 typedef void (*btf_trace_dma_fence_destroy)(void *, struct dma_fence *);
 
@@ -155579,7 +162550,11 @@ typedef void (*btf_trace_erofs_read_folio)(void *, struct folio *, bool);
 
 typedef void (*btf_trace_erofs_readpages)(void *, struct inode *, unsigned long, unsigned int, bool);
 
+typedef void (*btf_trace_error_downcast)(void *, int, int, unsigned long);
+
 typedef void (*btf_trace_error_report_end)(void *, enum error_detector, unsigned long);
+
+typedef void (*btf_trace_evacuate_bucket)(void *, struct bch_fs *, struct bpos *, unsigned int, unsigned int, u64, int);
 
 typedef void (*btf_trace_exit_mmap)(void *, struct mm_struct *);
 
@@ -156009,6 +162984,10 @@ typedef void (*btf_trace_free_tunnel)(void *, struct l2tp_tunnel *);
 
 typedef void (*btf_trace_free_vmap_area_noflush)(void *, unsigned long, unsigned long, unsigned long);
 
+typedef void (*btf_trace_gc_gens_end)(void *, struct bch_fs *);
+
+typedef void (*btf_trace_gc_gens_start)(void *, struct bch_fs *);
+
 typedef void (*btf_trace_generic_add_lease)(void *, struct inode *, struct file_lease *);
 
 typedef void (*btf_trace_generic_delete_lease)(void *, struct inode *, struct file_lease *);
@@ -156301,6 +163280,18 @@ typedef void (*btf_trace_jbd2_update_log_tail)(void *, journal_t *, tid_t, unsig
 
 typedef void (*btf_trace_jbd2_write_superblock)(void *, journal_t *, blk_opf_t);
 
+typedef void (*btf_trace_journal_entry_close)(void *, struct bch_fs *, const char *);
+
+typedef void (*btf_trace_journal_entry_full)(void *, struct bch_fs *, const char *);
+
+typedef void (*btf_trace_journal_full)(void *, struct bch_fs *);
+
+typedef void (*btf_trace_journal_reclaim_finish)(void *, struct bch_fs *, u64);
+
+typedef void (*btf_trace_journal_reclaim_start)(void *, struct bch_fs *, bool, bool, u64, u64, u64, u64, u64, u64);
+
+typedef void (*btf_trace_journal_write)(void *, struct bio *);
+
 typedef void (*btf_trace_kfree)(void *, unsigned long, const void *);
 
 typedef void (*btf_trace_kfree_skb)(void *, struct sk_buff *, void *, enum skb_drop_reason);
@@ -156458,6 +163449,20 @@ typedef void (*btf_trace_module_load)(void *, struct module *);
 typedef void (*btf_trace_module_put)(void *, struct module *, unsigned long);
 
 typedef void (*btf_trace_module_request)(void *, char *, bool, unsigned long);
+
+typedef void (*btf_trace_move_data)(void *, struct bch_fs *, struct bch_move_stats *);
+
+typedef void (*btf_trace_move_extent)(void *, struct bch_fs *, const char *);
+
+typedef void (*btf_trace_move_extent_fail)(void *, struct bch_fs *, const char *);
+
+typedef void (*btf_trace_move_extent_finish)(void *, struct bch_fs *, const char *);
+
+typedef void (*btf_trace_move_extent_read)(void *, struct bch_fs *, const char *);
+
+typedef void (*btf_trace_move_extent_start_fail)(void *, struct bch_fs *, const char *);
+
+typedef void (*btf_trace_move_extent_write)(void *, struct bch_fs *, const char *);
 
 typedef void (*btf_trace_mr_alloc)(void *, const struct ib_pd *, enum ib_mr_type, u32, const struct ib_mr *);
 
@@ -157203,6 +164208,8 @@ typedef void (*btf_trace_page_pool_state_release)(void *, const struct page_pool
 
 typedef void (*btf_trace_page_pool_update_nid)(void *, const struct page_pool *, int);
 
+typedef void (*btf_trace_path_downgrade)(void *, struct btree_trans *, unsigned long, struct btree_path *, unsigned int);
+
 typedef void (*btf_trace_pelt_cfs_tp)(void *, struct cfs_rq *);
 
 typedef void (*btf_trace_pelt_dl_tp)(void *, struct rq *);
@@ -157562,6 +164569,20 @@ typedef void (*btf_trace_rdev_update_mesh_config)(void *, struct wiphy *, struct
 typedef void (*btf_trace_rdev_update_mgmt_frame_registrations)(void *, struct wiphy *, struct wireless_dev *, struct mgmt_frame_regs *);
 
 typedef void (*btf_trace_rdev_update_owe_info)(void *, struct wiphy *, struct net_device *, struct cfg80211_update_owe_info *);
+
+typedef void (*btf_trace_read_bounce)(void *, struct bio *);
+
+typedef void (*btf_trace_read_nopromote)(void *, struct bch_fs *, int);
+
+typedef void (*btf_trace_read_promote)(void *, struct bio *);
+
+typedef void (*btf_trace_read_retry)(void *, struct bio *);
+
+typedef void (*btf_trace_read_reuse_race)(void *, struct bio *);
+
+typedef void (*btf_trace_read_split)(void *, struct bio *);
+
+typedef void (*btf_trace_rebalance_extent)(void *, struct bch_fs *, const char *);
 
 typedef void (*btf_trace_reclaim_retry_zone)(void *, struct zoneref *, int, unsigned long, unsigned long, unsigned long, int, bool);
 
@@ -158441,6 +165462,62 @@ typedef void (*btf_trace_tmigr_update_events)(void *, struct tmigr_group *, stru
 
 typedef void (*btf_trace_track_foreign_dirty)(void *, struct folio *, struct bdi_writeback *);
 
+typedef void (*btf_trace_trans_blocked_journal_reclaim)(void *, struct btree_trans *, unsigned long);
+
+typedef void (*btf_trace_trans_restart_btree_node_reused)(void *, struct btree_trans *, unsigned long, struct btree_path *);
+
+typedef void (*btf_trace_trans_restart_btree_node_split)(void *, struct btree_trans *, unsigned long, struct btree_path *);
+
+typedef void (*btf_trace_trans_restart_fault_inject)(void *, struct btree_trans *, unsigned long);
+
+typedef void (*btf_trace_trans_restart_injected)(void *, struct btree_trans *, unsigned long);
+
+typedef void (*btf_trace_trans_restart_journal_preres_get)(void *, struct btree_trans *, unsigned long, unsigned int);
+
+typedef void (*btf_trace_trans_restart_key_cache_key_realloced)(void *, struct btree_trans *, unsigned long, struct btree_path *, unsigned int, unsigned int);
+
+typedef void (*btf_trace_trans_restart_key_cache_raced)(void *, struct btree_trans *, unsigned long);
+
+typedef void (*btf_trace_trans_restart_key_cache_upgrade)(void *, struct btree_trans *, unsigned long);
+
+typedef void (*btf_trace_trans_restart_mem_realloced)(void *, struct btree_trans *, unsigned long, unsigned long);
+
+typedef void (*btf_trace_trans_restart_memory_allocation_failure)(void *, struct btree_trans *, unsigned long, struct btree_path *);
+
+typedef void (*btf_trace_trans_restart_relock)(void *, struct btree_trans *, unsigned long, const char *);
+
+typedef void (*btf_trace_trans_restart_relock_after_fill)(void *, struct btree_trans *, unsigned long, struct btree_path *);
+
+typedef void (*btf_trace_trans_restart_relock_key_cache_fill)(void *, struct btree_trans *, unsigned long, struct btree_path *);
+
+typedef void (*btf_trace_trans_restart_relock_next_node)(void *, struct btree_trans *, unsigned long, struct btree_path *);
+
+typedef void (*btf_trace_trans_restart_relock_parent_for_fill)(void *, struct btree_trans *, unsigned long, struct btree_path *);
+
+typedef void (*btf_trace_trans_restart_relock_path)(void *, struct btree_trans *, unsigned long, struct btree_path *);
+
+typedef void (*btf_trace_trans_restart_relock_path_intent)(void *, struct btree_trans *, unsigned long, struct btree_path *);
+
+typedef void (*btf_trace_trans_restart_split_race)(void *, struct btree_trans *, unsigned long, struct btree *);
+
+typedef void (*btf_trace_trans_restart_too_many_iters)(void *, struct btree_trans *, unsigned long, const char *);
+
+typedef void (*btf_trace_trans_restart_traverse)(void *, struct btree_trans *, unsigned long, struct btree_path *);
+
+typedef void (*btf_trace_trans_restart_upgrade)(void *, struct btree_trans *, unsigned long, struct btree_path *, unsigned int, unsigned int, struct get_locks_fail *);
+
+typedef void (*btf_trace_trans_restart_would_deadlock)(void *, struct btree_trans *, const char *);
+
+typedef void (*btf_trace_trans_restart_would_deadlock_recursion_limit)(void *, struct btree_trans *, unsigned long);
+
+typedef void (*btf_trace_trans_restart_would_deadlock_write)(void *, struct btree_trans *);
+
+typedef void (*btf_trace_trans_restart_write_buffer_flush)(void *, struct btree_trans *, unsigned long);
+
+typedef void (*btf_trace_trans_traverse_all)(void *, struct btree_trans *, unsigned long);
+
+typedef void (*btf_trace_transaction_commit)(void *, struct btree_trans *, unsigned long);
+
 typedef void (*btf_trace_udp_fail_queue_rcv_skb)(void *, int, struct sock *);
 
 typedef void (*btf_trace_update_bytes_may_use)(void *, const struct btrfs_fs_info *, const struct btrfs_space_info *, u64, s64);
@@ -158474,6 +165551,14 @@ typedef void (*btf_trace_workqueue_execute_end)(void *, struct work_struct *, wo
 typedef void (*btf_trace_workqueue_execute_start)(void *, struct work_struct *);
 
 typedef void (*btf_trace_workqueue_queue_work)(void *, int, struct pool_workqueue *, struct work_struct *);
+
+typedef void (*btf_trace_write_buffer_flush)(void *, struct btree_trans *, size_t, size_t, size_t, size_t);
+
+typedef void (*btf_trace_write_buffer_flush_slowpath)(void *, struct btree_trans *, size_t, size_t);
+
+typedef void (*btf_trace_write_buffer_flush_sync)(void *, struct btree_trans *, unsigned long);
+
+typedef void (*btf_trace_write_super)(void *, struct bch_fs *, unsigned long);
 
 typedef void (*btf_trace_writeback_bdi_register)(void *, struct backing_dev_info *);
 
@@ -159843,6 +166928,8 @@ typedef u32 inet_ehashfn_t(const struct net *, const __be32, const __u16, const 
 
 typedef int (*initxattrs)(struct inode *, const struct xattr *, void *);
 
+typedef int (*inode_set_fn)(struct btree_trans *, struct bch_inode_info *, struct bch_inode_unpacked *, void *);
+
 typedef struct dentry *instantiate_t(struct dentry *, struct task_struct *, const void *);
 
 typedef int (*ioctl_fn)(struct file *, struct autofs_sb_info *, struct autofs_dev_ioctl *);
@@ -159869,7 +166956,11 @@ typedef int (*list_cmp_func_t)(void *, const struct list_head *, const struct li
 
 typedef enum lru_status (*list_lru_walk_cb)(struct list_head *, struct list_lru_one *, spinlock_t *, void *);
 
+typedef bool (*move_btree_pred)(struct bch_fs *, void *, struct btree *, struct bch_io_opts *, struct data_update_opts *);
+
 typedef void (*move_fn_t)(struct lruvec *, struct folio *);
+
+typedef bool (*move_pred_fn)(struct bch_fs *, void *, struct bkey_s_c, struct bch_io_opts *, struct data_update_opts *);
 
 typedef int (*netlink_filter_fn)(struct sock *, struct sk_buff *, void *);
 
@@ -159947,7 +167038,11 @@ typedef void sha256_block_fn(struct sha256_state *, const u8 *, int);
 
 typedef void sha512_block_fn(struct sha512_state *, const u8 *, int);
 
+typedef int (*six_lock_should_sleep_fn)(struct six_lock *, void *);
+
 typedef bool (*smp_cond_func_t)(int, void *);
+
+typedef int (*sort_cmp_fn)(struct btree *, struct bkey_packed *, struct bkey_packed *);
 
 typedef int splice_actor(struct pipe_inode_info *, struct pipe_buffer *, struct splice_desc *);
 

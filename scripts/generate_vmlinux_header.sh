@@ -1,7 +1,14 @@
 #!/bin/bash
 
 # Define the output file
-OUTPUT_FILE="vmlinux.h"
+OUTPUT_FILE="./include/vmlinux.h"
+
+# Check if bpftool is installed
+if ! command -v pahole &> /dev/null
+then
+    echo "pahol could not be found. Please install pahole (dwarves package)."
+    exit 1
+fi
 
 # Check if bpftool is installed
 if ! command -v bpftool &> /dev/null
@@ -9,6 +16,10 @@ then
     echo "bpftool could not be found. Please install bpftool."
     exit 1
 fi
+
+# Genereting vmlinux
+echo "Generating vmlinux"
+pahole -J /sys/kernel/btf/vmlinux
 
 # Generate vmlinux.h using bpftool
 echo "Generating $OUTPUT_FILE..."

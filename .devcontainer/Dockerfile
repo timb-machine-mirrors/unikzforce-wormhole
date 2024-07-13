@@ -24,6 +24,7 @@ RUN apt install -y libcap-ng-dev
 RUN apt install -y libbfd-dev
 RUN ln -sf /usr/include/asm-generic/ /usr/include/asm
 RUN apt install -y libcap-dev
+RUN apt install -y dwarves
 RUN echo 'alias ll="ls -al"' >> ~/.bashrc
 RUN apt install -y fzf
 #RUN ln -sf /usr/bin/containerlab /usr/bin/clab

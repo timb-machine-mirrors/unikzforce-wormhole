@@ -1,5 +1,4 @@
-#include <linux/bpf.h>
-#include <linux/if_ether.h>
+#include "../../../../include/vmlinux.h"
 #include <bpf/bpf_helpers.h>
 #include <linux/pkt_cls.h>
 

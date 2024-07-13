@@ -1,5 +1,6 @@
 #!/bin/bash
 
+./scripts/generate_vmlinux_header.sh
 ./scripts/generate_grpc.sh
 
 # build switch_agent image

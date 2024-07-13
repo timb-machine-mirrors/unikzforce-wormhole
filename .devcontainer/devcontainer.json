@@ -6,7 +6,7 @@
 	"build": {
 		"dockerfile": "Dockerfile",
 		"args": {
-			"_CLAB_VERSION": "0.50.0"
+			"_CLAB_VERSION": "0.56.0"
 		}
 	},
 	"features": {

@@ -24,6 +24,7 @@ RUN apt install -y libcap-ng-dev
 RUN apt install -y libbfd-dev
 RUN ln -sf /usr/include/asm-generic/ /usr/include/asm
 RUN apt install -y libcap-dev
+RUN apt install -y dwarves
 RUN echo 'alias ll="ls -al"' >> ~/.bashrc
 
 RUN mkdir /tools/
@@ -43,6 +44,7 @@ RUN mkdir /wormhole-source/
 COPY ../../go.mod /wormhole-source
 COPY ../../go.sum /wormhole-source
 COPY ../../internal/ /wormhole-source/internal/
+COPY ../../include/ /wormhole-source/include/
 COPY ../../cmd/ /wormhole-source/cmd/
 
 WORKDIR /wormhole-source/
