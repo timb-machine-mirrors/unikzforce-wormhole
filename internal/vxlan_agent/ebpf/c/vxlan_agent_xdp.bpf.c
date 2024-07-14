@@ -108,6 +108,18 @@ static __always_inline __u16 get_ephemeral_port() {
     return 49152 + bpf_get_prandom_u32() % (65535 - 49152 + 1);
 }
 
+static __always_inline bool is_broadcast_address(const struct mac_address *mac) {
+    // Check if the MAC address is the broadcast address (FF:FF:FF:FF:FF:FF)
+    if (mac->mac[0] != 0xFF) return false;
+    if (mac->mac[1] != 0xFF) return false;
+    if (mac->mac[2] != 0xFF) return false;
+    if (mac->mac[3] != 0xFF) return false;
+    if (mac->mac[4] != 0xFF) return false;
+    if (mac->mac[5] != 0xFF) return false;
+    return true;
+}
+
+
 
 SEC("xdp")
 long vxlan_agent_xdp(struct xdp_md *ctx)
@@ -226,6 +238,8 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
 
                 // Calculate ip checksum
                 outer_iph->check = ~bpf_csum_diff(0, 0, (__u32)outer_iph, IP_HDR_LEN, 0);
+
+                return bpf_redirect(*iface_to_redirect, 0);
             }
 
         } else {
@@ -240,52 +254,104 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
 
     } else {
 
+        void *data = (void *)(long)ctx->data;
+        void *data_end = (void *)(long)ctx->data_end;
+
+        struct ethhdr *outer_eth = data;
+        struct iphdr *outer_iph = data + sizeof(struct ethhdr);
+        struct udphdr *outer_udph = (void *)outer_iph + sizeof(struct iphdr);
+        struct vxlanhdr *outer_vxh = (void *)outer_udph + sizeof(struct udphdr);
+
+
+        // Ensure the packet is valid
+        if ((void *)(outer_vxh + 1) > data_end)
+            return XDP_DROP;
+
+        // Extract outer source and destination IP addresses
+        __u32 outer_src_ip = outer_iph->saddr;
+        __u32 outer_dst_ip = outer_iph->daddr;
+
+        // Calculate the start of the inner Ethernet header
+        // when we perform (+1), it will not add 1 to the pointer
+        // it will add the size of the vxlan header which is 8 bytes
+        // in this case, it will point to the start of the inner ethernet header
+        struct ethhdr *inner_eth = (void *)(outer_vxh + 1);
+
+        // Ensure the inner Ethernet header is valid
+        if ((void *)(inner_eth + 1) > data_end)
+            return XDP_DROP;
+
+        // Extract inner source and destination MAC addresses
+        struct mac_address inner_src_mac;
+        struct mac_address inner_dst_mac;
+        __builtin_memcpy(inner_src_mac.mac, inner_eth->h_source, ETH_ALEN);
+        __builtin_memcpy(inner_dst_mac.mac, inner_eth->h_dest, ETH_ALEN);
+
+        // Initialize inner source and destination IP addresses
+        __u32 inner_src_ip = 0;
+        __u32 inner_dst_ip = 0;
+
+
+        // Check if the inner packet is an IP packet
+        if (inner_eth->h_proto == bpf_htons(ETH_P_IP)) {
+            struct iphdr *inner_iph = (void *)(inner_eth + 1);
+
+            // Ensure the inner IP header is valid
+            if ((void *)(inner_iph + 1) > data_end)
+                return XDP_DROP;
+
+            // Extract inner source and destination IP addresses
+            inner_src_ip = inner_iph->saddr;
+            inner_dst_ip = inner_iph->daddr;
+        }
+
+        __u32* iface_to_redirect = bpf_map_lookup_elem(&mac_to_ifindex_map, &inner_dst_mac);
+
+
+        if (iface_to_redirect != NULL) {
+
+            bool* iface_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, iface_to_redirect);
+
+            if ( iface_to_redirect_is_internal == NULL ) {
+                return XDP_ABORTED;
+            }
+
+            bool packet_to_be_redirected_to_an_internal_interface = *iface_to_redirect_is_internal;
+
+            if (packet_to_be_redirected_to_an_internal_interface) {
+                // Remove outer headers by adjusting the headroom
+                if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
+                    return XDP_DROP;
+
+                // Recalculate data and data_end pointers after adjustment
+                void *data = (void *)(long)ctx->data;
+                void *data_end = (void *)(long)ctx->data_end;
+
+                // Ensure the packet is still valid after adjustment
+                if (data + (data_end - data) > data_end)
+                    return XDP_DROP;
+
+                // Redirect the resulting internal frame buffer to the proper interface
+                return bpf_redirect(*iface_to_redirect, 0);
+            } else {
+                return XDP_DROP;
+            }
+
+        } else {
+            // if we don't know where to send this packet.
+
+            if (is_broadcast_address(&inner_dst_mac)) {
+                return XDP_PASS;
+            } else {
+                return XDP_DROP;
+            }
+        }
+
     }
 }
 
 
 void learn_internal_source_host(const struct xdp_md *ctx, const struct ethhdr *eth, __u64 current_time)
 {
-	bpf_printk("id = %llu, learning-process: register source mac address if required\n",
-		   current_time);
-	struct mac_address source_mac_addr;
-	__builtin_memcpy(source_mac_addr.mac, eth->h_source, ETH_ALEN);
 
-	bpf_printk(
-		"id = %llu, learning-process: check if we already have registered source mac address \n",
-		current_time);
-
-	struct iface_index *iface_for_source_mac =
-		bpf_map_lookup_elem(&mac_table, &source_mac_addr);
-
-	if (!iface_for_source_mac) {
-		bpf_printk(
-			"id = %llu, learning-process: have NOT Found an already registered entry for source mac address \n",
-			current_time);
-
-		struct mac_address_iface_entry new_entry;
-		__builtin_memset(&new_entry, 0, sizeof(new_entry));
-
-		__builtin_memcpy(new_entry.mac.mac, eth->h_source, ETH_ALEN);
-		new_entry.iface.interface_index = ctx->ingress_ifindex;
-		new_entry.iface.timestamp = current_time;
-
-		bpf_printk(
-			"id = %llu, learning-process: have NOT found + trying to update mac_table map\n",
-			current_time);
-
-		bpf_map_update_elem(&mac_table, &(new_entry.mac), &(new_entry.iface), BPF_ANY);
-		//		bpf_ringbuf_submit(new_entry, 0);
-
-		bpf_printk(
-			"id = %llu, learning-process: have NOT found + trying to submit data to new_discovered map\n",
-			current_time);
-		bpf_ringbuf_output(&new_discovered_entries_rb, &new_entry, sizeof(new_entry), 0);
-	} else {
-		bpf_printk(
-			"id = %llu, learning-process: have Found an already registered entry for source mac address \n",
-			current_time);
-		iface_for_source_mac->timestamp = current_time;
-		bpf_map_update_elem(&mac_table, &source_mac_addr, iface_for_source_mac, BPF_ANY);
-	}
 }
