@@ -176,6 +176,9 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
 static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, struct ethhdr *eth, __u64 current_time) {
     // if packet has been received by an internal iface
     // it means this packet should have no outer headers
+    // we should:
+    // - either forward it internally
+    // - or add outer headers and forward it to an external interface
 
     learn_internal_source_host(ctx, eth, current_time);
 
