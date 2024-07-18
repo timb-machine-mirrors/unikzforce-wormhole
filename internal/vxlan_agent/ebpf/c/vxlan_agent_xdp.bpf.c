@@ -242,10 +242,11 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
             return XDP_DROP;
 
 
-        // Check if the inner packet is an ARP packet
         if (inner_eth->h_proto == bpf_htons(ETH_P_ARP)) {
+            // if the inner packet is an ARP packet
             return handle_incoming_arp_packet_from_external(ctx, data, data_end, inner_eth);
         } else if (inner_eth->h_proto == bpf_htons(ETH_P_IP)) {
+            // if the inner packet is an IP packet
             return handle_incoming_ip_packet_from_external(ctx, data, data_end, inner_eth);
         } else {
             return XDP_DROP;
