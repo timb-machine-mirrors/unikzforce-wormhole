@@ -2,6 +2,7 @@
 
 
 #include "../../../../include/vmlinux.h"
+#include <linux/if_arp.h> // Add this line
 #include <bpf/bpf_helpers.h>
 
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
@@ -12,6 +13,15 @@ char LICENSE[] SEC("license") = "Dual BSD/GPL";
 #define UDP_HDR_LEN sizeof(struct udphdr)
 #define VXLAN_HDR_LEN sizeof(struct vxlanhdr)
 #define NEW_HDR_LEN (ETH_HLEN + IP_HDR_LEN + UDP_HDR_LEN + VXLAN_HDR_LEN)
+
+struct arp_payload {
+    unsigned char ar_sha[ETH_ALEN];  // Sender hardware address
+    unsigned char ar_sip[4];         // Sender IP address
+    unsigned char ar_tha[ETH_ALEN];  // Target hardware address
+    unsigned char ar_tip[4];         // Target IP address
+};
+
+// --------------------------------------------------------
 
 struct mac_address {
 	__u8 mac[ETH_ALEN]; // MAC address
@@ -119,7 +129,15 @@ static __always_inline bool is_broadcast_address(const struct mac_address *mac) 
     return true;
 }
 
-void __always_inline add_headers_to_internal_packet(struct xdp_md *ctx, struct mac_address* dest_mac_addr);
+static __always_inline struct in_addr convert_to_in_addr(unsigned char ip[4]) {
+    struct in_addr addr;
+    addr.s_addr = bpf_ntohl(*(unsigned int *)ip);
+    return addr;
+}
+
+static void __always_inline add_outer_headers_to_internal_packet(struct xdp_md *ctx, struct mac_address* dest_mac_addr);
+static long __always_inline handle_incoming_arp_packet_from_external(struct xdp_md *ctx, void *data, void *data_end, struct ethhdr *inner_eth);
+static long __always_inline handle_incoming_ip_packet_from_external(struct xdp_md *ctx, void *data, void *data_end, struct ethhdr *inner_eth);
 
 
 SEC("xdp")
@@ -167,7 +185,7 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
                 // if packet need to be forwarded to an internal interface
                 return bpf_redirect(*iface_to_redirect, 0);
             } else {
-                add_headers_to_internal_packet(ctx, &dest_mac_addr);
+                add_outer_headers_to_internal_packet(ctx, &dest_mac_addr);
 
                 return bpf_redirect(*iface_to_redirect, 0);
             }
@@ -183,6 +201,18 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
         }
 
     } else {
+        // if packet has been received by an external interface
+        // it means that this packet:
+        // - has outer ethernet header
+        // - has outer ip header
+        // - has outer udp header
+        // - has outer vxlan header
+        // - has an internal original layer 2 frame
+        //      - has inner ethernet header
+        //      - has either inner ip packet or arp packet or other type of packet
+        //
+        // for simplicity we assume that the packet is an ip or arp packet
+        // in the future we will add support for other type of packets
 
         void *data = (void *)(long)ctx->data;
         void *data_end = (void *)(long)ctx->data_end;
@@ -211,35 +241,126 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
         if ((void *)(inner_eth + 1) > data_end)
             return XDP_DROP;
 
+
+        // Check if the inner packet is an ARP packet
+        if (inner_eth->h_proto == bpf_htons(ETH_P_ARP)) {
+            return handle_incoming_arp_packet_from_external(ctx, data, data_end, inner_eth);
+        } else if (inner_eth->h_proto == bpf_htons(ETH_P_IP)) {
+            return handle_incoming_ip_packet_from_external(ctx, data, data_end, inner_eth);
+        } else {
+            return XDP_DROP;
+        }
+    }
+}
+
+static long __always_inline handle_incoming_ip_packet_from_external(struct xdp_md *ctx, void *data, void *data_end, struct ethhdr *inner_eth) {
+    // Extract inner source and destination MAC addresses
+    struct mac_address inner_src_mac;
+    struct mac_address inner_dst_mac;
+    __builtin_memcpy(inner_src_mac.mac, inner_eth->h_source, ETH_ALEN);
+    __builtin_memcpy(inner_dst_mac.mac, inner_eth->h_dest, ETH_ALEN);
+
+
+    struct iphdr *inner_iph = (void *)(inner_eth + 1);
+
+    // Ensure the inner IP header is valid
+    if ((void *)(inner_iph + 1) > data_end)
+        return XDP_DROP;
+
+    // Extract inner source and destination IP addresses
+    __u32 inner_src_ip = inner_iph->saddr;
+    __u32 inner_dst_ip = inner_iph->daddr;
+
+
+    __u32* iface_to_redirect = bpf_map_lookup_elem(&mac_to_ifindex_map, &inner_dst_mac);
+
+    if (iface_to_redirect != NULL) {
+
+        bool* iface_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, iface_to_redirect);
+
+        if ( iface_to_redirect_is_internal == NULL ) {
+            return XDP_ABORTED;
+        }
+
+        bool packet_to_be_redirected_to_an_internal_interface = *iface_to_redirect_is_internal;
+
+        if (packet_to_be_redirected_to_an_internal_interface) {
+            // Remove outer headers by adjusting the headroom
+            if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
+                return XDP_DROP;
+
+            // Recalculate data and data_end pointers after adjustment
+            void *data = (void *)(long)ctx->data;
+            void *data_end = (void *)(long)ctx->data_end;
+
+            // Ensure the packet is still valid after adjustment
+            if (data + (data_end - data) > data_end)
+                return XDP_DROP;
+
+            // Redirect the resulting internal frame buffer to the proper interface
+            return bpf_redirect(*iface_to_redirect, 0);
+        } else {
+            return XDP_DROP;
+        }
+
+    } else {
+        // if we don't know where to send this packet.
+        return XDP_DROP;
+    }
+
+}
+
+static long __always_inline handle_incoming_arp_packet_from_external(struct xdp_md *ctx, void *data, void *data_end, struct ethhdr *inner_eth) {
+    struct arphdr *inner_arph = (void *)(inner_eth + 1);
+
+    // Ensure the inner ARP header is valid
+    if ((void *)(inner_arph + 1) > data_end)
+        return XDP_DROP;
+
+    struct arp_payload *inner_arp_payload = (void *)(inner_arph + 1);
+
+    // Ensure the inner ARP payload is valid
+    if ((void *)(inner_arp_payload + 1) > data_end)
+        return XDP_DROP;
+
+    if (inner_arph->ar_op == bpf_htons(ARPOP_REQUEST)) {
+        // if the packet is an arp request:
+        // - either a normal arp request
+        // - or a gratuitous arp request
+        //      - Source IP Address: The IP address of the sender.
+        //      - Destination IP Address: The same as the source IP address
+        //      - Source MAC Address: The MAC address of the sender.
+        //      - Destination MAC Address: is set to broadcast address (ff:ff:ff:ff:ff:ff).
+        // we need to perform Flooding, XDP_PASS --> handle in TC
+        return XDP_PASS;
+    } else if (inner_arph->ar_op == bpf_htons(ARPOP_REPLY)) {
+        // if the packet is an arp reply:
+        // - either a normal arp reply
+        // - or a gratuitous arp reply
+        //      - Source IP Address: The IP address of the sender.
+        //      - Destination IP Address: The same as the source IP address
+        //      - Source MAC Address: The MAC address of the sender.
+        //      - Destination MAC Address: the MAC address of an specific device or broadcast address (ff:ff:ff:ff:ff:ff)
+        //          - if we want only an specific device to update its arp cache we set its mac address as the destination mac address
+        //          - if we want to update the arp cache of all devices on a subnet we set the destination mac address to broadcast address
+        //
+        // TODO: i need to make sure that we want to enable Gratuitous ARP replies or not
+
         // Extract inner source and destination MAC addresses
         struct mac_address inner_src_mac;
         struct mac_address inner_dst_mac;
         __builtin_memcpy(inner_src_mac.mac, inner_eth->h_source, ETH_ALEN);
         __builtin_memcpy(inner_dst_mac.mac, inner_eth->h_dest, ETH_ALEN);
 
-        // Initialize inner source and destination IP addresses
-        __u32 inner_src_ip = 0;
-        __u32 inner_dst_ip = 0;
-
-
-        // Check if the inner packet is an IP packet
-        if (inner_eth->h_proto == bpf_htons(ETH_P_IP)) {
-            struct iphdr *inner_iph = (void *)(inner_eth + 1);
-
-            // Ensure the inner IP header is valid
-            if ((void *)(inner_iph + 1) > data_end)
-                return XDP_DROP;
-
-            // Extract inner source and destination IP addresses
-            inner_src_ip = inner_iph->saddr;
-            inner_dst_ip = inner_iph->daddr;
+        
+        // check if it is a gratuitous arp reply
+        if (*(unsigned int *)inner_arp_payload->ar_sip == *(unsigned int *)inner_arp_payload->ar_tip && is_broadcast_address(&inner_dst_mac)) {
+            return XDP_PASS;
         }
 
+        // Check if the destination MAC address is known
         __u32* iface_to_redirect = bpf_map_lookup_elem(&mac_to_ifindex_map, &inner_dst_mac);
-
-
         if (iface_to_redirect != NULL) {
-
             bool* iface_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, iface_to_redirect);
 
             if ( iface_to_redirect_is_internal == NULL ) {
@@ -249,38 +370,38 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
             bool packet_to_be_redirected_to_an_internal_interface = *iface_to_redirect_is_internal;
 
             if (packet_to_be_redirected_to_an_internal_interface) {
-                // Remove outer headers by adjusting the headroom
+                // Handle ARP reply: remove outer headers and forward
                 if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
                     return XDP_DROP;
 
                 // Recalculate data and data_end pointers after adjustment
-                void *data = (void *)(long)ctx->data;
-                void *data_end = (void *)(long)ctx->data_end;
+                data = (void *)(long)ctx->data;
+                data_end = (void *)(long)ctx->data_end;
 
                 // Ensure the packet is still valid after adjustment
                 if (data + (data_end - data) > data_end)
                     return XDP_DROP;
-
+                
                 // Redirect the resulting internal frame buffer to the proper interface
                 return bpf_redirect(*iface_to_redirect, 0);
             } else {
+                // if we recieve a arp packet from external interface 
+                // that is meant to be redirected to another remote vxlan border agent
+                // then we need to drop it
                 return XDP_DROP;
             }
-
         } else {
-            // if we don't know where to send this packet.
-
-            if (is_broadcast_address(&inner_dst_mac)) {
-                return XDP_PASS;
-            } else {
-                return XDP_DROP;
-            }
+            // if we recieve an arp reply packet from external interface that
+            // we don't know what to do with it then we need to drop it
+            return XDP_DROP;
         }
-
+    } else {
+        // if the packet doesn't have valid ar_op
+        return XDP_DROP;
     }
 }
 
-void add_headers_to_internal_packet(struct xdp_md *ctx, struct mac_address* dest_mac_addr) {
+static void add_outer_headers_to_internal_packet(struct xdp_md *ctx, struct mac_address* dest_mac_addr) {
     // if packet need to be forwarded to an external interface
     void *data = (void *)(long)ctx->data;
     void *data_end = (void *)(long)ctx->data_end;
