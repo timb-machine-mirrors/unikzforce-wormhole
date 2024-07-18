@@ -435,7 +435,10 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     int old_len = data_end - data;
     int new_len = old_len + NEW_HDR_LEN;
 
-    // Resize the packet buffer by increasing the headroom
+    // Resize the packet buffer by increasing the headroom.
+    // in packet memory model, the start of the packet which is the ethernet header,
+    // has smaller address in memory, and the more we proceed into the deeper packet headers, the bigger the address gets.
+    // so when adjusting the packet headroom with -NEW_HDR_LEN, we are actually increasing the size of the packet.
     if (bpf_xdp_adjust_head(ctx, -NEW_HDR_LEN))
         return XDP_DROP;
 
@@ -443,7 +446,7 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     data = (void *)(long)ctx->data;
     data_end = (void *)(long)ctx->data_end;
 
-        // Ensure the packet is still valid after adjustment
+    // Ensure the packet is still valid after adjustment
     if (data + new_len > data_end)
         return XDP_DROP;
 
