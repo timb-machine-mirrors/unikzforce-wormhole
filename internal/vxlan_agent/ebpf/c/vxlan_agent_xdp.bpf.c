@@ -208,7 +208,7 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
     __u32* ifindex_to_redirect = bpf_map_lookup_elem(&mac_to_ifindex_map, &dest_mac_addr);
 
     if (ifindex_to_redirect != NULL) {
-        // if we already know this mac in mac table ( mac_to_ifindex_map )
+        // if we already know this dest mac in mac table ( mac_to_ifindex_map )
 
         bool* ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, ifindex_to_redirect);
 
@@ -233,7 +233,7 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
         // no matter why we are here:
         // - either because of a mac addr that we don't know where to find (unknown mac)
         // - or because of broadcast mac address ( FFFFFFFFFFFF )
-        // in ether case we must perform Flooding.--> XDP_PASS --> handle in implemented TC flooding hook
+        // in ether case we must perform Flooding --> XDP_PASS --> handle in implemented TC flooding hook
 
         return XDP_PASS;
     }
@@ -241,6 +241,15 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
 
 static void __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address* dest_mac_addr) {
     // if packet need to be forwarded to an external interface
+    // we must add outer headers to the packet
+    // and then forward it to the external interface
+    // so the packet will have:
+    // - outer ethernet header
+    // - outer ip header
+    // - outer udp header
+    // - outer vxlan header
+    // - inner original layer 2 frame
+
     void *data = (void *)(long)ctx->data;
     void *data_end = (void *)(long)ctx->data_end;
     struct ethhdr* inner_eth = data;
