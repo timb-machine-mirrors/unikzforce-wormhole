@@ -284,15 +284,23 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     outer_udph = (void*) outer_iph + IP_HDR_LEN;
     outer_vxh = (void*) outer_udph + UDP_HDR_LEN;
 
-    struct in_addr* border_ip = bpf_map_lookup_elem(&mac_to_border_ip_map, dest_mac_addr);
+    struct in_addr* dst_border_ip = bpf_map_lookup_elem(&mac_to_border_ip_map, dest_mac_addr);
 
-    if (border_ip == NULL) {
+    if (dst_border_ip == NULL) {
+        // we are in add_outer_headers...() function, it means that we have an ifindex in mac_to_ifindex_map 
+        // which is an external ifindex, but we don't know the border ip address of the destination mac address.
+        // this should never happen, because we update mac_to_border_ip_map in the same function
+        // where we update mac_to_ifindex_map.
+        //
+        // so in case this happens, we perform XDP_ABORTED because it means something is fishy.
         return XDP_ABORTED;
     }
 
-    struct external_route_info* route_info = bpf_map_lookup_elem(&border_ip_to_route_info_map, border_ip);
+    struct external_route_info* route_info = bpf_map_lookup_elem(&border_ip_to_route_info_map, dst_border_ip);
 
     if (route_info == NULL) {
+        // we must have prepopulated route_info in border_ip_to_route_info_map before starting the xdp program.
+        // if we don't have it, it means that something is fishy, and we must abort the packet.
         return XDP_ABORTED;
     }
 
@@ -313,7 +321,7 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     outer_iph->protocol = IPPROTO_UDP;
     outer_iph->check = 0; // will be calculated later
     outer_iph->saddr = bpf_htonl(route_info->external_iface_ip);
-    outer_iph->daddr = bpf_htonl(*border_ip);
+    outer_iph->daddr = bpf_htonl(*dst_border_ip);
 
 
     outer_udph->source = bpf_htons(get_ephemeral_port()); // Source UDP port
