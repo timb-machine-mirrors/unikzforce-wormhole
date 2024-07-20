@@ -120,13 +120,14 @@ static __always_inline bool is_broadcast_address(const struct mac_address *mac);
 static __always_inline struct in_addr convert_to_in_addr(unsigned char ip[4]);
 
 
-static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, struct ethhdr *eth, __u64 current_time);
+static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time, struct ethhdr *eth);
 static void __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address* dest_mac_addr);
-static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, const struct ethhdr *eth, __u64 current_time);
+static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time, const struct ethhdr *eth);
 
-static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx);
-static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, void *data, void *data_end, struct ethhdr *inner_eth);
-static long __always_inline handle_packet_received_by_external_iface__ip_packet(struct xdp_md *ctx, void *data, void *data_end, struct ethhdr *inner_eth);
+static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time);
+static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, __u32* outer_src_ip);
+static long __always_inline handle_packet_received_by_external_iface__ip_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, __u32* outer_src_ip);
+static void __always_inline learn_from_packet_received_by_external_iface(struct xdp_md* ctx, __u64 current_time, struct mac_address* inner_src_mac, __u32* outer_src_border_ip);
 
 
 // --------------------------------------------------------
@@ -157,7 +158,7 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
         return handle_packet_received_by_internal_iface(ctx, eth, current_time);
     } else {
         // if packet has been received by an external interface
-        return handle_packet_received_by_external_iface(ctx);
+        return handle_packet_received_by_external_iface(ctx, current_time);
     }
 }
 
@@ -193,7 +194,7 @@ static __always_inline struct in_addr convert_to_in_addr(unsigned char ip[4]) {
 // --------------------------------------------------------
 
 
-static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, struct ethhdr *eth, __u64 current_time) {
+static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time, struct ethhdr *eth) {
     // if packet has been received by an internal iface
     // it means this packet should have no outer headers.
     // we should:
@@ -326,7 +327,7 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     outer_iph->check = ~bpf_csum_diff(0, 0, (__u32)outer_iph, IP_HDR_LEN, 0);
 }
 
-static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, const struct ethhdr *eth, __u64 current_time)
+static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time, const struct ethhdr *eth)
 {
     struct mac_address src_mac_addr;
     __builtin_memcpy(src_mac_addr.mac, eth->h_source, ETH_ALEN);
@@ -335,15 +336,18 @@ static void __always_inline learn_from_packet_received_by_internal_iface(const s
     bpf_map_update_elem(&mac_to_timestamp_map, &src_mac_addr, &current_time, BPF_ANY);
 
     // Check if the source MAC address is already in the mac_to_ifindex_map
-    __u32* ifindex = bpf_map_lookup_elem(&mac_to_ifindex_map, &src_mac_addr);
+    __u32* existing_ifindex = bpf_map_lookup_elem(&mac_to_ifindex_map, &src_mac_addr);
 
-    if (ifindex == NULL) {
+    if (existing_ifindex == NULL) {
         // If the source MAC address is not in the map
-        // it means that this is the first time we see this mac address
-        // & we need to report it to new_discovered_entries_rb,
-        // this way in the userspace we can learn about this mac address
-        // and maintain a timed cache entry for this mac address in our ttl cache in userspace.
-        // whenever the cache entry in userspace expires, we will remove it from the kernel map as well.
+        // it means that this is the first time we see this mac address, or if it's not the first time
+        // and we had previously seen this mac address but the entry in the kernel map has been previously expired & deleted.
+        // & we need to report it via new_discovered_entries_rb to userspace code.
+        // this way in the userspace we can learn about this newly detected mac address.
+        // and maintain a ttl based entry for this mac address in userspace cache.
+        // whenever the cache entry in userspace expires, in the userspace code we will check again the kernel map:
+        // - if the entry in mac_to_timestamp_map kernel map is still old, we will remove it from kernel map as well.
+        // - else we will not remove it from the kernel map, because it is still valid & also we will re-insert it with the new timestamp into the userspace cache.
 
         struct new_discovered_entry new_entry;
         new_entry.mac = src_mac_addr;
@@ -361,7 +365,7 @@ static void __always_inline learn_from_packet_received_by_internal_iface(const s
 // --------------------------------------------------------
 
 
-static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx) {
+static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time) {
     // if packet has been received by an external interface
     // it means that this packet:
     // - has outer ethernet header
@@ -404,22 +408,117 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
 
     if (inner_eth->h_proto == bpf_htons(ETH_P_ARP)) {
         // if the inner packet is an ARP packet
-        return handle_packet_received_by_external_iface__arp_packet(ctx, data, data_end, inner_eth);
+        return handle_packet_received_by_external_iface__arp_packet(ctx, current_time, data, data_end, inner_eth, outer_src_ip);
     } else if (inner_eth->h_proto == bpf_htons(ETH_P_IP)) {
         // if the inner packet is an IP packet
-        return handle_packet_received_by_external_iface__ip_packet(ctx, data, data_end, inner_eth);
+        return handle_packet_received_by_external_iface__ip_packet(ctx, current_time, data, data_end, inner_eth, outer_src_ip);
     } else {
         return XDP_DROP;
     }
 }
 
-static long __always_inline handle_packet_received_by_external_iface__ip_packet(struct xdp_md *ctx, void *data, void *data_end, struct ethhdr *inner_eth) {
+static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, __u32* outer_src_ip) {
+
     // Extract inner source and destination MAC addresses
     struct mac_address inner_src_mac;
     struct mac_address inner_dst_mac;
     __builtin_memcpy(inner_src_mac.mac, inner_eth->h_source, ETH_ALEN);
     __builtin_memcpy(inner_dst_mac.mac, inner_eth->h_dest, ETH_ALEN);
 
+    learn_from_packet_received_by_external_iface(ctx, current_time, &inner_src_mac, outer_src_ip);
+
+    struct arphdr *inner_arph = (void *)(inner_eth + 1);
+
+    // Ensure the inner ARP header is valid
+    if ((void *)(inner_arph + 1) > data_end)
+        return XDP_DROP;
+
+    struct arp_payload *inner_arp_payload = (void *)(inner_arph + 1);
+
+    // Ensure the inner ARP payload is valid
+    if ((void *)(inner_arp_payload + 1) > data_end)
+        return XDP_DROP;
+
+    if (inner_arph->ar_op == bpf_htons(ARPOP_REQUEST)) {
+        // if the packet is an arp request:
+        // - either a normal arp request
+        // - or a gratuitous arp request
+        //      - Source IP Address: The IP address of the sender.
+        //      - Destination IP Address: The same as the source IP address
+        //      - Source MAC Address: The MAC address of the sender.
+        //      - Destination MAC Address: is set to broadcast address (ff:ff:ff:ff:ff:ff).
+        // we need to perform Flooding, XDP_PASS --> handle in implemented TC flooding hook
+        return XDP_PASS;
+    } else if (inner_arph->ar_op == bpf_htons(ARPOP_REPLY)) {
+        // if the packet is an arp reply:
+        // - either a normal arp reply
+        // - or a gratuitous arp reply
+        //      - Source IP Address: The IP address of the sender.
+        //      - Destination IP Address: The same as the source IP address
+        //      - Source MAC Address: The MAC address of the sender.
+        //      - Destination MAC Address: the MAC address of an specific device or broadcast address (ff:ff:ff:ff:ff:ff)
+        //          - if we want only an specific device to update its arp cache we set its mac address as the destination mac address
+        //          - if we want to update the arp cache of all devices on a subnet we set the destination mac address to broadcast address
+        //
+        // TODO: i need to make sure that we want to enable Gratuitous ARP replies or not
+
+        // check if it is a gratuitous arp reply
+        if (*(unsigned int *)inner_arp_payload->ar_sip == *(unsigned int *)inner_arp_payload->ar_tip && is_broadcast_address(&inner_dst_mac)) {
+            // we need to perform Flooding, XDP_PASS --> handle in implemented TC flooding hook
+            return XDP_PASS;
+        }
+
+        // Check if the destination MAC address is known
+        __u32* ifindex_to_redirect = bpf_map_lookup_elem(&mac_to_ifindex_map, &inner_dst_mac);
+        if (ifindex_to_redirect != NULL) {
+            bool* ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, ifindex_to_redirect);
+
+            if ( ifindex_to_redirect_is_internal == NULL ) {
+                return XDP_ABORTED;
+            }
+
+            bool packet_to_be_redirected_to_an_internal_interface = *ifindex_to_redirect_is_internal;
+
+            if (packet_to_be_redirected_to_an_internal_interface) {
+                // Handle ARP reply: remove outer headers and forward
+                if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
+                    return XDP_DROP;
+
+                // Recalculate data and data_end pointers after adjustment
+                data = (void *)(long)ctx->data;
+                data_end = (void *)(long)ctx->data_end;
+
+                // Ensure the packet is still valid after adjustment
+                if (data + (data_end - data) > data_end)
+                    return XDP_DROP;
+                
+                // Redirect the resulting internal frame buffer to the proper interface
+                return bpf_redirect(*ifindex_to_redirect, 0);
+            } else {
+                // if we recieve a arp packet from external interface 
+                // that is meant to be redirected to another remote vxlan border agent
+                // then we need to drop it
+                return XDP_DROP;
+            }
+        } else {
+            // if we recieve an arp reply packet from external interface that
+            // we don't know what to do with it then we need to drop it
+            return XDP_DROP;
+        }
+    } else {
+        // if the packet doesn't have valid ar_op
+        return XDP_DROP;
+    }
+}
+
+static long __always_inline handle_packet_received_by_external_iface__ip_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, __u32* outer_src_ip) {
+    // Extract inner source and destination MAC addresses
+    struct mac_address inner_src_mac;
+    struct mac_address inner_dst_mac;
+    __builtin_memcpy(inner_src_mac.mac, inner_eth->h_source, ETH_ALEN);
+    __builtin_memcpy(inner_dst_mac.mac, inner_eth->h_dest, ETH_ALEN);
+
+    learn_from_packet_received_by_external_iface(ctx, current_time, &inner_src_mac, outer_src_ip);
 
     struct iphdr *inner_iph = (void *)(inner_eth + 1);
 
@@ -470,97 +569,44 @@ static long __always_inline handle_packet_received_by_external_iface__ip_packet(
 
 }
 
-static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, void *data, void *data_end, struct ethhdr *inner_eth) {
-    struct arphdr *inner_arph = (void *)(inner_eth + 1);
+static void __always_inline learn_from_packet_received_by_external_iface(struct xdp_md* ctx, __u64 current_time, struct mac_address* inner_src_mac, __u32* outer_src_border_ip) {
+    // in this case we need to learn two things:
+    // - the internal mac address of the source
+    // - the external source border ip address that this mac address belongs to
 
-    // Ensure the inner ARP header is valid
-    if ((void *)(inner_arph + 1) > data_end)
-        return XDP_DROP;
+    __u32 ingress_ifindex = ctx->ingress_ifindex;
 
-    struct arp_payload *inner_arp_payload = (void *)(inner_arph + 1);
+    // Update mac_to_timestamp_map
+    bpf_map_update_elem(&mac_to_timestamp_map, inner_src_mac, &current_time, BPF_ANY);
 
-    // Ensure the inner ARP payload is valid
-    if ((void *)(inner_arp_payload + 1) > data_end)
-        return XDP_DROP;
+    // Check if the inner_src_mac address is already in the mac_to_ifindex_map
+    __u32* existing_ifindex = bpf_map_lookup_elem(&mac_to_ifindex_map, inner_src_mac);
 
-    if (inner_arph->ar_op == bpf_htons(ARPOP_REQUEST)) {
-        // if the packet is an arp request:
-        // - either a normal arp request
-        // - or a gratuitous arp request
-        //      - Source IP Address: The IP address of the sender.
-        //      - Destination IP Address: The same as the source IP address
-        //      - Source MAC Address: The MAC address of the sender.
-        //      - Destination MAC Address: is set to broadcast address (ff:ff:ff:ff:ff:ff).
-        // we need to perform Flooding, XDP_PASS --> handle in implemented TC flooding hook
-        return XDP_PASS;
-    } else if (inner_arph->ar_op == bpf_htons(ARPOP_REPLY)) {
-        // if the packet is an arp reply:
-        // - either a normal arp reply
-        // - or a gratuitous arp reply
-        //      - Source IP Address: The IP address of the sender.
-        //      - Destination IP Address: The same as the source IP address
-        //      - Source MAC Address: The MAC address of the sender.
-        //      - Destination MAC Address: the MAC address of an specific device or broadcast address (ff:ff:ff:ff:ff:ff)
-        //          - if we want only an specific device to update its arp cache we set its mac address as the destination mac address
-        //          - if we want to update the arp cache of all devices on a subnet we set the destination mac address to broadcast address
-        //
-        // TODO: i need to make sure that we want to enable Gratuitous ARP replies or not
+    if (existing_ifindex == NULL) {
+        // If the inner_src_mac address is not in the map
+        // it means that this is the first time we see this mac address, or if it's not the first time
+        // and we had previously seen this mac address but the entry in the kernel map has been previously expired & deleted.
+        // & we need to report it via new_discovered_entries_rb to userspace code.
+        // this way in the userspace we can learn about this newly detected mac address.
+        // and maintain a ttl based entry for this mac address in userspace cache.
+        // whenever the cache entry in userspace expires, in the userspace code we will check again the kernel map:
+        // - if the entry in mac_to_timestamp_map kernel map is still old, we will remove it from kernel map as well.
+        // - else we will not remove it from the kernel map, because it is still valid & also we will re-insert it with the new timestamp into the userspace cache.
 
-        // Extract inner source and destination MAC addresses
-        struct mac_address inner_src_mac;
-        struct mac_address inner_dst_mac;
-        __builtin_memcpy(inner_src_mac.mac, inner_eth->h_source, ETH_ALEN);
-        __builtin_memcpy(inner_dst_mac.mac, inner_eth->h_dest, ETH_ALEN);
+        struct new_discovered_entry new_entry;
+        new_entry.mac = *inner_src_mac;
+        new_entry.timestamp = current_time;
+        new_entry.ifindex = ctx->ingress_ifindex;
 
-        
-        // check if it is a gratuitous arp reply
-        if (*(unsigned int *)inner_arp_payload->ar_sip == *(unsigned int *)inner_arp_payload->ar_tip && is_broadcast_address(&inner_dst_mac)) {
-            // we need to perform Flooding, XDP_PASS --> handle in implemented TC flooding hook
-            return XDP_PASS;
-        }
-
-        // Check if the destination MAC address is known
-        __u32* ifindex_to_redirect = bpf_map_lookup_elem(&mac_to_ifindex_map, &inner_dst_mac);
-        if (ifindex_to_redirect != NULL) {
-            bool* ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, ifindex_to_redirect);
-
-            if ( ifindex_to_redirect_is_internal == NULL ) {
-                return XDP_ABORTED;
-            }
-
-            bool packet_to_be_redirected_to_an_internal_interface = *ifindex_to_redirect_is_internal;
-
-            if (packet_to_be_redirected_to_an_internal_interface) {
-                // Handle ARP reply: remove outer headers and forward
-                if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
-                    return XDP_DROP;
-
-                // Recalculate data and data_end pointers after adjustment
-                data = (void *)(long)ctx->data;
-                data_end = (void *)(long)ctx->data_end;
-
-                // Ensure the packet is still valid after adjustment
-                if (data + (data_end - data) > data_end)
-                    return XDP_DROP;
-                
-                // Redirect the resulting internal frame buffer to the proper interface
-                return bpf_redirect(*ifindex_to_redirect, 0);
-            } else {
-                // if we recieve a arp packet from external interface 
-                // that is meant to be redirected to another remote vxlan border agent
-                // then we need to drop it
-                return XDP_DROP;
-            }
-        } else {
-            // if we recieve an arp reply packet from external interface that
-            // we don't know what to do with it then we need to drop it
-            return XDP_DROP;
-        }
-    } else {
-        // if the packet doesn't have valid ar_op
-        return XDP_DROP;
+        bpf_ringbuf_output(&new_discovered_entries_rb, &new_entry, sizeof(new_entry), 0);
     }
-}
 
+    // Update mac_to_ifindex_map
+    bpf_map_update_elem(&mac_to_ifindex_map, inner_src_mac, &ingress_ifindex, BPF_ANY);
+
+    // Update mac_to_border_ip_map
+    bpf_map_update_elem(&mac_to_border_ip_map, inner_src_mac, outer_src_border_ip, BPF_ANY);
+
+}
 
 // --------------------------------------------------------
