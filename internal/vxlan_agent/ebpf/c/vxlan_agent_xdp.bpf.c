@@ -122,6 +122,7 @@ static __always_inline struct in_addr convert_to_in_addr(unsigned char ip[4]);
 
 static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, struct ethhdr *eth, __u64 current_time);
 static void __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address* dest_mac_addr);
+static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, const struct ethhdr *eth, __u64 current_time);
 
 static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx);
 static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, void *data, void *data_end, struct ethhdr *inner_eth);
@@ -199,7 +200,7 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
     // - either forward it internally
     // - or add outer headers and forward it to an external interface
 
-    learn_internal_source_host(ctx, eth, current_time);
+    learn_from_packet_received_by_internal_iface(ctx, eth, current_time);
 
     struct mac_address dest_mac_addr;
     __builtin_memcpy(dest_mac_addr.mac, eth->h_dest, ETH_ALEN);
@@ -316,9 +317,35 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     outer_iph->check = ~bpf_csum_diff(0, 0, (__u32)outer_iph, IP_HDR_LEN, 0);
 }
 
-void learn_internal_source_host(const struct xdp_md *ctx, const struct ethhdr *eth, __u64 current_time)
+static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, const struct ethhdr *eth, __u64 current_time)
 {
+    struct mac_address dest_mac_addr;
+    __builtin_memcpy(dest_mac_addr.mac, eth->h_dest, ETH_ALEN);
 
+    // Update the mac_to_timestamp_map with the current time
+    bpf_map_update_elem(&mac_to_timestamp_map, &dest_mac_addr, &current_time, BPF_ANY);
+
+    // Check if the destination MAC address is already in the mac_to_ifindex_map
+    __u32* ifindex = bpf_map_lookup_elem(&mac_to_ifindex_map, &dest_mac_addr);
+
+    if (ifindex == NULL) {
+        // If the destination MAC address is not in the map
+        // it means that this is the first time we see this mac address
+        // & we need to report it to new_discovered_entries_rb,
+        // this way in the userspace we can learn about this mac address
+        // and maintain a timed cache entry for this mac address in our ttl cache in userspace.
+        // whenever the cache entry in userspace expires, we will remove it from the kernel map as well.
+
+        struct new_discovered_entry new_entry;
+        new_entry.mac = dest_mac_addr;
+        new_entry.timestamp = current_time;
+        new_entry.ifindex = ctx->ingress_ifindex;
+
+        bpf_ringbuf_output(&new_discovered_entries_rb, &new_entry, sizeof(new_entry), 0);
+    }
+
+    __u32 ingress_ifindex = ctx->ingress_ifindex;
+    bpf_map_update_elem(&mac_to_ifindex_map, &dest_mac_addr, &ingress_ifindex, BPF_ANY);
 }
 
 
