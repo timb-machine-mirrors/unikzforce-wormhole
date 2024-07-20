@@ -160,7 +160,9 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
     }
 }
 
+
 // --------------------------------------------------------
+
 
 // Function to get a random port within the ephemeral range
 static __always_inline __u16 get_ephemeral_port() {
@@ -185,6 +187,10 @@ static __always_inline struct in_addr convert_to_in_addr(unsigned char ip[4]) {
     addr.s_addr = bpf_ntohl(*(unsigned int *)ip);
     return addr;
 }
+
+
+// --------------------------------------------------------
+
 
 static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, struct ethhdr *eth, __u64 current_time) {
     // if packet has been received by an internal iface
@@ -309,6 +315,15 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     // Calculate ip checksum
     outer_iph->check = ~bpf_csum_diff(0, 0, (__u32)outer_iph, IP_HDR_LEN, 0);
 }
+
+void learn_internal_source_host(const struct xdp_md *ctx, const struct ethhdr *eth, __u64 current_time)
+{
+
+}
+
+
+// --------------------------------------------------------
+
 
 static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx) {
     // if packet has been received by an external interface
@@ -511,7 +526,5 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
     }
 }
 
-void learn_internal_source_host(const struct xdp_md *ctx, const struct ethhdr *eth, __u64 current_time)
-{
 
-}
+// --------------------------------------------------------
