@@ -230,10 +230,10 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
         }
 
     } else {
-        // if we don't know this mac in mac table ( mac_to_ifindex_map )
+        // if we don't know this dest mac in mac table ( mac_to_ifindex_map )
         // no matter why we are here:
-        // - either because of a mac addr that we don't know where to find (unknown mac)
-        // - or because of broadcast mac address ( FFFFFFFFFFFF )
+        // - either because of a dest mac addr that we don't know where to find (unknown dest mac)
+        // - or because dest mac is broadcast mac address ( FFFFFFFFFFFF )
         // in ether case we must perform Flooding --> XDP_PASS --> handle in implemented TC flooding hook
 
         return XDP_PASS;
@@ -304,12 +304,15 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
         return XDP_ABORTED;
     }
 
-    //  In network programming, the distinction between the endianness of multi-byte values and single-byte values or byte sequences is critical.
-    //  - Multi-byte Values: The endianness affects how multi-byte values (such as 16-bit, 32-bit, and 64-bit integers) are stored in memory. Network protocols typically require these values to be in big-endian (network byte order) format.
-    //  - Byte Sequences: Single-byte values or sequences of bytes (such as MAC addresses) are not affected by endianness. They are simply copied as they are, byte by byte.
-    __builtin_memcpy(outer_eth->h_source, route_info->external_iface_mac.mac, ETH_ALEN);
-    __builtin_memcpy(outer_eth->h_dest, route_info->external_iface_next_hop_mac.mac, ETH_ALEN);
-    outer_eth->h_proto = bpf_htons(ETH_P_IP);
+    //  In network programming, the distinction between the endianness of multi-byte values and byte sequences is critical.
+    //  - Multi-byte Values: The endianness affects how multi-byte values (such as 16-bit, 32-bit, and 64-bit integers) are stored
+    //    in memory. Network protocols typically require these values to be in big-endian (network byte order) format. 
+    //    Multi-byte values needs to be handled by bpf_htons() or bpf_htonl(). Like IP addresses, which is a single 32-bit value.
+    //  - Byte Sequences: sequences of bytes (such as MAC addresses) are not affected by endianness.
+    //    They are simply copied as they are, byte by byte. Like mac addresses, which is a 6 bytes sequence.
+    __builtin_memcpy(outer_eth->h_source, route_info->external_iface_mac.mac, ETH_ALEN);            // mac address is a byte sequence
+    __builtin_memcpy(outer_eth->h_dest, route_info->external_iface_next_hop_mac.mac, ETH_ALEN);     // mac address is a byte sequence
+    outer_eth->h_proto = bpf_htons(ETH_P_IP);                                                       // ip address is a multi-byte value
 
     outer_iph->version = 4;
     outer_iph->ihl = 5;
