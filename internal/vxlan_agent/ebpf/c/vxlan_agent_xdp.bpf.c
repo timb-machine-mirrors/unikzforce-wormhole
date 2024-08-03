@@ -125,8 +125,8 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
 static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time, const struct ethhdr *eth);
 
 static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time);
-static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, __u32* outer_src_ip);
-static long __always_inline handle_packet_received_by_external_iface__ip_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, __u32* outer_src_ip);
+static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address* inner_dst_mac);
+static long __always_inline handle_packet_received_by_external_iface__ip_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address* inner_dst_mac);
 static void __always_inline learn_from_packet_received_by_external_iface(struct xdp_md* ctx, __u64 current_time, struct mac_address* inner_src_mac, __u32* outer_src_border_ip);
 
 
@@ -310,27 +310,27 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     //    Multi-byte values needs to be handled by bpf_htons() or bpf_htonl(). Like IP addresses, which is a single 32-bit value.
     //  - Byte Sequences: sequences of bytes (such as MAC addresses) are not affected by endianness.
     //    They are simply copied as they are, byte by byte. Like mac addresses, which is a 6 bytes sequence.
-    __builtin_memcpy(outer_eth->h_source, route_info->external_iface_mac.mac, ETH_ALEN);            // mac address is a byte sequence
-    __builtin_memcpy(outer_eth->h_dest, route_info->external_iface_next_hop_mac.mac, ETH_ALEN);     // mac address is a byte sequence
-    outer_eth->h_proto = bpf_htons(ETH_P_IP);                                                       // ip address is a multi-byte value
+    __builtin_memcpy(outer_eth->h_source, route_info->external_iface_mac.mac, ETH_ALEN);            // mac address is a byte sequence, not affected by endianness
+    __builtin_memcpy(outer_eth->h_dest, route_info->external_iface_next_hop_mac.mac, ETH_ALEN);     // mac address is a byte sequence, not affected by endianness
+    outer_eth->h_proto = bpf_htons(ETH_P_IP);                                                       // ip address is a multi-byte value, so it needs to be in network byte order
 
-    outer_iph->version = 4;
-    outer_iph->ihl = 5;
-    outer_iph->tos = 0;
-    outer_iph->tot_len = bpf_htons(new_len - ETH_HLEN);
-    outer_iph->id=0;
-    outer_iph->frag_off = 0;
-    outer_iph->ttl = 64;
-    outer_iph->protocol = IPPROTO_UDP;
-    outer_iph->check = 0; // will be calculated later
-    outer_iph->saddr = bpf_htonl(route_info->external_iface_ip);
-    outer_iph->daddr = bpf_htonl(*dst_border_ip);
+    outer_iph->version = 4;                                             // ip version
+    outer_iph->ihl = 5;                                                 // ip header length
+    outer_iph->tos = 0;                                                 // ip type of service
+    outer_iph->tot_len = bpf_htons(new_len - ETH_HLEN);                 // ip total length
+    outer_iph->id=0;                                                    // ip id
+    outer_iph->frag_off = 0;                                            // ip fragment offset
+    outer_iph->ttl = 64;                                                // ip time to live
+    outer_iph->protocol = IPPROTO_UDP;                                  // ip protocol
+    outer_iph->check = 0;                                               // ip checksum will be calculated later
+    outer_iph->saddr = bpf_htonl(route_info->external_iface_ip);        // ip source address
+    outer_iph->daddr = bpf_htonl(*dst_border_ip);                       // ip destination address
 
 
-    outer_udph->source = bpf_htons(get_ephemeral_port()); // Source UDP port
-    outer_udph->dest = bpf_htons(4789); // Destination UDP port (VXLAN default)
-    outer_udph->len = bpf_htons(new_len - ETH_HLEN - IP_HDR_LEN);
-    outer_udph->check = 0; // UDP checksum is optional in IPv4
+    outer_udph->source = bpf_htons(get_ephemeral_port());               // Source UDP port
+    outer_udph->dest = bpf_htons(4789);                                 // Destination UDP port (VXLAN default)
+    outer_udph->len = bpf_htons(new_len - ETH_HLEN - IP_HDR_LEN);       // UDP length
+    outer_udph->check = 0;                                              // UDP checksum is optional in IPv4
 
     // for now we don't set VXLAN header
 
@@ -416,27 +416,34 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
     if ((void *)(inner_eth + 1) > data_end)
         return XDP_DROP;
 
+    // Extract inner source and destination MAC addresses
+    struct mac_address inner_src_mac;
+    struct mac_address inner_dst_mac;
 
     if (inner_eth->h_proto == bpf_htons(ETH_P_ARP)) {
         // if the inner packet is an ARP packet
-        return handle_packet_received_by_external_iface__arp_packet(ctx, current_time, data, data_end, inner_eth, outer_src_ip);
+
+        __builtin_memcpy(inner_src_mac.mac, inner_eth->h_source, ETH_ALEN);
+        __builtin_memcpy(inner_dst_mac.mac, inner_eth->h_dest, ETH_ALEN);
+
+        learn_from_packet_received_by_external_iface(ctx, current_time, &inner_src_mac, outer_src_ip);
+
+        return handle_packet_received_by_external_iface__arp_packet(ctx, current_time, data, data_end, inner_eth, &inner_dst_mac);
     } else if (inner_eth->h_proto == bpf_htons(ETH_P_IP)) {
         // if the inner packet is an IP packet
-        return handle_packet_received_by_external_iface__ip_packet(ctx, current_time, data, data_end, inner_eth, outer_src_ip);
+
+        __builtin_memcpy(inner_src_mac.mac, inner_eth->h_source, ETH_ALEN);
+        __builtin_memcpy(inner_dst_mac.mac, inner_eth->h_dest, ETH_ALEN);
+
+        learn_from_packet_received_by_external_iface(ctx, current_time, &inner_src_mac, outer_src_ip);
+
+        return handle_packet_received_by_external_iface__ip_packet(ctx, current_time, data, data_end, inner_eth, &inner_dst_mac);
     } else {
         return XDP_DROP;
     }
 }
 
-static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, __u32* outer_src_ip) {
-
-    // Extract inner source and destination MAC addresses
-    struct mac_address inner_src_mac;
-    struct mac_address inner_dst_mac;
-    __builtin_memcpy(inner_src_mac.mac, inner_eth->h_source, ETH_ALEN);
-    __builtin_memcpy(inner_dst_mac.mac, inner_eth->h_dest, ETH_ALEN);
-
-    learn_from_packet_received_by_external_iface(ctx, current_time, &inner_src_mac, outer_src_ip);
+static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address* inner_dst_mac) {
 
     struct arphdr *inner_arph = (void *)(inner_eth + 1);
 
@@ -522,14 +529,8 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
     }
 }
 
-static long __always_inline handle_packet_received_by_external_iface__ip_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, __u32* outer_src_ip) {
+static long __always_inline handle_packet_received_by_external_iface__ip_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address* inner_dst_mac) {
     // Extract inner source and destination MAC addresses
-    struct mac_address inner_src_mac;
-    struct mac_address inner_dst_mac;
-    __builtin_memcpy(inner_src_mac.mac, inner_eth->h_source, ETH_ALEN);
-    __builtin_memcpy(inner_dst_mac.mac, inner_eth->h_dest, ETH_ALEN);
-
-    learn_from_packet_received_by_external_iface(ctx, current_time, &inner_src_mac, outer_src_ip);
 
     struct iphdr *inner_iph = (void *)(inner_eth + 1);
 
