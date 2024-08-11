@@ -38,7 +38,7 @@ struct
 struct mac_table_entry
 {
     __u32 ifindex;                     // interface which mac address is learned from
-    __u64 last_seen_timestamp;         // last time this mac address was seen
+    __u64 last_seen_timestamp_ns;      // last time this mac address was seen
     struct in_addr border_ip;          // remote agent border ip address that this mac address is learned from.
                                        // - in case of an internal mac address, this field is not used and set to 0.0.0.0
                                        // - in case of an external mac address, this field is used and set to the remote agent border ip address
@@ -62,14 +62,14 @@ static __always_inline struct in_addr convert_to_in_addr(unsigned char ip[4]);
 
 static int mac_table_expiration_callback(void *map, struct mac_address *key, struct mac_table_entry *value);
 
-static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time, struct ethhdr *eth);
+static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time_ns, struct ethhdr *eth);
 static void __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address *dst_mac, struct mac_table_entry *dst_mac_entry);
-static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time, struct mac_address *src_mac);
+static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time_ns, struct mac_address *src_mac);
 
-static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time);
-static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address *inner_dst_mac);
-static long __always_inline handle_packet_received_by_external_iface__ip_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address *inner_dst_mac);
-static void __always_inline learn_from_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time, struct mac_address *inner_src_mac, __u32 *outer_src_border_ip);
+static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time_ns);
+static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, __u64 current_time_ns, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address *inner_dst_mac);
+static long __always_inline handle_packet_received_by_external_iface__ip_packet(struct xdp_md *ctx, __u64 current_time_ns, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address *inner_dst_mac);
+static void __always_inline learn_from_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time_ns, struct mac_address *inner_src_mac, __u32 *outer_src_border_ip);
 
 // --------------------------------------------------------
 // main xdp entry point
@@ -77,8 +77,8 @@ static void __always_inline learn_from_packet_received_by_external_iface(struct 
 SEC("xdp")
 long vxlan_agent_xdp(struct xdp_md *ctx)
 {
-    // we can use current_time as something like a unique identifier for packet
-    __u64 current_time = bpf_ktime_get_tai_ns();
+    // we can use current_time_ns as something like a unique identifier for packet
+    __u64 current_time_ns = bpf_ktime_get_tai_ns();
 
     struct ethhdr *eth = (void *)(long)ctx->data;
 
@@ -98,12 +98,12 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
     if (packet_is_received_by_internal_iface)
     {
         // if packet has been received by an internal iface
-        return handle_packet_received_by_internal_iface(ctx, eth, current_time);
+        return handle_packet_received_by_internal_iface(ctx, eth, current_time_ns);
     }
     else
     {
         // if packet has been received by an external interface
-        return handle_packet_received_by_external_iface(ctx, current_time);
+        return handle_packet_received_by_external_iface(ctx, current_time_ns);
     }
 }
 
@@ -144,7 +144,7 @@ static __always_inline struct in_addr convert_to_in_addr(unsigned char ip[4])
 
 // --------------------------------------------------------
 
-static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time, struct ethhdr *eth)
+static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time_ns, struct ethhdr *eth)
 {
     // if packet has been received by an internal iface
     // it means this packet should have no outer headers.
@@ -155,7 +155,7 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
     struct mac_address src_mac;
     __builtin_memcpy(src_mac.mac, eth->h_source, ETH_ALEN);
 
-    learn_from_packet_received_by_internal_iface(ctx, eth, current_time);
+    learn_from_packet_received_by_internal_iface(ctx, eth, current_time_ns);
 
     struct mac_address dst_mac;
     __builtin_memcpy(dst_mac.mac, eth->h_dest, ETH_ALEN);
@@ -289,7 +289,7 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     outer_iph->check = ~bpf_csum_diff(0, 0, (__u32)outer_iph, IP_HDR_LEN, 0);
 }
 
-static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time, struct mac_address *src_mac)
+static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time_ns, struct mac_address *src_mac)
 {
     struct mac_table_entry *src_mac_entry = bpf_map_lookup_elem(&mac_table, &src_mac);
 
@@ -297,7 +297,7 @@ static void __always_inline learn_from_packet_received_by_internal_iface(const s
     {
         // if the source mac address is not in the mac table, we need to insert it
         src_mac_entry = &(struct mac_table_entry){
-            .last_seen_timestamp = current_time,
+            .last_seen_timestamp_ns = current_time_ns,
             .ifindex = ctx->ingress_ifindex,
             .border_ip = {0}, // in this case, border_ip is set to 0.0.0.0 but it doesn't mean it's really 0.0.0.0 but it means it's not set yet.
             .expiration_timer = {}};
@@ -329,7 +329,7 @@ static void __always_inline learn_from_packet_received_by_internal_iface(const s
     }
     else
     {
-        src_mac_entry->last_seen_timestamp = current_time;
+        src_mac_entry->last_seen_timestamp_ns = current_time_ns;
 
         bpf_map_update_elem(&mac_table, &src_mac, src_mac_entry, BPF_ANY);
     }
@@ -337,7 +337,7 @@ static void __always_inline learn_from_packet_received_by_internal_iface(const s
 
 // --------------------------------------------------------
 
-static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time)
+static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time_ns)
 {
     // if packet has been received by an external interface
     // it means that this packet:
@@ -388,9 +388,9 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
         __builtin_memcpy(inner_src_mac.mac, inner_eth->h_source, ETH_ALEN);
         __builtin_memcpy(inner_dst_mac.mac, inner_eth->h_dest, ETH_ALEN);
 
-        learn_from_packet_received_by_external_iface(ctx, current_time, &inner_src_mac, outer_src_ip);
+        learn_from_packet_received_by_external_iface(ctx, current_time_ns, &inner_src_mac, outer_src_ip);
 
-        return handle_packet_received_by_external_iface__arp_packet(ctx, current_time, data, data_end, inner_eth, &inner_dst_mac);
+        return handle_packet_received_by_external_iface__arp_packet(ctx, current_time_ns, data, data_end, inner_eth, &inner_dst_mac);
     }
     else if (inner_eth->h_proto == bpf_htons(ETH_P_IP))
     {
@@ -399,9 +399,9 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
         __builtin_memcpy(inner_src_mac.mac, inner_eth->h_source, ETH_ALEN);
         __builtin_memcpy(inner_dst_mac.mac, inner_eth->h_dest, ETH_ALEN);
 
-        learn_from_packet_received_by_external_iface(ctx, current_time, &inner_src_mac, outer_src_ip);
+        learn_from_packet_received_by_external_iface(ctx, current_time_ns, &inner_src_mac, outer_src_ip);
 
-        return handle_packet_received_by_external_iface__ip_packet(ctx, current_time, data, data_end, inner_eth, &inner_dst_mac);
+        return handle_packet_received_by_external_iface__ip_packet(ctx, current_time_ns, data, data_end, inner_eth, &inner_dst_mac);
     }
     else
     {
@@ -409,7 +409,7 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
     }
 }
 
-static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address *inner_dst_mac)
+static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, __u64 current_time_ns, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address *inner_dst_mac)
 {
 
     struct arphdr *inner_arph = (void *)(inner_eth + 1);
@@ -509,7 +509,7 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
     }
 }
 
-static long __always_inline handle_packet_received_by_external_iface__ip_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address *inner_dst_mac)
+static long __always_inline handle_packet_received_by_external_iface__ip_packet(struct xdp_md *ctx, __u64 current_time_ns, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address *inner_dst_mac)
 {
     // Extract inner source and destination MAC addresses
 
@@ -566,7 +566,7 @@ static long __always_inline handle_packet_received_by_external_iface__ip_packet(
     }
 }
 
-static void __always_inline learn_from_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time, struct mac_address *inner_src_mac, __u32 *outer_src_border_ip)
+static void __always_inline learn_from_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time_ns, struct mac_address *inner_src_mac, __u32 *outer_src_border_ip)
 {
     // in this case we need to learn two things:
     // - the internal mac address of the source
@@ -576,7 +576,7 @@ static void __always_inline learn_from_packet_received_by_external_iface(struct 
     if (src_mac_entry == NULL)
     {
         src_mac_entry = &(struct mac_table_entry){
-            .last_seen_timestamp = current_time,
+            .last_seen_timestamp_ns = current_time_ns,
             .ifindex = ctx->ingress_ifindex,
             .border_ip.s_addr = *outer_src_border_ip,
             .expiration_timer = {}};
@@ -608,7 +608,7 @@ static void __always_inline learn_from_packet_received_by_external_iface(struct 
     }
     else
     {
-        src_mac_entry->last_seen_timestamp = current_time;
+        src_mac_entry->last_seen_timestamp_ns = current_time_ns;
 
         bpf_map_update_elem(&mac_table, inner_src_mac, src_mac_entry, BPF_ANY);
     }
@@ -619,7 +619,7 @@ static void __always_inline learn_from_packet_received_by_external_iface(struct 
 // the mac table expiration callback function
 static int mac_table_expiration_callback(void *map, struct mac_address *key, struct mac_table_entry *value)
 {
-    __u64 passed_time = bpf_ktime_get_tai_ns() - value->last_seen_timestamp;
+    __u64 passed_time = bpf_ktime_get_tai_ns() - value->last_seen_timestamp_ns;
 
     if (passed_time >= FIVE_MINUTES_IN_NS)
     {
