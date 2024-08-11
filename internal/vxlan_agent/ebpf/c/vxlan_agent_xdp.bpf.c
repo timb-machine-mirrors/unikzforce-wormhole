@@ -265,16 +265,6 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
 
     struct in_addr *dst_border_ip = &(dst_mac_entry->border_ip);
 
-    // if (dst_border_ip == NULL) {
-    //     // we are in add_outer_headers...() function, it means that we have an ifindex in mac_to_ifindex_map
-    //     // which is an external ifindex, but we don't know the border ip address of the destination mac address.
-    //     // this should never happen, because we update mac_to_border_ip_map in the same function
-    //     // where we update mac_to_ifindex_map.
-    //     //
-    //     // so in case this happens, we perform XDP_ABORTED because it means something is fishy.
-    //     return XDP_ABORTED;
-    // }
-
     struct external_route_info *route_info = bpf_map_lookup_elem(&border_ip_to_route_info_map, dst_border_ip);
 
     if (route_info == NULL)
