@@ -1,4 +1,6 @@
+#include "vxlan_agent.bpf.h"
 #include <linux/if_ether.h>
+#include <linux/time.h>
 
 
 #include "../../../../include/vmlinux.h"
@@ -7,35 +9,9 @@
 
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
 
-
-
-#define IP_HDR_LEN sizeof(struct iphdr)
-#define UDP_HDR_LEN sizeof(struct udphdr)
-#define VXLAN_HDR_LEN sizeof(struct vxlanhdr)
-#define NEW_HDR_LEN (ETH_HLEN + IP_HDR_LEN + UDP_HDR_LEN + VXLAN_HDR_LEN)
-
-struct arp_payload {
-    unsigned char ar_sha[ETH_ALEN];  // Sender hardware address
-    unsigned char ar_sip[4];         // Sender IP address
-    unsigned char ar_tha[ETH_ALEN];  // Target hardware address
-    unsigned char ar_tip[4];         // Target IP address
-};
+#define FIVE_MINUTES_IN_NS 300000000000
 
 // --------------------------------------------------------
-
-struct mac_address {
-	__u8 mac[ETH_ALEN]; // MAC address
-};
-
-
-// --------------------------------------------------------
-
-struct external_route_info {
-    __u32       external_iface_index;
-    struct mac_address external_iface_mac;
-    struct mac_address external_iface_next_hop_mac;
-    struct in_addr     external_iface_ip;
-};
 
 // will use these info in case we want to forward a packet to
 // external network
@@ -60,57 +36,20 @@ struct {
 
 // --------------------------------------------------------
 
-// it will tell us which iface index is responsible for a mac address
+struct mac_table_entry {
+    __u32 ifindex;                              // interface which mac address is learned from
+    struct in_addr border_ip;                   // remote agent border ip address that this mac address is learned from 
+    __u64 last_seen_timestamp;                  // last time this mac address was seen
+    struct bpf_timer expiration_timer;          // the timer object to expire this mac entry from the map in the future
+};
+
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
 	__type(key, struct mac_address);
-	__type(value, __u32);
+	__type(value, struct mac_table_entry);
+    __uint(pinning, LIBBPF_PIN_BY_NAME);
 	__uint(max_entries, 4 * 1024 * 1024);
-} mac_to_ifindex_map SEC(".maps");
-
-
-// it will tell us which remote border is responsible for a mac address
-struct {
-    __uint(type, BPF_MAP_TYPE_HASH);
-    __type(key, struct mac_address);
-    __type(value, struct in_addr);
-    __uint(max_entries, 4 * 1024 * 1024);
-} mac_to_border_ip_map SEC(".maps");
-
-
-// it will tell us what is the last time info for a mac has been updated
-struct {
-	__uint(type, BPF_MAP_TYPE_HASH);
-	__type(key, struct mac_address);
-	__type(value, __u64);
-	__uint(max_entries, 4 * 1024 * 1024);
-} mac_to_timestamp_map SEC(".maps");
-
-
-// --------------------------------------------------------
-
-// when sending information to userspace code, we will use this format
-struct new_discovered_entry {
-	struct mac_address mac;
-	__u32 ifindex;
-	__u64 timestamp;
-} *unused_new_discovered_entry __attribute__((unused));
-// because new_discovered_entry is not directly mentioned
-// as a type in new_discovered_entries_rb then it will be
-// omitted in bpf2go generation procedure, unless we
-// directly add an unused instance of it to prevent it from
-// being omitted by optimization and also in bpf2go generate
-// command we must explicitly ask bpf2g to generate this struct
-// using '-type new_discovered_entry' option.
-
-
-// the userspace code will read this ring buffer for new discovered info
-struct {
-	__uint(type, BPF_MAP_TYPE_RINGBUF);
-	__uint(max_entries, 1024 * 1024);
-//	__uint(pinning, LIBBPF_PIN_BY_NAME);
-} new_discovered_entries_rb SEC(".maps");
-
+} mac_table SEC(".maps");
 
 // --------------------------------------------------------
 
@@ -119,10 +58,11 @@ static __always_inline __u16 get_ephemeral_port();
 static __always_inline bool is_broadcast_address(const struct mac_address *mac);
 static __always_inline struct in_addr convert_to_in_addr(unsigned char ip[4]);
 
+static int mac_table_expiration_callback(void *map, struct mac_address *key, struct mac_table_entry *value);
 
 static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time, struct ethhdr *eth);
-static void __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address* dest_mac_addr);
-static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time, const struct ethhdr *eth);
+static void __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address* dst_mac, struct mac_table_entry* dst_mac_entry);
+static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time, struct mac_address* src_mac);
 
 static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time);
 static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, __u64 current_time, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address* inner_dst_mac);
@@ -190,6 +130,21 @@ static __always_inline struct in_addr convert_to_in_addr(unsigned char ip[4]) {
     return addr;
 }
 
+// Define the callback function for the timer
+static int mac_table_expiration_callback(void *map, struct mac_address *key, struct mac_table_entry *value)
+{
+    __u64 current_time = bpf_ktime_get_tai_ns();
+
+    if (current_time - value->last_seen_timestamp > FIVE_MINUTES_IN_NS) {
+        // if the mac entry is expired
+        bpf_map_delete_elem(map, key);
+    } else {
+        bpf_timer_start(&value->expiration_timer, FIVE_MINUTES_IN_NS, 0);
+    }
+
+    return 0;
+}
+
 
 // --------------------------------------------------------
 
@@ -201,17 +156,20 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
     // - either forward it internally
     // - or add outer headers and forward it to an external interface
 
+    struct mac_address src_mac;
+    __builtin_memcpy(src_mac.mac, eth->h_source, ETH_ALEN);
+
     learn_from_packet_received_by_internal_iface(ctx, eth, current_time);
 
-    struct mac_address dest_mac_addr;
-    __builtin_memcpy(dest_mac_addr.mac, eth->h_dest, ETH_ALEN);
+    struct mac_address dst_mac;
+    __builtin_memcpy(dst_mac.mac, eth->h_dest, ETH_ALEN);
 
-    __u32* ifindex_to_redirect = bpf_map_lookup_elem(&mac_to_ifindex_map, &dest_mac_addr);
+    struct mac_table_entry* dst_mac_entry = bpf_map_lookup_elem(&mac_table, &dst_mac);
 
-    if (ifindex_to_redirect != NULL) {
+    if (dst_mac_entry != NULL) {
         // if we already know this dest mac in mac table ( mac_to_ifindex_map )
 
-        bool* ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, ifindex_to_redirect);
+        bool* ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &(dst_mac_entry->ifindex));
 
         if ( ifindex_to_redirect_is_internal == NULL ) {
             return XDP_ABORTED;
@@ -221,12 +179,12 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
 
         if (packet_to_be_redirected_to_an_internal_interface) {
             // if packet need to be forwarded to an internal interface
-            return bpf_redirect(*ifindex_to_redirect, 0);
+            return bpf_redirect(dst_mac_entry->ifindex, 0);
         } else {
             // if packet need to be forwarded to an external interface
-            add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(ctx, &dest_mac_addr);
+            add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(ctx, &dst_mac, dst_mac_entry);
 
-            return bpf_redirect(*ifindex_to_redirect, 0);
+            return bpf_redirect(dst_mac_entry->ifindex, 0);
         }
 
     } else {
@@ -240,7 +198,7 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
     }
 }
 
-static void __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address* dest_mac_addr) {
+static void __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address* dst_mac, struct mac_table_entry* dst_mac_entry) {
     // if packet need to be forwarded to an external interface
     // we must add outer headers to the packet
     // and then forward it to the external interface
@@ -284,17 +242,17 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     outer_udph = (void*) outer_iph + IP_HDR_LEN;
     outer_vxh = (void*) outer_udph + UDP_HDR_LEN;
 
-    struct in_addr* dst_border_ip = bpf_map_lookup_elem(&mac_to_border_ip_map, dest_mac_addr);
+    struct in_addr* dst_border_ip = &(dst_mac_entry->border_ip);
 
-    if (dst_border_ip == NULL) {
-        // we are in add_outer_headers...() function, it means that we have an ifindex in mac_to_ifindex_map 
-        // which is an external ifindex, but we don't know the border ip address of the destination mac address.
-        // this should never happen, because we update mac_to_border_ip_map in the same function
-        // where we update mac_to_ifindex_map.
-        //
-        // so in case this happens, we perform XDP_ABORTED because it means something is fishy.
-        return XDP_ABORTED;
-    }
+    // if (dst_border_ip == NULL) {
+    //     // we are in add_outer_headers...() function, it means that we have an ifindex in mac_to_ifindex_map 
+    //     // which is an external ifindex, but we don't know the border ip address of the destination mac address.
+    //     // this should never happen, because we update mac_to_border_ip_map in the same function
+    //     // where we update mac_to_ifindex_map.
+    //     //
+    //     // so in case this happens, we perform XDP_ABORTED because it means something is fishy.
+    //     return XDP_ABORTED;
+    // }
 
     struct external_route_info* route_info = bpf_map_lookup_elem(&border_ip_to_route_info_map, dst_border_ip);
 
@@ -338,38 +296,46 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     outer_iph->check = ~bpf_csum_diff(0, 0, (__u32)outer_iph, IP_HDR_LEN, 0);
 }
 
-static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time, const struct ethhdr *eth)
+static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time, struct mac_address* src_mac)
 {
-    struct mac_address src_mac_addr;
-    __builtin_memcpy(src_mac_addr.mac, eth->h_source, ETH_ALEN);
+    struct mac_table_entry* src_mac_entry = bpf_map_lookup_elem(&mac_table, &src_mac);
 
-    // Update the mac_to_timestamp_map with the current time
-    bpf_map_update_elem(&mac_to_timestamp_map, &src_mac_addr, &current_time, BPF_ANY);
+    if (src_mac_entry == NULL) {
+        // if the source mac address is not in the mac table, we need to insert it
+        src_mac_entry = &(struct mac_table_entry){
+            .last_seen_timestamp = current_time,
+            .ifindex = ctx->ingress_ifindex,
+            .border_ip = {0},                           // in this case, border_ip is set to 0.0.0.0 but it doesn't mean it's really 0.0.0.0 but it means it's not set yet.
+            .expiration_timer = {}
+        };
 
-    // Check if the source MAC address is already in the mac_to_ifindex_map
-    __u32* existing_ifindex = bpf_map_lookup_elem(&mac_to_ifindex_map, &src_mac_addr);
+        bpf_map_update_elem(&mac_table, &src_mac, src_mac_entry, BPF_ANY);
 
-    if (existing_ifindex == NULL) {
-        // If the source MAC address is not in the map
-        // it means that this is the first time we see this mac address, or if it's not the first time
-        // and we had previously seen this mac address but the entry in the kernel map has been previously expired & deleted.
-        // & we need to report it via new_discovered_entries_rb to userspace code.
-        // this way in the userspace we can learn about this newly detected mac address.
-        // and maintain a ttl based entry for this mac address in userspace cache.
-        // whenever the cache entry in userspace expires, in the userspace code we will check again the kernel map:
-        // - if the entry in mac_to_timestamp_map kernel map is still old, we will remove it from kernel map as well.
-        // - else we will not remove it from the kernel map, because it is still valid & also we will re-insert it with the new timestamp into the userspace cache.
+        int ret;
+        ret = bpf_timer_init(&src_mac_entry->expiration_timer, &mac_table, CLOCK_BOOTTIME);
+        if (ret) {
+            bpf_printk("failed to init timer\n");
+            return;
+        }
 
-        struct new_discovered_entry new_entry;
-        new_entry.mac = src_mac_addr;
-        new_entry.timestamp = current_time;
-        new_entry.ifindex = ctx->ingress_ifindex;
+        ret = bpf_timer_set_callback(&src_mac_entry->expiration_timer, mac_table_expiration_callback);
+        if (ret) {
+            bpf_printk("failed to set timer callback\n");
+            return;
+        }
 
-        bpf_ringbuf_output(&new_discovered_entries_rb, &new_entry, sizeof(new_entry), 0);
+        // 5 minutes
+        ret = bpf_timer_start(&src_mac_entry->expiration_timer, FIVE_MINUTES_IN_NS, 0);
+        if (ret) {
+            bpf_printk("failed to start timer\n");
+            return;
+        }
+
+    } else {
+        src_mac_entry->last_seen_timestamp = current_time;
+
+        bpf_map_update_elem(&mac_table, &src_mac, src_mac_entry, BPF_ANY);
     }
-
-    __u32 ingress_ifindex = ctx->ingress_ifindex;
-    bpf_map_update_elem(&mac_to_ifindex_map, &src_mac_addr, &ingress_ifindex, BPF_ANY);
 }
 
 
@@ -487,9 +453,9 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
         }
 
         // Check if the destination MAC address is known
-        __u32* ifindex_to_redirect = bpf_map_lookup_elem(&mac_to_ifindex_map, &inner_dst_mac);
-        if (ifindex_to_redirect != NULL) {
-            bool* ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, ifindex_to_redirect);
+        struct mac_table_entry* dst_mac_entry = bpf_map_lookup_elem(&mac_table, &inner_dst_mac);
+        if (dst_mac_entry != NULL) {
+            bool* ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &(dst_mac_entry->ifindex));
 
             if ( ifindex_to_redirect_is_internal == NULL ) {
                 return XDP_ABORTED;
@@ -511,7 +477,7 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
                     return XDP_DROP;
                 
                 // Redirect the resulting internal frame buffer to the proper interface
-                return bpf_redirect(*ifindex_to_redirect, 0);
+                return bpf_redirect(dst_mac_entry->ifindex, 0);
             } else {
                 // if we recieve a arp packet from external interface 
                 // that is meant to be redirected to another remote vxlan border agent
@@ -542,12 +508,11 @@ static long __always_inline handle_packet_received_by_external_iface__ip_packet(
     __u32 inner_src_ip = inner_iph->saddr;
     __u32 inner_dst_ip = inner_iph->daddr;
 
+    struct mac_table_entry* dst_mac_entry = bpf_map_lookup_elem(&mac_table, &inner_dst_mac);
 
-    __u32* ifindex_to_redirect = bpf_map_lookup_elem(&mac_to_ifindex_map, &inner_dst_mac);
+    if (dst_mac_entry != NULL) {
 
-    if (ifindex_to_redirect != NULL) {
-
-        bool* ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, ifindex_to_redirect);
+        bool* ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &(dst_mac_entry->ifindex));
 
         if ( ifindex_to_redirect_is_internal == NULL ) {
             return XDP_ABORTED;
@@ -569,7 +534,7 @@ static long __always_inline handle_packet_received_by_external_iface__ip_packet(
                 return XDP_DROP;
 
             // Redirect the resulting internal frame buffer to the proper interface
-            return bpf_redirect(*ifindex_to_redirect, 0);
+            return bpf_redirect(dst_mac_entry->ifindex, 0);
         } else {
             return XDP_DROP;
         }
@@ -586,39 +551,42 @@ static void __always_inline learn_from_packet_received_by_external_iface(struct 
     // - the internal mac address of the source
     // - the external source border ip address that this mac address belongs to
 
-    __u32 ingress_ifindex = ctx->ingress_ifindex;
+    struct mac_table_entry* src_mac_entry = bpf_map_lookup_elem(&mac_table, inner_src_mac);
+    if (src_mac_entry == NULL) {
+        src_mac_entry = &(struct mac_table_entry) {
+            .last_seen_timestamp = current_time,
+            .ifindex = ctx->ingress_ifindex,
+            .border_ip.s_addr = *outer_src_border_ip,
+            .expiration_timer = {}
+        };
 
-    // Update mac_to_timestamp_map
-    bpf_map_update_elem(&mac_to_timestamp_map, inner_src_mac, &current_time, BPF_ANY);
+        bpf_map_update_elem(&mac_table, inner_src_mac, src_mac_entry, BPF_ANY);
 
-    // Check if the inner_src_mac address is already in the mac_to_ifindex_map
-    __u32* existing_ifindex = bpf_map_lookup_elem(&mac_to_ifindex_map, inner_src_mac);
+        int ret;
+        ret = bpf_timer_init(&src_mac_entry->expiration_timer, &mac_table, CLOCK_BOOTTIME);
+        if (ret) {
+            bpf_printk("failed to init timer\n");
+            return;
+        }
 
-    if (existing_ifindex == NULL) {
-        // If the inner_src_mac address is not in the map
-        // it means that this is the first time we see this mac address, or if it's not the first time
-        // and we had previously seen this mac address but the entry in the kernel map has been previously expired & deleted.
-        // & we need to report it via new_discovered_entries_rb to userspace code.
-        // this way in the userspace we can learn about this newly detected mac address.
-        // and maintain a ttl based entry for this mac address in userspace cache.
-        // whenever the cache entry in userspace expires, in the userspace code we will check again the kernel map:
-        // - if the entry in mac_to_timestamp_map kernel map is still old, we will remove it from kernel map as well.
-        // - else we will not remove it from the kernel map, because it is still valid & also we will re-insert it with the new timestamp into the userspace cache.
+        ret = bpf_timer_set_callback(&src_mac_entry->expiration_timer, mac_table_expiration_callback);
+        if (ret) {
+            bpf_printk("failed to set timer callback\n");
+            return;
+        }
 
-        struct new_discovered_entry new_entry;
-        new_entry.mac = *inner_src_mac;
-        new_entry.timestamp = current_time;
-        new_entry.ifindex = ctx->ingress_ifindex;
+        // 5 minutes
+        ret = bpf_timer_start(&src_mac_entry->expiration_timer, FIVE_MINUTES_IN_NS, 0);
+        if (ret) {
+            bpf_printk("failed to start timer\n");
+            return;
+        }
 
-        bpf_ringbuf_output(&new_discovered_entries_rb, &new_entry, sizeof(new_entry), 0);
+    } else {
+        src_mac_entry->last_seen_timestamp = current_time;
+
+        bpf_map_update_elem(&mac_table, inner_src_mac, src_mac_entry, BPF_ANY);
     }
-
-    // Update mac_to_ifindex_map
-    bpf_map_update_elem(&mac_to_ifindex_map, inner_src_mac, &ingress_ifindex, BPF_ANY);
-
-    // Update mac_to_border_ip_map
-    bpf_map_update_elem(&mac_to_border_ip_map, inner_src_mac, outer_src_border_ip, BPF_ANY);
-
 }
 
 // --------------------------------------------------------
