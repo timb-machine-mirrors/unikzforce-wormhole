@@ -182,7 +182,7 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
 
     if (dst_mac_entry != NULL)
     {
-        // if we already know this dest mac in mac table ( mac_to_ifindex_map )
+        // if we already know this dest mac in mac_table
 
         bool *ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &(dst_mac_entry->ifindex));
 
@@ -208,7 +208,7 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
     }
     else
     {
-        // if we don't know this dest mac in mac table ( mac_to_ifindex_map )
+        // if we don't know this dest mac in mac_table
         // no matter why we are here:
         // - either because of a dest mac addr that we don't know where to find (unknown dest mac)
         // - or because dest mac is broadcast mac address ( FFFFFFFFFFFF )
