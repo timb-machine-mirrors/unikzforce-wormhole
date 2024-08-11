@@ -60,7 +60,6 @@ static __always_inline __u16 get_ephemeral_port();
 static __always_inline bool is_broadcast_address(const struct mac_address *mac);
 static __always_inline struct in_addr convert_to_in_addr(unsigned char ip[4]);
 
-static int mac_table_expiration_callback(void *map, struct mac_address *key, struct mac_table_entry *value);
 
 static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time_ns, struct ethhdr *eth);
 static void __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address *dst_mac, struct mac_table_entry *dst_mac_entry);
@@ -70,6 +69,8 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
 static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, __u64 current_time_ns, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address *inner_dst_mac);
 static long __always_inline handle_packet_received_by_external_iface__ip_packet(struct xdp_md *ctx, __u64 current_time_ns, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address *inner_dst_mac);
 static void __always_inline learn_from_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time_ns, struct mac_address *inner_src_mac, __u32 *outer_src_border_ip);
+
+static int mac_table_expiration_callback(void *map, struct mac_address *key, struct mac_table_entry *value);
 
 // --------------------------------------------------------
 // main xdp entry point
