@@ -142,24 +142,6 @@ static __always_inline struct in_addr convert_to_in_addr(unsigned char ip[4])
     return addr;
 }
 
-// Define the callback function for the timer
-static int mac_table_expiration_callback(void *map, struct mac_address *key, struct mac_table_entry *value)
-{
-    __u64 current_time = bpf_ktime_get_tai_ns();
-
-    if (current_time - value->last_seen_timestamp > FIVE_MINUTES_IN_NS)
-    {
-        // if the mac entry is expired
-        bpf_map_delete_elem(map, key);
-    }
-    else
-    {
-        bpf_timer_start(&value->expiration_timer, FIVE_MINUTES_IN_NS, 0);
-    }
-
-    return 0;
-}
-
 // --------------------------------------------------------
 
 static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time, struct ethhdr *eth)
@@ -633,3 +615,22 @@ static void __always_inline learn_from_packet_received_by_external_iface(struct 
 }
 
 // --------------------------------------------------------
+
+// the mac table expiration callback function
+static int mac_table_expiration_callback(void *map, struct mac_address *key, struct mac_table_entry *value)
+{
+    __u64 passed_time = bpf_ktime_get_tai_ns() - value->last_seen_timestamp;
+
+    if (passed_time >= FIVE_MINUTES_IN_NS)
+    {
+        // if the mac entry is expired
+        bpf_map_delete_elem(map, key);
+    }
+    else
+    {
+        // if the mac entry is not expired we need to restart the timer according to the remaining time
+        bpf_timer_start(&value->expiration_timer, FIVE_MINUTES_IN_NS - passed_time, 0);
+    }
+
+    return 0;
+}
