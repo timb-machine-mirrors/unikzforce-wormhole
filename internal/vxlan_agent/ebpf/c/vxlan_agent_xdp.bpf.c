@@ -42,7 +42,7 @@ struct mac_table_entry
     struct in_addr border_ip;          // remote agent border ip address that this mac address is learned from.
                                        // - in case of an internal mac address, this field is not used and set to 0.0.0.0
                                        // - in case of an external mac address, this field is used and set to the remote agent border ip address
-    struct bpf_timer expiration_timer; // the timer object to expire this mac entry from the map in the future
+    struct bpf_timer expiration_timer; // the timer object to expire this mac entry from the map in 5 minutes
 };
 
 struct
@@ -59,7 +59,6 @@ struct
 static __always_inline __u16 get_ephemeral_port();
 static __always_inline bool is_broadcast_address(const struct mac_address *mac);
 static __always_inline struct in_addr convert_to_in_addr(unsigned char ip[4]);
-
 
 static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time_ns, struct ethhdr *eth);
 static void __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address *dst_mac, struct mac_table_entry *dst_mac_entry);
@@ -165,7 +164,7 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
 
     if (dst_mac_entry != NULL)
     {
-        // if we already know this dest mac in mac_table
+        // if we already know this dst mac in mac_table
 
         bool *ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &(dst_mac_entry->ifindex));
 
@@ -191,10 +190,10 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
     }
     else
     {
-        // if we don't know this dest mac in mac_table
+        // if we don't know this dst mac in mac_table
         // no matter why we are here:
-        // - either because of a dest mac addr that we don't know where to find (unknown dest mac)
-        // - or because dest mac is broadcast mac address ( FFFFFFFFFFFF )
+        // - either because of a dst mac addr that we don't know where to find (unknown dst mac)
+        // - or because dst mac is broadcast mac address ( FFFFFFFFFFFF )
         // in ether case we must perform Flooding --> XDP_PASS --> handle in implemented TC flooding hook
 
         return XDP_PASS;
@@ -320,7 +319,6 @@ static void __always_inline learn_from_packet_received_by_internal_iface(const s
             return;
         }
 
-        // 5 minutes
         ret = bpf_timer_start(&src_mac_entry->expiration_timer, FIVE_MINUTES_IN_NS, 0);
         if (ret)
         {
