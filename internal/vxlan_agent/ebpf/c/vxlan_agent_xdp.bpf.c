@@ -237,7 +237,7 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     data_end = (void *)(long)ctx->data_end;
 
     // Ensure the packet is still valid after adjustment
-    if (data + new_len > data_end)
+    if (data + sizeof(struct ethhdr) > data_end)
         return XDP_DROP;
 
     outer_eth = data;
@@ -480,7 +480,7 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
                 data_end = (void *)(long)ctx->data_end;
 
                 // Ensure the packet is still valid after adjustment
-                if (data + (data_end - data) > data_end)
+                if (data + sizeof(struct ethhdr) > data_end)
                     return XDP_DROP;
 
                 // Redirect the resulting internal frame buffer to the proper interface
@@ -547,7 +547,7 @@ static long __always_inline handle_packet_received_by_external_iface__ip_packet(
             void *data_end = (void *)(long)ctx->data_end;
 
             // Ensure the packet is still valid after adjustment
-            if (data + (data_end - data) > data_end)
+            if (data + sizeof(struct ethhdr) > data_end)
                 return XDP_DROP;
 
             // Redirect the resulting internal frame buffer to the proper interface
