@@ -220,15 +220,15 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
         __builtin_memcpy(outer_eth->h_dest, route_info->external_iface_next_hop_mac.addr, ETH_ALEN); // mac address is a byte sequence, not affected by endianness
         outer_eth->h_proto = bpf_htons(ETH_P_IP);                                                    // ip address is a multi-byte value, so it needs to be in network byte order
 
-        outer_iph->version = 4;                                      // ip version
-        outer_iph->ihl = 5;                                          // ip header length
-        outer_iph->tos = 0;                                          // ip type of service
-        outer_iph->tot_len = bpf_htons(new_len - ETH_HLEN);          // ip total length
-        outer_iph->id = 0;                                           // ip id
-        outer_iph->frag_off = 0;                                     // ip fragment offset
-        outer_iph->ttl = 64;                                         // ip time to live
-        outer_iph->protocol = IPPROTO_UDP;                           // ip protocol
-        outer_iph->check = 0;                                        // ip checksum will be calculated later
+        outer_iph->version = 4;                                             // ip version
+        outer_iph->ihl = 5;                                                 // ip header length
+        outer_iph->tos = 0;                                                 // ip type of service
+        outer_iph->tot_len = bpf_htons(new_len - ETH_HLEN);                 // ip total length
+        outer_iph->id = 0;                                                  // ip id
+        outer_iph->frag_off = 0;                                            // ip fragment offset
+        outer_iph->ttl = 64;                                                // ip time to live
+        outer_iph->protocol = IPPROTO_UDP;                                  // ip protocol
+        outer_iph->check = 0;                                               // ip checksum will be calculated later
         outer_iph->saddr = bpf_htonl(route_info->external_iface_ip.s_addr); // ip source address
         outer_iph->daddr = bpf_htonl(remote_border_ip->s_addr);             // ip destination address
 
