@@ -46,7 +46,7 @@ struct arp_payload
 };
 
 // Function to get a random port within the ephemeral range
-static __u16 get_ephemeral_port()
+static __always_inline __u16 get_ephemeral_port()
 {
     return 49152 + bpf_get_prandom_u32() % (65535 - 49152 + 1);
 }
