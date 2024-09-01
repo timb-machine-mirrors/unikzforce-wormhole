@@ -12,6 +12,15 @@ import (
 	"github.com/cilium/ebpf"
 )
 
+type VxlanAgentUnknownUnicastFloodingExternalRouteInfo struct {
+	ExternalIfaceIndex      uint32
+	ExternalIfaceMac        struct{ Addr [6]uint8 }
+	ExternalIfaceNextHopMac struct{ Addr [6]uint8 }
+	ExternalIfaceIp         VxlanAgentUnknownUnicastFloodingInAddr
+}
+
+type VxlanAgentUnknownUnicastFloodingInAddr struct{ S_addr uint32 }
+
 // LoadVxlanAgentUnknownUnicastFlooding returns the embedded CollectionSpec for VxlanAgentUnknownUnicastFlooding.
 func LoadVxlanAgentUnknownUnicastFlooding() (*ebpf.CollectionSpec, error) {
 	reader := bytes.NewReader(_VxlanAgentUnknownUnicastFloodingBytes)
@@ -60,8 +69,12 @@ type VxlanAgentUnknownUnicastFloodingProgramSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type VxlanAgentUnknownUnicastFloodingMapSpecs struct {
-	InterfacesArray       *ebpf.MapSpec `ebpf:"interfaces_array"`
-	InterfacesArrayLength *ebpf.MapSpec `ebpf:"interfaces_array_length"`
+	BorderIpToRouteInfoMap       *ebpf.MapSpec `ebpf:"border_ip_to_route_info_map"`
+	IfindexIsInternalMap         *ebpf.MapSpec `ebpf:"ifindex_is_internal_map"`
+	InternalIfindexesArray       *ebpf.MapSpec `ebpf:"internal_ifindexes_array"`
+	InternalIfindexesArrayLength *ebpf.MapSpec `ebpf:"internal_ifindexes_array_length"`
+	RemoteBorderIpsArray         *ebpf.MapSpec `ebpf:"remote_border_ips_array"`
+	RemoteBorderIpsArrayLength   *ebpf.MapSpec `ebpf:"remote_border_ips_array_length"`
 }
 
 // VxlanAgentUnknownUnicastFloodingObjects contains all objects after they have been loaded into the kernel.
@@ -83,14 +96,22 @@ func (o *VxlanAgentUnknownUnicastFloodingObjects) Close() error {
 //
 // It can be passed to LoadVxlanAgentUnknownUnicastFloodingObjects or ebpf.CollectionSpec.LoadAndAssign.
 type VxlanAgentUnknownUnicastFloodingMaps struct {
-	InterfacesArray       *ebpf.Map `ebpf:"interfaces_array"`
-	InterfacesArrayLength *ebpf.Map `ebpf:"interfaces_array_length"`
+	BorderIpToRouteInfoMap       *ebpf.Map `ebpf:"border_ip_to_route_info_map"`
+	IfindexIsInternalMap         *ebpf.Map `ebpf:"ifindex_is_internal_map"`
+	InternalIfindexesArray       *ebpf.Map `ebpf:"internal_ifindexes_array"`
+	InternalIfindexesArrayLength *ebpf.Map `ebpf:"internal_ifindexes_array_length"`
+	RemoteBorderIpsArray         *ebpf.Map `ebpf:"remote_border_ips_array"`
+	RemoteBorderIpsArrayLength   *ebpf.Map `ebpf:"remote_border_ips_array_length"`
 }
 
 func (m *VxlanAgentUnknownUnicastFloodingMaps) Close() error {
 	return _VxlanAgentUnknownUnicastFloodingClose(
-		m.InterfacesArray,
-		m.InterfacesArrayLength,
+		m.BorderIpToRouteInfoMap,
+		m.IfindexIsInternalMap,
+		m.InternalIfindexesArray,
+		m.InternalIfindexesArrayLength,
+		m.RemoteBorderIpsArray,
+		m.RemoteBorderIpsArrayLength,
 	)
 }
 

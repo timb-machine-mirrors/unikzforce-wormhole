@@ -12,18 +12,24 @@ import (
 	"github.com/cilium/ebpf"
 )
 
-type VxlanAgentXDPIfaceIndex struct {
-	InterfaceIndex uint32
-	_              [4]byte
-	Timestamp      uint64
+type VxlanAgentXDPExternalRouteInfo struct {
+	ExternalIfaceIndex      uint32
+	ExternalIfaceMac        VxlanAgentXDPMacAddress
+	ExternalIfaceNextHopMac VxlanAgentXDPMacAddress
+	ExternalIfaceIp         VxlanAgentXDPInAddr
 }
 
-type VxlanAgentXDPMacAddress struct{ Mac [6]uint8 }
+type VxlanAgentXDPInAddr struct{ S_addr uint32 }
 
-type VxlanAgentXDPMacAddressIfaceEntry struct {
-	Mac   VxlanAgentXDPMacAddress
-	_     [2]byte
-	Iface VxlanAgentXDPIfaceIndex
+type VxlanAgentXDPMacAddress struct{ Addr [6]uint8 }
+
+type VxlanAgentXDPMacTableEntry struct {
+	Ifindex             uint32
+	_                   [4]byte
+	LastSeenTimestampNs uint64
+	BorderIp            VxlanAgentXDPInAddr
+	_                   [4]byte
+	ExpirationTimer     struct{ Opaque [2]uint64 }
 }
 
 // LoadVxlanAgentXDP returns the embedded CollectionSpec for VxlanAgentXDP.
@@ -74,8 +80,9 @@ type VxlanAgentXDPProgramSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type VxlanAgentXDPMapSpecs struct {
+	BorderIpToRouteInfoMap *ebpf.MapSpec `ebpf:"border_ip_to_route_info_map"`
+	IfindexIsInternalMap   *ebpf.MapSpec `ebpf:"ifindex_is_internal_map"`
 	MacTable               *ebpf.MapSpec `ebpf:"mac_table"`
-	NewDiscoveredEntriesRb *ebpf.MapSpec `ebpf:"new_discovered_entries_rb"`
 }
 
 // VxlanAgentXDPObjects contains all objects after they have been loaded into the kernel.
@@ -97,14 +104,16 @@ func (o *VxlanAgentXDPObjects) Close() error {
 //
 // It can be passed to LoadVxlanAgentXDPObjects or ebpf.CollectionSpec.LoadAndAssign.
 type VxlanAgentXDPMaps struct {
+	BorderIpToRouteInfoMap *ebpf.Map `ebpf:"border_ip_to_route_info_map"`
+	IfindexIsInternalMap   *ebpf.Map `ebpf:"ifindex_is_internal_map"`
 	MacTable               *ebpf.Map `ebpf:"mac_table"`
-	NewDiscoveredEntriesRb *ebpf.Map `ebpf:"new_discovered_entries_rb"`
 }
 
 func (m *VxlanAgentXDPMaps) Close() error {
 	return _VxlanAgentXDPClose(
+		m.BorderIpToRouteInfoMap,
+		m.IfindexIsInternalMap,
 		m.MacTable,
-		m.NewDiscoveredEntriesRb,
 	)
 }
 

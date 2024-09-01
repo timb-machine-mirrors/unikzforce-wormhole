@@ -1,7 +1,5 @@
 #include "vxlan_agent.bpf.h"
 #include "../../../../include/vmlinux.h"
-#include <bpf/bpf_helpers.h>
-#include <linux/pkt_cls.h>
 
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
 
@@ -111,11 +109,11 @@ int vxlan_agent_unknown_unicast_flooding(struct __sk_buff *skb)
 
     if (packet_is_received_by_internal_iface)
     {
-        clone_internal_packet_and_send_to_all_internal_ifaces_and_external_border_ips(skb, number_of_internal_ifindexes, number_of_remote_border_ips);
+        clone_internal_packet_and_send_to_all_internal_ifaces_and_external_border_ips(skb, *number_of_internal_ifindexes, *number_of_remote_border_ips);
     }
     else
     {
-        clone_external_packet_and_send_to_all_internal_ifaces(skb, number_of_internal_ifindexes);
+        clone_external_packet_and_send_to_all_internal_ifaces(skb, *number_of_internal_ifindexes);
     }
 
     return TC_ACT_OK;
@@ -218,9 +216,9 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
             return;
         }
 
-        __builtin_memcpy(outer_eth->h_source, route_info->external_iface_mac.mac, ETH_ALEN);        // mac address is a byte sequence, not affected by endianness
-        __builtin_memcpy(outer_eth->h_dest, route_info->external_iface_next_hop_mac.mac, ETH_ALEN); // mac address is a byte sequence, not affected by endianness
-        outer_eth->h_proto = bpf_htons(ETH_P_IP);                                                   // ip address is a multi-byte value, so it needs to be in network byte order
+        __builtin_memcpy(outer_eth->h_source, route_info->external_iface_mac.addr, ETH_ALEN);        // mac address is a byte sequence, not affected by endianness
+        __builtin_memcpy(outer_eth->h_dest, route_info->external_iface_next_hop_mac.addr, ETH_ALEN); // mac address is a byte sequence, not affected by endianness
+        outer_eth->h_proto = bpf_htons(ETH_P_IP);                                                    // ip address is a multi-byte value, so it needs to be in network byte order
 
         outer_iph->version = 4;                                      // ip version
         outer_iph->ihl = 5;                                          // ip header length
@@ -231,8 +229,8 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
         outer_iph->ttl = 64;                                         // ip time to live
         outer_iph->protocol = IPPROTO_UDP;                           // ip protocol
         outer_iph->check = 0;                                        // ip checksum will be calculated later
-        outer_iph->saddr = bpf_htonl(route_info->external_iface_ip); // ip source address
-        outer_iph->daddr = bpf_htonl(*remote_border_ip);             // ip destination address
+        outer_iph->saddr = bpf_htonl(route_info->external_iface_ip.s_addr); // ip source address
+        outer_iph->daddr = bpf_htonl(remote_border_ip->s_addr);             // ip destination address
 
         outer_udph->source = bpf_htons(get_ephemeral_port());         // Source UDP port
         outer_udph->dest = bpf_htons(4789);                           // Destination UDP port (VXLAN default)
@@ -242,7 +240,7 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
         // for now we don't set VXLAN header
 
         // Calculate ip checksum
-        outer_iph->check = ~bpf_csum_diff(0, 0, (__u32)outer_iph, IP_HDR_LEN, 0);
+        outer_iph->check = ~bpf_csum_diff(0, 0, (__u32 *)outer_iph, IP_HDR_LEN, 0);
 
         bpf_clone_redirect(skb, *ifindex_ptr, 0);
     }
@@ -255,9 +253,9 @@ static void __always_inline clone_external_packet_and_send_to_all_internal_iface
     int i;
     __u32 *ifindex_ptr;
 
-    // Resize the packet buffer by increasing the headroom.
-    // in bpf_xdp_adjust_head() if we want to increase the packet length, we must use negative number
-    // in bpf_skb_adjust_room() if we want to increase the packet length, we must use positive number
+    // Resize the packet buffer by decreasing the headroom.
+    // in bpf_xdp_adjust_head() if we want to decrease the packet length, we must use positive number
+    // in bpf_skb_adjust_room() if we want to decrease the packet length, we must use negative number
     // TODO: check if this is the correct way to decrease the packet length
     if (bpf_skb_adjust_room(skb, -NEW_HDR_LEN, BPF_ADJ_ROOM_MAC, 0))
     {

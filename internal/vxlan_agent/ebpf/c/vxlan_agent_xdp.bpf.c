@@ -1,10 +1,4 @@
 #include "vxlan_agent.bpf.h"
-#include <linux/if_ether.h>
-#include <linux/time.h>
-
-#include "../../../../include/vmlinux.h"
-#include <linux/if_arp.h> // Add this line
-#include <bpf/bpf_helpers.h>
 
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
 
@@ -56,12 +50,10 @@ struct
 
 // --------------------------------------------------------
 
-static __always_inline __u16 get_ephemeral_port();
 static __always_inline bool is_broadcast_address(const struct mac_address *mac);
-static __always_inline struct in_addr convert_to_in_addr(unsigned char ip[4]);
 
 static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time_ns, struct ethhdr *eth);
-static void __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address *dst_mac, struct mac_table_entry *dst_mac_entry);
+static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address *dst_mac, struct mac_table_entry *dst_mac_entry);
 static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time_ns, struct mac_address *src_mac);
 
 static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time_ns);
@@ -98,7 +90,7 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
     if (packet_is_received_by_internal_iface)
     {
         // if packet has been received by an internal iface
-        return handle_packet_received_by_internal_iface(ctx, eth, current_time_ns);
+        return handle_packet_received_by_internal_iface(ctx, current_time_ns, eth);
     }
     else
     {
@@ -109,37 +101,23 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
 
 // --------------------------------------------------------
 
-// Function to get a random port within the ephemeral range
-static __always_inline __u16 get_ephemeral_port()
-{
-    return 49152 + bpf_get_prandom_u32() % (65535 - 49152 + 1);
-}
-
 // Function to check if the MAC address is the broadcast address
 static __always_inline bool is_broadcast_address(const struct mac_address *mac)
 {
     // Check if the MAC address is the broadcast address (FF:FF:FF:FF:FF:FF)
-    if (mac->mac[0] != 0xFF)
+    if (mac->addr[0] != 0xFF)
         return false;
-    if (mac->mac[1] != 0xFF)
+    if (mac->addr[1] != 0xFF)
         return false;
-    if (mac->mac[2] != 0xFF)
+    if (mac->addr[2] != 0xFF)
         return false;
-    if (mac->mac[3] != 0xFF)
+    if (mac->addr[3] != 0xFF)
         return false;
-    if (mac->mac[4] != 0xFF)
+    if (mac->addr[4] != 0xFF)
         return false;
-    if (mac->mac[5] != 0xFF)
+    if (mac->addr[5] != 0xFF)
         return false;
     return true;
-}
-
-// Function to convert an array of 4 bytes to an in_addr struct
-static __always_inline struct in_addr convert_to_in_addr(unsigned char ip[4])
-{
-    struct in_addr addr;
-    addr.s_addr = bpf_ntohl(*(unsigned int *)ip);
-    return addr;
 }
 
 // --------------------------------------------------------
@@ -153,12 +131,12 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
     // - or add outer headers and forward it to an external interface
 
     struct mac_address src_mac;
-    __builtin_memcpy(src_mac.mac, eth->h_source, ETH_ALEN);
+    __builtin_memcpy(src_mac.addr, eth->h_source, ETH_ALEN);
 
-    learn_from_packet_received_by_internal_iface(ctx, eth, current_time_ns);
+    learn_from_packet_received_by_internal_iface(ctx, current_time_ns, &src_mac);
 
     struct mac_address dst_mac;
-    __builtin_memcpy(dst_mac.mac, eth->h_dest, ETH_ALEN);
+    __builtin_memcpy(dst_mac.addr, eth->h_dest, ETH_ALEN);
 
     struct mac_table_entry *dst_mac_entry = bpf_map_lookup_elem(&mac_table, &dst_mac);
 
@@ -183,7 +161,12 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
         else
         {
             // if packet need to be forwarded to an external interface
-            add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(ctx, &dst_mac, dst_mac_entry);
+            enum vxlan_agent_processing_error error = add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(ctx, &dst_mac, dst_mac_entry);
+
+            if (error == AGENT_ERROR_ABORT)
+                return XDP_ABORTED;
+            else if (error == AGENT_ERROR_DROP)
+                return XDP_DROP;
 
             return bpf_redirect(dst_mac_entry->ifindex, 0);
         }
@@ -200,7 +183,7 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
     }
 }
 
-static void __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address *dst_mac, struct mac_table_entry *dst_mac_entry)
+static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address *dst_mac, struct mac_table_entry *dst_mac_entry)
 {
     // if packet need to be forwarded to an external interface
     // we must add outer headers to the packet
@@ -230,7 +213,7 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     // has smaller address in memory, and the more we proceed into the deeper packet headers, the bigger the address gets.
     // so when adjusting the packet headroom with -NEW_HDR_LEN, we are actually increasing the size of the packet.
     if (bpf_xdp_adjust_head(ctx, -NEW_HDR_LEN))
-        return XDP_DROP;
+        return AGENT_ERROR_ABORT;
 
     // Recalculate data and data_end pointers after adjustment
     data = (void *)(long)ctx->data;
@@ -238,7 +221,7 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
 
     // Ensure the packet is still valid after adjustment
     if (data + sizeof(struct ethhdr) > data_end)
-        return XDP_DROP;
+        return AGENT_ERROR_DROP;
 
     outer_eth = data;
     outer_iph = data + ETH_HLEN; // ETH_HLEN == 14 & ETH_ALEN == 6
@@ -253,7 +236,9 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     {
         // we must have prepopulated route_info in border_ip_to_route_info_map before starting the xdp program.
         // if we don't have it, it means that something is fishy, and we must abort the packet.
-        return XDP_ABORTED;
+
+        // TODO: function is void, improve error handling later
+        return AGENT_ERROR_ABORT;
     }
 
     //  In network programming, the distinction between the endianness of multi-byte values and byte sequences is critical.
@@ -262,21 +247,21 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     //    Multi-byte values needs to be handled by bpf_htons() or bpf_htonl(). Like IP addresses, which is a single 32-bit value.
     //  - Byte Sequences: sequences of bytes (such as MAC addresses) are not affected by endianness.
     //    They are simply copied as they are, byte by byte. Like mac addresses, which is a 6 bytes sequence.
-    __builtin_memcpy(outer_eth->h_source, route_info->external_iface_mac.mac, ETH_ALEN);        // mac address is a byte sequence, not affected by endianness
-    __builtin_memcpy(outer_eth->h_dest, route_info->external_iface_next_hop_mac.mac, ETH_ALEN); // mac address is a byte sequence, not affected by endianness
-    outer_eth->h_proto = bpf_htons(ETH_P_IP);                                                   // ip address is a multi-byte value, so it needs to be in network byte order
+    __builtin_memcpy(outer_eth->h_source, route_info->external_iface_mac.addr, ETH_ALEN);        // mac address is a byte sequence, not affected by endianness
+    __builtin_memcpy(outer_eth->h_dest, route_info->external_iface_next_hop_mac.addr, ETH_ALEN); // mac address is a byte sequence, not affected by endianness
+    outer_eth->h_proto = bpf_htons(ETH_P_IP);                                                    // ip address is a multi-byte value, so it needs to be in network byte order
 
-    outer_iph->version = 4;                                      // ip version
-    outer_iph->ihl = 5;                                          // ip header length
-    outer_iph->tos = 0;                                          // ip type of service
-    outer_iph->tot_len = bpf_htons(new_len - ETH_HLEN);          // ip total length
-    outer_iph->id = 0;                                           // ip id
-    outer_iph->frag_off = 0;                                     // ip fragment offset
-    outer_iph->ttl = 64;                                         // ip time to live
-    outer_iph->protocol = IPPROTO_UDP;                           // ip protocol
-    outer_iph->check = 0;                                        // ip checksum will be calculated later
-    outer_iph->saddr = bpf_htonl(route_info->external_iface_ip); // ip source address
-    outer_iph->daddr = bpf_htonl(*dst_border_ip);                // ip destination address
+    outer_iph->version = 4;                                             // ip version
+    outer_iph->ihl = 5;                                                 // ip header length
+    outer_iph->tos = 0;                                                 // ip type of service
+    outer_iph->tot_len = bpf_htons(new_len - ETH_HLEN);                 // ip total length
+    outer_iph->id = 0;                                                  // ip id
+    outer_iph->frag_off = 0;                                            // ip fragment offset
+    outer_iph->ttl = 64;                                                // ip time to live
+    outer_iph->protocol = IPPROTO_UDP;                                  // ip protocol
+    outer_iph->check = 0;                                               // ip checksum will be calculated later
+    outer_iph->saddr = bpf_htonl(route_info->external_iface_ip.s_addr); // ip source address
+    outer_iph->daddr = bpf_htonl(dst_border_ip->s_addr);                // ip destination address
 
     outer_udph->source = bpf_htons(get_ephemeral_port());         // Source UDP port
     outer_udph->dest = bpf_htons(4789);                           // Destination UDP port (VXLAN default)
@@ -286,7 +271,9 @@ static void __always_inline add_outer_headers_to_internal_packet_before_forwardi
     // for now we don't set VXLAN header
 
     // Calculate ip checksum
-    outer_iph->check = ~bpf_csum_diff(0, 0, (__u32)outer_iph, IP_HDR_LEN, 0);
+    outer_iph->check = ~bpf_csum_diff(0, 0, (__u32 *)outer_iph, IP_HDR_LEN, 0);
+
+    return AGENT_NO_ERROR;
 }
 
 static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time_ns, struct mac_address *src_mac)
@@ -384,10 +371,10 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
     {
         // if the inner packet is an ARP packet
 
-        __builtin_memcpy(inner_src_mac.mac, inner_eth->h_source, ETH_ALEN);
-        __builtin_memcpy(inner_dst_mac.mac, inner_eth->h_dest, ETH_ALEN);
+        __builtin_memcpy(inner_src_mac.addr, inner_eth->h_source, ETH_ALEN);
+        __builtin_memcpy(inner_dst_mac.addr, inner_eth->h_dest, ETH_ALEN);
 
-        learn_from_packet_received_by_external_iface(ctx, current_time_ns, &inner_src_mac, outer_src_ip);
+        learn_from_packet_received_by_external_iface(ctx, current_time_ns, &inner_src_mac, &outer_src_ip);
 
         return handle_packet_received_by_external_iface__arp_packet(ctx, current_time_ns, data, data_end, inner_eth, &inner_dst_mac);
     }
@@ -395,10 +382,10 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
     {
         // if the inner packet is an IP packet
 
-        __builtin_memcpy(inner_src_mac.mac, inner_eth->h_source, ETH_ALEN);
-        __builtin_memcpy(inner_dst_mac.mac, inner_eth->h_dest, ETH_ALEN);
+        __builtin_memcpy(inner_src_mac.addr, inner_eth->h_source, ETH_ALEN);
+        __builtin_memcpy(inner_dst_mac.addr, inner_eth->h_dest, ETH_ALEN);
 
-        learn_from_packet_received_by_external_iface(ctx, current_time_ns, &inner_src_mac, outer_src_ip);
+        learn_from_packet_received_by_external_iface(ctx, current_time_ns, &inner_src_mac, &outer_src_ip);
 
         return handle_packet_received_by_external_iface__ip_packet(ctx, current_time_ns, data, data_end, inner_eth, &inner_dst_mac);
     }
@@ -450,7 +437,7 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
         // TODO: i need to make sure that we want to enable Gratuitous ARP replies or not
 
         // check if it is a gratuitous arp reply
-        if (*(unsigned int *)inner_arp_payload->ar_sip == *(unsigned int *)inner_arp_payload->ar_tip && is_broadcast_address(&inner_dst_mac))
+        if (*(unsigned int *)inner_arp_payload->ar_sip == *(unsigned int *)inner_arp_payload->ar_tip && is_broadcast_address(inner_dst_mac))
         {
             // we need to perform Flooding, XDP_PASS --> handle in implemented TC flooding hook
             return XDP_PASS;
