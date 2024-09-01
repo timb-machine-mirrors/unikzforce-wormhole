@@ -10,11 +10,14 @@
 #define TC_ACT_OK 0
 
 #define ETH_P_IP 0x0800  /* Internet Protocol packet */
-#define ETH_ALEN 6       /* Ethernet address length */
 #define ETH_P_ARP 0x0806 /* Address Resolution packet */
+
 #define ARPOP_REQUEST 1  /* ARP request */
 #define ARPOP_REPLY 2    /* ARP reply */
+
 #define CLOCK_BOOTTIME 7 /* Monotonic system-wide clock that includes time spent in suspension.  */
+
+#define ETH_ALEN 6       /* Ethernet address length */
 #define ETH_HLEN 14      /* Total octets in header.	 */
 #define IP_HDR_LEN (int)sizeof(struct iphdr)
 #define UDP_HDR_LEN (int)sizeof(struct udphdr)
