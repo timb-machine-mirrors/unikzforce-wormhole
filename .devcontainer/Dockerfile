@@ -26,11 +26,9 @@ RUN ln -sf /usr/include/asm-generic/ /usr/include/asm
 RUN apt install -y libcap-dev
 RUN apt install -y dwarves
 RUN echo 'alias ll="ls -al"' >> ~/.bashrc
-RUN apt install -y fzf
-#RUN ln -sf /usr/bin/containerlab /usr/bin/clab
 
-#RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
-#RUN ~/.fzf/install
+RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+RUN ~/.fzf/install --all
 
 
 RUN mkdir /tools/

@@ -6,20 +6,20 @@
 	"build": {
 		"dockerfile": "Dockerfile",
 		"args": {
-			"_CLAB_VERSION": "0.56.0"
+			"_CLAB_VERSION": "0.57.0"
 		}
 	},
 	"features": {
 		"ghcr.io/devcontainers/features/docker-in-docker:latest": {
 			"version": "latest"
 		},
-		"ghcr.io/devcontainers/features/go:1": {},
-		"ghcr.io/guiyomh/features/golangci-lint:0": {},
-		"ghcr.io/guiyomh/features/goreleaser:0": {},
-		"ghcr.io/guiyomh/features/gotestsum:0": {},
-		"ghcr.io/guiyomh/features/pact-go:0": {},
-		"ghcr.io/azutake/devcontainer-features/go-packages-install:0": {},
-		"ghcr.io/marcozac/devcontainer-features/gofumpt:1": {}
+		"ghcr.io/devcontainers/features/go:latest": {},
+		"ghcr.io/guiyomh/features/golangci-lint:latest": {},
+		"ghcr.io/guiyomh/features/goreleaser:latest": {},
+		"ghcr.io/guiyomh/features/gotestsum:latest": {},
+		"ghcr.io/guiyomh/features/pact-go:latest": {},
+		"ghcr.io/azutake/devcontainer-features/go-packages-install:latest": {},
+		"ghcr.io/marcozac/devcontainer-features/gofumpt:latest": {}
 	},
 	"runArgs": ["--privileged"],
 	"privileged": true,
