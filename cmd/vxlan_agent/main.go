@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
-	"github.com/vishvananda/netlink"
 	"os"
 	"strings"
 	"wormhole/internal/vxlan_agent"
+
+	"github.com/sirupsen/logrus"
+	"github.com/urfave/cli"
+	"github.com/vishvananda/netlink"
 )
 
 func main() {
@@ -25,9 +26,9 @@ func main() {
 				Usage: "the name of the external network interfaces",
 			},
 			&cli.StringFlag{
-				Name:  "neighbour-border-ips",
+				Name:  "remote-border-ips",
 				Value: "",
-				Usage: "IPs of other neighboring vxlan agents",
+				Usage: "IPs of other remote vxlan agents",
 			},
 		},
 		Action: ActivateVxlanAgent,
@@ -42,9 +43,9 @@ func main() {
 func ActivateVxlanAgent(cCtx *cli.Context) error {
 	internalNetworkInterfaces := findNetworkInterfaces(cCtx, "internal-interface-names")
 	externalNetworkInterfaces := findNetworkInterfaces(cCtx, "external-interface-names")
-	neighbourBorderIps := findNeighbourBorderIps(cCtx)
+	remoteBorderIps := findRemoteBorderIps(cCtx)
 
-	vxlanAgent := vxlan_agent.NewVxlanAgent(internalNetworkInterfaces, externalNetworkInterfaces, neighbourBorderIps)
+	vxlanAgent := vxlan_agent.NewVxlanAgent(internalNetworkInterfaces, externalNetworkInterfaces, remoteBorderIps)
 
 	return vxlanAgent.ActivateVxlanAgent()
 }
@@ -73,11 +74,11 @@ func findNetworkInterfaces(cCtx *cli.Context, argumentName string) []netlink.Lin
 	return ifaces
 }
 
-func findNeighbourBorderIps(cCtx *cli.Context) []string {
-	cliNeighbourBorderIps := strings.TrimSpace(cCtx.String("neighbour-border-ips"))
-	if cliNeighbourBorderIps == "" {
-		logrus.Fatal("--neighbour-border-ips should be present and not empty")
+func findRemoteBorderIps(cCtx *cli.Context) []string {
+	cliRemoteBorderIps := strings.TrimSpace(cCtx.String("remote-border-ips"))
+	if cliRemoteBorderIps == "" {
+		logrus.Fatal("--remote-border-ips should be present and not empty")
 	}
 
-	return strings.Split(cliNeighbourBorderIps, ",")
+	return strings.Split(cliRemoteBorderIps, ",")
 }

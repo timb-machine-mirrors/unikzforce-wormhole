@@ -14,6 +14,7 @@ struct
     __type(key, struct in_addr);
     __type(value, struct external_route_info);
     __uint(max_entries, 4 * 1024);
+    __uint(pinning, LIBBPF_PIN_BY_NAME);
 } border_ip_to_route_info_map SEC(".maps");
 
 // --------------------------------------------------------
@@ -25,6 +26,7 @@ struct
     __type(key, __u32);
     __type(value, bool);
     __uint(max_entries, 4 * 1024);
+    __uint(pinning, LIBBPF_PIN_BY_NAME);
 } ifindex_is_internal_map SEC(".maps");
 
 // --------------------------------------------------------
@@ -44,8 +46,8 @@ struct
     __uint(type, BPF_MAP_TYPE_HASH);
     __type(key, struct mac_address);
     __type(value, struct mac_table_entry);
-    __uint(pinning, LIBBPF_PIN_BY_NAME);
     __uint(max_entries, 4 * 1024 * 1024);
+    __uint(pinning, LIBBPF_PIN_BY_NAME);
 } mac_table SEC(".maps");
 
 // --------------------------------------------------------

@@ -2,32 +2,32 @@ package main
 
 import (
 	"fmt"
-	"github.com/Kseleven/traceroute-go"
+	"net"
+
 	"github.com/mostlygeek/arp"
 	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
-	"net"
 )
 
 func main() {
-	conf := &traceroute.TraceConfig{
-		Debug:    true,
-		FirstTTL: 1,
-		MaxTTL:   1,
-		Retry:    0,
-		WaitSec:  1,
-	}
-
-	var destAddr = "1.1.1.1"
-
-	fmt.Printf("traceroute to %s %d hots max\n", destAddr, conf.MaxTTL)
-	results, err := traceroute.Traceroute(destAddr, conf)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-
-	fmt.Printf("%s : %s\n", results[0].NextHot, arp.Search(results[0].NextHot))
+	//conf := &traceroute.TraceConfig{
+	//	Debug:    true,
+	//	FirstTTL: 1,
+	//	MaxTTL:   1,
+	//	Retry:    0,
+	//	WaitSec:  1,
+	//}
+	//
+	//var destAddr = "1.1.1.1"
+	//
+	//fmt.Printf("traceroute to %s %d hots max\n", destAddr, conf.MaxTTL)
+	//results, err := traceroute.Traceroute(destAddr, conf)
+	//if err != nil {
+	//	fmt.Println(err.Error())
+	//	return
+	//}
+	//
+	//fmt.Printf("%s : %s\n", results[0].NextHot, arp.Search(results[0].NextHot))
 
 	// via the new vay to `ip route get 1.1.1.1`
 	destination := "1.1.1.1"

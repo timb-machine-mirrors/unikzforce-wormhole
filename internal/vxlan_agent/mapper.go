@@ -5,9 +5,10 @@ import (
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"sync"
 	"wormhole/internal/vxlan_agent/ebpf"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Pool to cache Encoder and Decoder instances
@@ -21,7 +22,13 @@ var (
 
 func ConvertMacToString(mac ebpf.VxlanAgentXDPMacAddress) string {
 	return fmt.Sprintf("%02X%02X%02X%02X%02X%02X",
-		mac.Mac[0], mac.Mac[1], mac.Mac[2], mac.Mac[3], mac.Mac[4], mac.Mac[5])
+		mac.Addr[0], mac.Addr[1], mac.Addr[2], mac.Addr[3], mac.Addr[4], mac.Addr[5])
+}
+
+func ConvertMacBytesToMac(macBytes []byte) ebpf.VxlanAgentXDPMacAddress {
+	var mac [6]uint8
+	copy(mac[:], macBytes)
+	return ebpf.VxlanAgentXDPMacAddress{Addr: mac}
 }
 
 func ConvertStringToMac(macStr string) ebpf.VxlanAgentXDPMacAddress {
@@ -33,7 +40,7 @@ func ConvertStringToMac(macStr string) ebpf.VxlanAgentXDPMacAddress {
 	var mac [6]uint8
 	copy(mac[:], macBytes)
 
-	return ebpf.VxlanAgentXDPMacAddress{Mac: mac}
+	return ebpf.VxlanAgentXDPMacAddress{Addr: mac}
 }
 
 func EncodeIfaceIndex(s ebpf.VxlanAgentXDPIfaceIndex) ([]byte, error) {

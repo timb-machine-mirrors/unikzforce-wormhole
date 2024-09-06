@@ -1,246 +1,248 @@
 package vxlan_agent
 
 import (
-	"bytes"
-	"context"
 	"encoding/binary"
-	"github.com/Kseleven/traceroute-go"
-	"github.com/allegro/bigcache/v3"
-	ciliumEbpf "github.com/cilium/ebpf"
-	"github.com/cilium/ebpf/link"
-	"github.com/cilium/ebpf/ringbuf"
-	"github.com/cilium/ebpf/rlimit"
-	"github.com/mostlygeek/arp"
-	"github.com/sirupsen/logrus"
-	"github.com/vishvananda/netlink"
+	"net"
 	"os"
 	"os/signal"
 	"time"
 	vxlanAgentEbpfGen "wormhole/internal/vxlan_agent/ebpf"
+
+	ciliumEbpf "github.com/cilium/ebpf"
+	"github.com/cilium/ebpf/link"
+	"github.com/cilium/ebpf/rlimit"
+	"github.com/mostlygeek/arp"
+	"github.com/sirupsen/logrus"
+	"github.com/vishvananda/netlink"
 )
 
 // VxlanAgent struct encapsulates all related functions and data
 type VxlanAgent struct {
-	internalNetworkInterfaces        []netlink.Link
-	externalNetworkInterfaces        []netlink.Link
-	neighbourBorderIps               []string
-	xdpObjects                       vxlanAgentEbpfGen.VxlanAgentXDPObjects
-	tcObjects                        vxlanAgentEbpfGen.VxlanAgentUnknownUnicastFloodingObjects
-	userspaceMacTable                *bigcache.BigCache
-	userspaceMacTableReInsertChannel chan vxlanAgentEbpfGen.VxlanAgentXDPMacAddressIfaceEntry
-	attachedLinks                    []*link.Link
-	neighborIpToForwardingMac        map[string]string
+	internalNetworkInterfaces   []netlink.Link
+	externalNetworkInterfaces   []netlink.Link
+	neighbourBorderIps          []string
+	borderIps                   []uint32
+	borderIpToExternalRouteInfo map[uint32]vxlanAgentEbpfGen.VxlanAgentXDPExternalRouteInfo
+	xdpObjects                  vxlanAgentEbpfGen.VxlanAgentXDPObjects
+	tcObjects                   vxlanAgentEbpfGen.VxlanAgentUnknownUnicastFloodingObjects
+	attachedLinks               []*link.Link
 }
 
 // NewVxlanAgent initializes and returns a new VxlanAgent instance
 func NewVxlanAgent(internalNetworkInterfaces []netlink.Link, externalNetworkInterfaces []netlink.Link, neighborBorderIps []string) *VxlanAgent {
 	return &VxlanAgent{
-		userspaceMacTableReInsertChannel: make(chan vxlanAgentEbpfGen.VxlanAgentXDPMacAddressIfaceEntry),
-		internalNetworkInterfaces:        internalNetworkInterfaces,
-		externalNetworkInterfaces:        externalNetworkInterfaces,
-		neighbourBorderIps:               neighborBorderIps,
+		internalNetworkInterfaces: internalNetworkInterfaces,
+		externalNetworkInterfaces: externalNetworkInterfaces,
+		neighbourBorderIps:        neighborBorderIps,
 	}
 }
 
 // ActivateVxlanAgent is the entry point to start the VxlanAgent
 func (vxlanAgent *VxlanAgent) ActivateVxlanAgent() error {
+
+	logrus.Print("0. check if we can remove memlock")
 	if err := rlimit.RemoveMemlock(); err != nil {
-		logrus.Fatal("Removing memlock:", err)
+		logrus.Error("Error removing memlock:", err)
+		return err
 	}
 
-	if err := vxlanAgent.findNeighborForwardingMacTable(); err != nil {
-		logrus.Fatalf("Failed to find forwarding macs for neighbor ips using traceroute")
+	logrus.Print("1. find neighbor forwarding mac table")
+
+	if err := vxlanAgent.initExternalRouteInfos(); err != nil {
+		logrus.Error("Error finding forwarding macs for neighbor ips using traceroute:", err)
+		return err
 	}
 
-	logrus.Print("1")
-
-	// Load the compiled eBPF ELF and load it into the kernel.
+	// Load the compiled XDP eBPF ELF into the kernel.
+	// the xdp program would need to be loaded only once on the system.
+	// the tc program also needs to be loaded only once on the system.
+	// later we need to attach xdp and tc to all relevant network interfaces.
+	logrus.Print("2. load XDP eBPF program")
 	if err := vxlanAgentEbpfGen.LoadVxlanAgentXDPObjects(&vxlanAgent.xdpObjects, nil); err != nil {
-		logrus.Fatal("Loading XDP eBPF objects:", err)
+		logrus.Error("Error loading XDP eBPF program:", err)
+		return err
 	}
 	defer vxlanAgent.xdpObjects.Close()
 
-	logrus.Print("2")
-
+	logrus.Print("2.1. load TC eBPF program")
 	if err := vxlanAgentEbpfGen.LoadVxlanAgentUnknownUnicastFloodingObjects(&vxlanAgent.tcObjects, nil); err != nil {
-		logrus.Fatal("Loading TC eBPF objects:", err)
+		logrus.Error("Error loading TC eBPF program:", err)
+		return err
 	}
 	defer vxlanAgent.tcObjects.Close()
 
+	// initialize maps needed by vxlan agent xdp program
+	logrus.Print("3. initialize xdp maps")
+	if err := vxlanAgent.initVxlanAgentXdpMaps(); err != nil {
+		logrus.Error("Error initializing xdp maps:", err)
+		return err
+	}
+
 	logrus.Print("size of internalNetworkInterfaces ", len(vxlanAgent.internalNetworkInterfaces))
 
-	logrus.Print("3")
-
-	if err := vxlanAgent.addNetworkInterfacesToUnknownUnicastFloodingMaps(); err != nil {
+	// initialize maps needed by vxlan agent unknown unicast flooding program
+	logrus.Print("4. add network interfaces to unknown unicast flooding maps")
+	if err := vxlanAgent.initVxlanAgentUnknownUnicastFloodingMaps(); err != nil {
+		logrus.Error("Error initializing unknown unicast flooding maps:", err)
 		return err
 	}
 
-	logrus.Print("4")
-
-	evictionCallback := vxlanAgent.createUserspaceMacTableEvictionCallback()
-	vxlanAgent.userspaceMacTable = vxlanAgent.createUserspaceMacTable(evictionCallback)
-
-	logrus.Print("5")
-
-	go vxlanAgent.reInsertIntoUserspaceMacTable()
-
-	logrus.Print("6")
-
+	// Attach the loaded XDP ebpf program to the network interfaces.
+	logrus.Print("5. attach vxlan agent XDP & Unknown Unicast Flooding TC program to interfaces")
 	var err error
-	vxlanAgent.attachedLinks, err = vxlanAgent.attachToInterfaces()
+	vxlanAgent.attachedLinks, err = vxlanAgent.attachVxlanAgentXdpAndTcToAllInterfaces()
 	defer vxlanAgent.closeAttachedLinks()
 	if err != nil {
+		logrus.Error("Error attaching vxlan agent XDP & Unknown Unicast Flooding TC program to interfaces:", err)
 		return err
 	}
 
-	logrus.Print("7")
-
-	go vxlanAgent.handleNewDiscoveredEntriesRingBuffer()
-
-	logrus.Print("8")
-
+	logrus.Print("6. wait for ctrl+c to stop")
 	return vxlanAgent.waitForCtrlC()
 }
 
-func (vxlanAgent *VxlanAgent) findNeighborForwardingMacTable() error {
+func (vxlanAgent *VxlanAgent) initExternalRouteInfos() error {
 
-	vxlanAgent.neighborIpToForwardingMac = make(map[string]string)
+	vxlanAgent.borderIpToExternalRouteInfo = make(map[uint32]vxlanAgentEbpfGen.VxlanAgentXDPExternalRouteInfo)
 
-	tracerouteConf := &traceroute.TraceConfig{
-		Debug:    true,
-		FirstTTL: 1,
-		MaxTTL:   1,
-		Retry:    0,
-		WaitSec:  1,
+	for _, borderIp := range vxlanAgent.neighbourBorderIps {
+		vxlanAgent.borderIps = append(vxlanAgent.borderIps, binary.BigEndian.Uint32(net.ParseIP(borderIp).To4()))
 	}
 
-	for _, neighbourBorderIp := range vxlanAgent.neighbourBorderIps {
-		results, err := traceroute.Traceroute(neighbourBorderIp, tracerouteConf)
+	for _, neighborBorderIp := range vxlanAgent.neighbourBorderIps {
 
+		dst := net.ParseIP(neighborBorderIp).To4()
+
+		routes, err := netlink.RouteGet(dst)
 		if err != nil {
-			logrus.Error(err.Error())
+			logrus.Error("Failed to get route: %v", err)
 			return err
 		}
 
-		vxlanAgent.neighborIpToForwardingMac[neighbourBorderIp] = arp.Search(results[0].NextHot)
+		logrus.Printf("Route to %s: %+v\n", neighborBorderIp, routes[0])
+		if routes[0].Gw != nil {
+			logrus.Printf("Gateway: %s Mac: %s\n", routes[0].Gw.String(), arp.Search(routes[0].Gw.String()))
+		}
+
+		if routes[0].LinkIndex != 0 {
+			l, err := netlink.LinkByIndex(routes[0].LinkIndex)
+			if err != nil {
+				logrus.Error("Failed to get link by index: %v", err)
+				return err
+			}
+			logrus.Printf("Interface: %s\n", l.Attrs().Name)
+			vxlanAgent.borderIpToExternalRouteInfo[binary.BigEndian.Uint32(dst)] = vxlanAgentEbpfGen.VxlanAgentXDPExternalRouteInfo{
+				ExternalIfaceIndex:      uint32(l.Attrs().Index),
+				ExternalIfaceMac:        ConvertMacBytesToMac(l.Attrs().HardwareAddr),
+				ExternalIfaceNextHopMac: ConvertStringToMac(arp.Search(routes[0].Gw.String())),
+				ExternalIfaceIp:         vxlanAgentEbpfGen.VxlanAgentXDPInAddr{S_addr: binary.BigEndian.Uint32(net.ParseIP(neighborBorderIp).To4())},
+			}
+		}
 
 	}
 
 	return nil
 }
 
-func (vxlanAgent *VxlanAgent) addNetworkInterfacesToUnknownUnicastFloodingMaps() error {
+func (vxlanAgent *VxlanAgent) initVxlanAgentXdpMaps() error {
 
-	logrus.Print("3.1")
-	err := vxlanAgent.tcObjects.InterfacesArrayLength.Put(uint32(0), uint32(len(vxlanAgent.internalNetworkInterfaces)))
-	if err != nil {
-		logrus.Fatalf("something bad happened %s", err)
+	for _, internalNetworkInterface := range vxlanAgent.internalNetworkInterfaces {
+		err := vxlanAgent.xdpObjects.IfindexIsInternalMap.Put(uint32(internalNetworkInterface.Attrs().Index), uint32(1))
+		if err != nil {
+			logrus.Error("Error putting value in IfindexIsInternalMap:", err)
+			return err
+		}
 	}
 
-	logrus.Print("3.2")
+	for _, externalNetworkInterface := range vxlanAgent.externalNetworkInterfaces {
+		err := vxlanAgent.xdpObjects.IfindexIsInternalMap.Put(uint32(externalNetworkInterface.Attrs().Index), uint32(0))
+		if err != nil {
+			logrus.Error("Error putting value in IfindexIsInternalMap:", err)
+			return err
+		}
+	}
+
+	for borderIp, externalRouteInfo := range vxlanAgent.borderIpToExternalRouteInfo {
+		err := vxlanAgent.xdpObjects.BorderIpToRouteInfoMap.Put(borderIp, externalRouteInfo)
+		if err != nil {
+			logrus.Error("Error putting value in BorderIpToRouteInfoMap:", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (vxlanAgent *VxlanAgent) initVxlanAgentUnknownUnicastFloodingMaps() error {
+
+	for borderIp, externalRouteInfo := range vxlanAgent.borderIpToExternalRouteInfo {
+		err := vxlanAgent.xdpObjects.BorderIpToRouteInfoMap.Put(borderIp, externalRouteInfo)
+		if err != nil {
+			logrus.Error("Error putting value in BorderIpToRouteInfoMap:", err)
+			return err
+		}
+	}
+
+	err := vxlanAgent.tcObjects.InternalIfindexesArrayLength.Put(uint32(0), uint32(len(vxlanAgent.internalNetworkInterfaces)))
+	if err != nil {
+		logrus.Error("Error putting value in InternalIfindexesArrayLength:", err)
+		return err
+	}
 
 	for i, networkInterface := range vxlanAgent.internalNetworkInterfaces {
-		logrus.Print("3.3_element")
-		err = vxlanAgent.tcObjects.InterfacesArray.Put(uint32(i), uint32(networkInterface.Attrs().Index))
+		err = vxlanAgent.tcObjects.InternalIfindexesArray.Put(uint32(i), uint32(networkInterface.Attrs().Index))
 		if err != nil {
+			logrus.Error("Error putting value in InternalIfindexesArray:", err)
 			return err
 		}
 	}
 
-	logrus.Print("3.4")
+	err = vxlanAgent.tcObjects.RemoteBorderIpsArrayLength.Put(uint32(0), uint32(len(vxlanAgent.borderIps)))
+	if err != nil {
+		logrus.Error("Error putting value in RemoteBorderIpsArrayLength:", err)
+		return err
+	}
+
+	for i, borderIp := range vxlanAgent.borderIps {
+		err := vxlanAgent.tcObjects.RemoteBorderIpsArray.Put(uint32(i), borderIp)
+		if err != nil {
+			logrus.Error("Error putting value in RemoteBorderIpsArray:", err)
+			return err
+		}
+	}
+
+	for _, internalNetworkInterface := range vxlanAgent.internalNetworkInterfaces {
+		err := vxlanAgent.tcObjects.IfindexIsInternalMap.Put(uint32(internalNetworkInterface.Attrs().Index), uint32(1))
+		if err != nil {
+			logrus.Error("Error putting value in IfindexIsInternalMap:", err)
+			return err
+		}
+	}
+
+	for _, externalNetworkInterface := range vxlanAgent.externalNetworkInterfaces {
+		err := vxlanAgent.tcObjects.IfindexIsInternalMap.Put(uint32(externalNetworkInterface.Attrs().Index), uint32(0))
+		if err != nil {
+			logrus.Error("Error putting value in IfindexIsInternalMap:", err)
+			return err
+		}
+	}
+
 	return nil
 }
 
-func (vxlanAgent *VxlanAgent) createUserspaceMacTable(onRemove func(string, []byte)) *bigcache.BigCache {
-	defaultCacheConfig := bigcache.DefaultConfig(20 * time.Second)
-	userspaceMacTable, _ := bigcache.New(
-		context.Background(),
-		bigcache.Config{
-			Shards:             defaultCacheConfig.Shards,
-			LifeWindow:         defaultCacheConfig.LifeWindow,
-			CleanWindow:        1 * time.Second,
-			MaxEntriesInWindow: defaultCacheConfig.MaxEntriesInWindow,
-			MaxEntrySize:       defaultCacheConfig.MaxEntrySize,
-			StatsEnabled:       defaultCacheConfig.StatsEnabled,
-			Verbose:            defaultCacheConfig.Verbose,
-			HardMaxCacheSize:   defaultCacheConfig.HardMaxCacheSize,
-			OnRemove:           onRemove,
-			Hasher:             defaultCacheConfig.Hasher,
-		})
-	return userspaceMacTable
-}
-
-func (vxlanAgent *VxlanAgent) createUserspaceMacTableEvictionCallback() func(string, []byte) {
-	return func(key string, entry []byte) {
-		logrus.Print("Eviction1")
-		macKey := ConvertStringToMac(key)
-		ifaceIndexInKernel := vxlanAgentEbpfGen.VxlanAgentXDPIfaceIndex{}
-		err := vxlanAgent.xdpObjects.MacTable.Lookup(&macKey, &ifaceIndexInKernel)
-		if err != nil {
-			logrus.Fatalf("Error parsing value in kernel for mac %s, err: %s", key, err)
-			return
-		}
-
-		logrus.Printf("Eviction2, %d", ifaceIndexInKernel.InterfaceIndex)
-
-		currentTimeNano := uint64(time.Now().UnixNano())
-		logrus.Printf("Eviction.currentTimeNano %d", currentTimeNano)
-		timestampInKernelNano := ifaceIndexInKernel.Timestamp // convert timestamp to seconds
-
-		timeDifferenceSeconds := (currentTimeNano - timestampInKernelNano) / 1_000_000_000
-
-		logrus.Printf("Eviction.currentTimeNano %d timestampInKernelNano %d TimeDifference %d, for mac: %s", currentTimeNano, timestampInKernelNano, timeDifferenceSeconds, key)
-
-		if timeDifferenceSeconds < 20 {
-			// if upon removal of the key in userspace Mac Table we realized that
-			// the kernel space equivalent of that item is _not_ older than 5 minutes
-			// we will realize that this Mac address have been visible to the Vxlan
-			// in tha last 5 minutes, so we will re-insert the key/value for that mac
-			// address again in the userspace table, with the latest value obtained
-			// from the kernel space mac table.
-
-			logrus.Print("Eviction.TryToReinsert")
-			vxlanAgent.userspaceMacTableReInsertChannel <- vxlanAgentEbpfGen.VxlanAgentXDPMacAddressIfaceEntry{
-				Mac:   macKey,
-				Iface: ifaceIndexInKernel,
-			}
-		} else {
-			logrus.Printf("Eviction.Delete, for mac: %s", key)
-			err := vxlanAgent.xdpObjects.MacTable.Delete(macKey)
-			if err != nil {
-				logrus.Fatalf("Error In Deleting %s", err)
-			}
-		}
-		logrus.Print("Eviction.finish")
-	}
-}
-
-func (vxlanAgent *VxlanAgent) reInsertIntoUserspaceMacTable() {
-	for entry := range vxlanAgent.userspaceMacTableReInsertChannel {
-		logrus.Print("ReInsert.1")
-		key := ConvertMacToString(entry.Mac)
-		value, _ := EncodeIfaceIndex(entry.Iface)
-		logrus.Print("ReInsert.2")
-		err := vxlanAgent.userspaceMacTable.Set(key, value)
-		if err != nil {
-			logrus.Fatalln("cannot reinsert evicted into userspaceMacTable")
-		}
-		logrus.Print("ReInsert.3")
-	}
-}
-
-func (vxlanAgent *VxlanAgent) attachToInterfaces() ([]*link.Link, error) {
+func (vxlanAgent *VxlanAgent) attachVxlanAgentXdpAndTcToAllInterfaces() ([]*link.Link, error) {
 	var attachedLinks []*link.Link
 
-	logrus.Print("6.1")
+	logrus.Print("5.1")
 
-	for _, iface := range vxlanAgent.internalNetworkInterfaces {
+	// Combine internal and external interfaces
+
+	for _, iface := range append(vxlanAgent.internalNetworkInterfaces, vxlanAgent.externalNetworkInterfaces...) {
 		var err error
 
-		logrus.Print("6.2.element")
+		logrus.Print("5.2.element")
 
 		// Attach VxlanAgentXdp to the network interface.
-
 		attachedXdpLink, err := link.AttachXDP(link.XDPOptions{
 			Program:   vxlanAgent.xdpObjects.VxlanAgentXdp,
 			Interface: iface.Attrs().Index,
@@ -248,12 +250,11 @@ func (vxlanAgent *VxlanAgent) attachToInterfaces() ([]*link.Link, error) {
 		})
 
 		if err != nil {
-			logrus.Fatal("Attaching XDP:", err)
+			logrus.Error("Attaching XDP:", err)
 			return attachedLinks, err
 		}
 
 		// attach VxlanAgentUnknownUnicastFlooding to the network interface
-
 		attachedTcLink, err := link.AttachTCX(link.TCXOptions{
 			Interface: iface.Attrs().Index,
 			Program:   vxlanAgent.tcObjects.VxlanAgentUnknownUnicastFlooding,
@@ -262,7 +263,7 @@ func (vxlanAgent *VxlanAgent) attachToInterfaces() ([]*link.Link, error) {
 		})
 
 		if err != nil {
-			logrus.Fatal("Attaching TCX:", err)
+			logrus.Error("Attaching TCX:", err)
 			return attachedLinks, err
 		}
 
@@ -270,38 +271,6 @@ func (vxlanAgent *VxlanAgent) attachToInterfaces() ([]*link.Link, error) {
 	}
 
 	return attachedLinks, nil
-}
-
-func (vxlanAgent *VxlanAgent) handleNewDiscoveredEntriesRingBuffer() {
-	for {
-		logrus.Print("HandleNewDiscoveredEntries.1")
-
-		rd, err := ringbuf.NewReader(vxlanAgent.xdpObjects.NewDiscoveredEntriesRb)
-		if err != nil {
-			logrus.Fatalf("opening ringbuf reader: %s", err)
-		}
-		defer rd.Close()
-
-		logrus.Print("HandleNewDiscoveredEntries.2")
-		var entry vxlanAgentEbpfGen.VxlanAgentXDPMacAddressIfaceEntry
-		record, err := rd.Read()
-
-		logrus.Print("HandleNewDiscoveredEntries.3")
-
-		if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.NativeEndian, &entry); err != nil {
-			logrus.Fatalf("failed parsing ringbuf entry: %s", err)
-			continue
-		}
-
-		logrus.Print("HandleNewDiscoveredEntries.4")
-
-		key := ConvertMacToString(entry.Mac)
-		value, _ := EncodeIfaceIndex(entry.Iface)
-
-		logrus.Print("HandleNewDiscoveredEntries.5")
-		vxlanAgent.userspaceMacTable.Set(key, value)
-		logrus.Print("HandleNewDiscoveredEntries.6")
-	}
 }
 
 func (vxlanAgent *VxlanAgent) closeAttachedLinks() {
@@ -319,10 +288,10 @@ func (vxlanAgent *VxlanAgent) waitForCtrlC() error {
 	for {
 		select {
 		case <-tick:
-			logrus.Printf("userspace mac table size %d", vxlanAgent.userspaceMacTable.Len())
+			// logrus.Printf("userspace mac table size %d", vxlanAgent.xdpObjects.BorderIpToRouteInfoMap.Len())
 			var (
 				key   vxlanAgentEbpfGen.VxlanAgentXDPMacAddress
-				value vxlanAgentEbpfGen.VxlanAgentXDPIfaceIndex
+				value vxlanAgentEbpfGen.VxlanAgentXDPMacTableEntry
 			)
 
 			for i := 0; vxlanAgent.xdpObjects.MacTable.Iterate().Next(&key, &value) && i < 3; i++ {
