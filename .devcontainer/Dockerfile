@@ -43,7 +43,7 @@ RUN git clone --recurse-submodules https://github.com/xdp-project/xdp-tools.git
 
 RUN make -C xdp-tools/ install
 
-workdir /
+WORKDIR /
 
 ENV GOPATH=/go
 ENV PATH=$PATH:$GOPATH/bin
