@@ -115,7 +115,7 @@ func (vxlanAgent *VxlanAgent) initExternalRouteInfos() error {
 
 		routes, err := netlink.RouteGet(dst)
 		if err != nil {
-			logrus.Error("Failed to get route: %v", err)
+			logrus.Errorf("Failed to get route: %v", err)
 			return err
 		}
 
@@ -127,7 +127,7 @@ func (vxlanAgent *VxlanAgent) initExternalRouteInfos() error {
 		if routes[0].LinkIndex != 0 {
 			l, err := netlink.LinkByIndex(routes[0].LinkIndex)
 			if err != nil {
-				logrus.Error("Failed to get link by index: %v", err)
+				logrus.Errorf("Failed to get link by index: %v", err)
 				return err
 			}
 			logrus.Printf("Interface: %s\n", l.Attrs().Name)
