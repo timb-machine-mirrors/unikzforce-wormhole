@@ -3,6 +3,11 @@ package switch_agent
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
+	"testing"
+	"wormhole/cmd/test_agent/generated"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/janog-netcon/netcon-problem-management-subsystem/pkg/containerlab"
@@ -11,15 +16,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"slices"
-	"strings"
-	"testing"
-	"wormhole/cmd/test_agent/generated"
 )
 
-func TestCart(t *testing.T) {
+func TestSwitchAgent(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Shopping Cart Suite")
+	RunSpecs(t, "Switch Agent Test Suite")
 }
 
 var _ = AfterSuite(func() {
