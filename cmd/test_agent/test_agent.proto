@@ -33,9 +33,23 @@ message EnableSwitchAgentResponse {
   string hostname = 4;
 }
 
+message EnableVxlanAgentRequest {
+  repeated string internalInterfaceNames = 1;
+  repeated string externalInterfaceNames = 2;
+}
+
+message EnableVxlanAgentResponse {
+  string resp = 1;
+  string command = 2;
+  int32 pid = 3;
+  string hostname = 4;
+}
+  
 service TestAgentService {
   rpc WaitUntilReady(google.protobuf.Empty) returns (WaitUntilReadyResponse) {}
   rpc Ping(PingRequest) returns (PingResponse) {}
   rpc EnableSwitchAgent(EnableSwitchAgentRequest) returns (EnableSwitchAgentResponse) {}
   rpc DisableSwitchAgent(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc EnableVxlanAgent(EnableVxlanAgentRequest) returns (EnableVxlanAgentResponse) {}
+  rpc DisableVxlanAgent(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }

@@ -22,14 +22,14 @@ topology:
       kind: linux
       image: wormhole/test_agent:latest
       exec:
-        - ip addr add 2.2.2.1/24 dev eth1
+        - ip addr add 3.3.3.1/24 dev eth2
         - touch /tmp/is_clab_container_ready
 
     border2:
       kind: linux
       image: wormhole/test_agent:latest
       exec:
-        - ip addr add 2.2.2.2/24 dev eth1
+        - ip addr add 3.3.3.2/24 dev eth2
         - touch /tmp/is_clab_container_ready
 
     dst:
@@ -45,14 +45,17 @@ topology:
       binds:
         - /sys/kernel/debug:/sys/kernel/debug
       exec:
+        - ip addr add 192.168.1.11/24 dev eth1
         - touch /tmp/is_clab_container_ready
 
   links:
-    - endpoints: [src:eth1, sw:eth1]
+    - endpoints: [src:eth1, border1:eth1]
       # sometimes by default the containerlab would set MTU to 9500.
       # if the MTU is high the libbpf would complain like this:
       #   libbpf: Kernel error message: veth: Peer MTU is too large to set XDP
       #   Error: interface xdp attach failed: Numerical result out of range
       mtu: 1500
-    - endpoints: [dst:eth1, sw:eth2]
+    - endpoints: [border1:eth2, border2:eth2]
+      mtu: 1500
+    - endpoints: [border2:eth1, dst:eth1]
       mtu: 1500
