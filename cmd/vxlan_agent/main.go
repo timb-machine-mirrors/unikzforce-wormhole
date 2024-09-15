@@ -53,7 +53,7 @@ func ActivateVxlanAgent(cCtx *cli.Context) error {
 func findNetworkInterfaces(cCtx *cli.Context, argumentName string) []netlink.Link {
 	cliInterfaceNames := strings.TrimSpace(cCtx.String(argumentName))
 	if cliInterfaceNames == "" {
-		logrus.Fatal("--interface-names should be present and not empty")
+		logrus.Fatalf("%s should be present and not empty", argumentName)
 	}
 
 	logrus.Println(cliInterfaceNames)

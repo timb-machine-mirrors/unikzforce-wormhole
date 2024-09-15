@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 	vxlanAgentEbpfGen "wormhole/internal/vxlan_agent/ebpf"
 
@@ -58,7 +59,23 @@ func (vxlanAgent *VxlanAgent) ActivateVxlanAgent() error {
 	// the tc program also needs to be loaded only once on the system.
 	// later we need to attach xdp and tc to all relevant network interfaces.
 	logrus.Print("2. load XDP eBPF program")
-	if err := vxlanAgentEbpfGen.LoadVxlanAgentXDPObjects(&vxlanAgent.xdpObjects, nil); err != nil {
+	pinPath := "/sys/fs/bpf"
+
+	// Ensure the pin path exists and is empty
+	if err := vxlanAgent.preparePinPath(pinPath); err != nil {
+		logrus.Error("Error preparing pin path:", err)
+		return err
+	}
+
+	if err := vxlanAgentEbpfGen.LoadVxlanAgentXDPObjects(&vxlanAgent.xdpObjects, &ciliumEbpf.CollectionOptions{
+		Maps: ciliumEbpf.MapOptions{
+			PinPath: pinPath,
+		},
+		Programs: ciliumEbpf.ProgramOptions{
+			LogLevel: ciliumEbpf.LogLevelInstruction, // Set log level to 1 to enable logs
+			LogSize:  1024 * 1024,                    // Set log size to 1MB
+		},
+	}); err != nil {
 		logrus.Error("Error loading XDP eBPF program:", err)
 		return err
 	}
@@ -302,4 +319,45 @@ func (vxlanAgent *VxlanAgent) waitForCtrlC() error {
 			return nil
 		}
 	}
+}
+
+// Add this new method to VxlanAgent struct
+func (vxlanAgent *VxlanAgent) preparePinPath(path string) error {
+	// Check if the directory exists
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		// Create the directory if it doesn't exist
+		if err := os.MkdirAll(path, 0755); err != nil {
+			logrus.Errorf("failed to create directory %s: %v", path, err)
+			return err
+		}
+		logrus.Infof("Created directory: %s", path)
+	} else if err != nil {
+		logrus.Errorf("error checking directory %s: %v", path, err)
+		return err
+	} else {
+		// Directory exists, clear its contents
+		dir, err := os.Open(path)
+		if err != nil {
+			logrus.Errorf("failed to open directory %s: %v", path, err)
+			return err
+		}
+		defer dir.Close()
+
+		names, err := dir.Readdirnames(-1)
+		if err != nil {
+			logrus.Errorf("failed to read directory contents %s: %v", path, err)
+			return err
+		}
+
+		for _, name := range names {
+			err = os.RemoveAll(filepath.Join(path, name))
+			if err != nil {
+				logrus.Errorf("failed to remove %s: %v", name, err)
+				return err
+			}
+		}
+		logrus.Infof("Cleared contents of directory: %s", path)
+	}
+
+	return nil
 }

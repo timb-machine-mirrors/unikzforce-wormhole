@@ -41,7 +41,8 @@
 		"source=clab-vscode-home-dir,target=/home/vscode,type=volume",
 		"source=clab-docker-root-config,target=/root/.docker,type=volume",
 //		"target=/home/vscode/.vscode-server,type=volume",
-		"source=/sys/kernel/debug,target=/sys/kernel/debug,type=bind"
+		"source=/sys/kernel/debug,target=/sys/kernel/debug,type=bind",
+		"source=/sys/fs/bpf,target=/sys/fs/bpf,type=bind"
 	]
 
 

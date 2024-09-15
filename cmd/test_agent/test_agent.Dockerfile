@@ -52,6 +52,7 @@ WORKDIR /wormhole-source/
 #RUN go install github.com/go-delve/delve/cmd/dlv@latest
 RUN go mod download
 RUN go generate ./internal/switch_agent/ebpf/
+RUN go generate ./internal/vxlan_agent/ebpf/
 
 RUN go build -o /build/switch_agent ./cmd/switch_agent/main.go
 RUN go build -o /build/vxlan_agent ./cmd/vxlan_agent/main.go

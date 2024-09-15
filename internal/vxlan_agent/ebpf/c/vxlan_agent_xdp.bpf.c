@@ -14,7 +14,7 @@ struct
     __type(key, struct in_addr);
     __type(value, struct external_route_info);
     __uint(max_entries, 4 * 1024);
-    __uint(pinning, LIBBPF_PIN_BY_NAME);
+    // __uint(pinning, LIBBPF_PIN_BY_NAME);
 } border_ip_to_route_info_map SEC(".maps");
 
 // --------------------------------------------------------
@@ -26,7 +26,7 @@ struct
     __type(key, __u32);
     __type(value, bool);
     __uint(max_entries, 4 * 1024);
-    __uint(pinning, LIBBPF_PIN_BY_NAME);
+    // __uint(pinning, LIBBPF_PIN_BY_NAME);
 } ifindex_is_internal_map SEC(".maps");
 
 // --------------------------------------------------------
@@ -47,7 +47,7 @@ struct
     __type(key, struct mac_address);
     __type(value, struct mac_table_entry);
     __uint(max_entries, 4 * 1024 * 1024);
-    __uint(pinning, LIBBPF_PIN_BY_NAME);
+    // __uint(pinning, LIBBPF_PIN_BY_NAME);
 } mac_table SEC(".maps");
 
 // --------------------------------------------------------
@@ -80,7 +80,8 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
     if ((void *)(eth + 1) > (void *)(long)ctx->data_end)
         return XDP_DROP;
 
-    bool *ifindex_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &(ctx->ingress_ifindex));
+    __u32 ingress_ifindex = ctx->ingress_ifindex;
+    bool *ifindex_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &ingress_ifindex);
 
     if (ifindex_is_internal == NULL)
     {
@@ -146,7 +147,8 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
     {
         // if we already know this dst mac in mac_table
 
-        bool *ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &(dst_mac_entry->ifindex));
+        __u32 dst_mac_entry_ifindex = dst_mac_entry->ifindex;
+        bool *ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &dst_mac_entry_ifindex);
 
         if (ifindex_to_redirect_is_internal == NULL)
         {
@@ -280,7 +282,7 @@ static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_in
 
 static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time_ns, struct mac_address *src_mac)
 {
-    struct mac_table_entry *src_mac_entry = bpf_map_lookup_elem(&mac_table, &src_mac);
+    struct mac_table_entry *src_mac_entry = bpf_map_lookup_elem(&mac_table, src_mac);
 
     if (src_mac_entry == NULL)
     {
@@ -291,7 +293,14 @@ static void __always_inline learn_from_packet_received_by_internal_iface(const s
             .border_ip = {0}, // in this case, border_ip is set to 0.0.0.0 but it doesn't mean it's really 0.0.0.0 but it means it's not set yet.
             .expiration_timer = {}};
 
-        bpf_map_update_elem(&mac_table, &src_mac, src_mac_entry, BPF_ANY);
+        bpf_map_update_elem(&mac_table, src_mac, src_mac_entry, BPF_ANY);
+
+        src_mac_entry = bpf_map_lookup_elem(&mac_table, src_mac);
+        if (!src_mac_entry)
+        {
+            bpf_printk("failed to lookup mac table after update\n");
+            return;
+        }
 
         int ret;
         ret = bpf_timer_init(&src_mac_entry->expiration_timer, &mac_table, CLOCK_BOOTTIME);
@@ -446,10 +455,11 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
         }
 
         // Check if the destination MAC address is known
-        struct mac_table_entry *dst_mac_entry = bpf_map_lookup_elem(&mac_table, &inner_dst_mac);
+        struct mac_table_entry *dst_mac_entry = bpf_map_lookup_elem(&mac_table, inner_dst_mac);
         if (dst_mac_entry != NULL)
         {
-            bool *ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &(dst_mac_entry->ifindex));
+            __u32 dst_mac_entry_ifindex = dst_mac_entry->ifindex;
+            bool *ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &dst_mac_entry_ifindex);
 
             if (ifindex_to_redirect_is_internal == NULL)
             {
@@ -511,12 +521,12 @@ static long __always_inline handle_packet_received_by_external_iface__ip_packet(
     __u32 inner_src_ip = inner_iph->saddr;
     __u32 inner_dst_ip = inner_iph->daddr;
 
-    struct mac_table_entry *dst_mac_entry = bpf_map_lookup_elem(&mac_table, &inner_dst_mac);
+    struct mac_table_entry *dst_mac_entry = bpf_map_lookup_elem(&mac_table, inner_dst_mac);
 
     if (dst_mac_entry != NULL)
     {
-
-        bool *ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &(dst_mac_entry->ifindex));
+        __u32 dst_mac_entry_ifindex = dst_mac_entry->ifindex;
+        bool *ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &dst_mac_entry_ifindex);
 
         if (ifindex_to_redirect_is_internal == NULL)
         {
@@ -570,6 +580,13 @@ static void __always_inline learn_from_packet_received_by_external_iface(struct 
             .expiration_timer = {}};
 
         bpf_map_update_elem(&mac_table, inner_src_mac, src_mac_entry, BPF_ANY);
+
+        src_mac_entry = bpf_map_lookup_elem(&mac_table, inner_src_mac);
+        if (!src_mac_entry)
+        {
+            bpf_printk("failed to lookup mac table after update\n");
+            return;
+        }
 
         int ret;
         ret = bpf_timer_init(&src_mac_entry->expiration_timer, &mac_table, CLOCK_BOOTTIME);
