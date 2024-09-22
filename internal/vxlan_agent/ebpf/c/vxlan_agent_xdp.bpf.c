@@ -33,12 +33,12 @@ struct
 
 struct mac_table_entry
 {
+    struct bpf_timer expiration_timer; // the timer object to expire this mac entry from the map in 5 minutes
     __u32 ifindex;                     // interface which mac address is learned from
     __u64 last_seen_timestamp_ns;      // last time this mac address was seen
     struct in_addr border_ip;          // remote agent border ip address that this mac address is learned from.
                                        // - in case of an internal mac address, this field is not used and set to 0.0.0.0
                                        // - in case of an external mac address, this field is used and set to the remote agent border ip address
-    struct bpf_timer expiration_timer; // the timer object to expire this mac entry from the map in 5 minutes
 };
 
 struct
@@ -232,6 +232,10 @@ static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_in
     outer_udph = (void *)outer_iph + IP_HDR_LEN;
     outer_vxh = (void *)outer_udph + UDP_HDR_LEN;
 
+    // Ensure the packet is still valid after adjustment
+    if ((void *)(outer_vxh + 1) > data_end)
+        return AGENT_ERROR_DROP;
+
     struct in_addr *dst_border_ip = &(dst_mac_entry->border_ip);
 
     struct external_route_info *route_info = bpf_map_lookup_elem(&border_ip_to_route_info_map, dst_border_ip);
@@ -284,51 +288,47 @@ static void __always_inline learn_from_packet_received_by_internal_iface(const s
 {
     struct mac_table_entry *src_mac_entry = bpf_map_lookup_elem(&mac_table, src_mac);
 
-    if (src_mac_entry == NULL)
+    if (src_mac_entry != NULL)
     {
-        // if the source mac address is not in the mac table, we need to insert it
-        src_mac_entry = &(struct mac_table_entry){
-            .last_seen_timestamp_ns = current_time_ns,
-            .ifindex = ctx->ingress_ifindex,
-            .border_ip = {0}, // in this case, border_ip is set to 0.0.0.0 but it doesn't mean it's really 0.0.0.0 but it means it's not set yet.
-            .expiration_timer = {}};
-
-        bpf_map_update_elem(&mac_table, src_mac, src_mac_entry, BPF_ANY);
-
-        src_mac_entry = bpf_map_lookup_elem(&mac_table, src_mac);
-        if (!src_mac_entry)
-        {
-            bpf_printk("failed to lookup mac table after update\n");
-            return;
-        }
-
-        int ret;
-        ret = bpf_timer_init(&src_mac_entry->expiration_timer, &mac_table, CLOCK_BOOTTIME);
-        if (ret)
-        {
-            bpf_printk("failed to init timer\n");
-            return;
-        }
-
-        ret = bpf_timer_set_callback(&src_mac_entry->expiration_timer, mac_table_expiration_callback);
-        if (ret)
-        {
-            bpf_printk("failed to set timer callback\n");
-            return;
-        }
-
-        ret = bpf_timer_start(&src_mac_entry->expiration_timer, FIVE_MINUTES_IN_NS, 0);
-        if (ret)
-        {
-            bpf_printk("failed to start timer\n");
-            return;
-        }
+        bpf_timer_cancel(&src_mac_entry->expiration_timer);
     }
-    else
-    {
-        src_mac_entry->last_seen_timestamp_ns = current_time_ns;
 
-        bpf_map_update_elem(&mac_table, &src_mac, src_mac_entry, BPF_ANY);
+    // if the source mac address is not in the mac table, we need to insert it
+    src_mac_entry = &(struct mac_table_entry){
+        .last_seen_timestamp_ns = current_time_ns,
+        .ifindex = ctx->ingress_ifindex,
+        .border_ip = {0}, // in this case, border_ip is set to 0.0.0.0 but it doesn't mean it's really 0.0.0.0 but it means it's not set yet.
+        .expiration_timer = {}};
+
+    bpf_map_update_elem(&mac_table, src_mac, src_mac_entry, BPF_ANY);
+
+    src_mac_entry = bpf_map_lookup_elem(&mac_table, src_mac);
+    if (!src_mac_entry)
+    {
+        bpf_printk("failed to lookup mac table after update\n");
+        return;
+    }
+
+    int ret;
+    ret = bpf_timer_init(&src_mac_entry->expiration_timer, &mac_table, CLOCK_BOOTTIME);
+    if (ret)
+    {
+        bpf_printk("failed to init timer\n");
+        return;
+    }
+
+    ret = bpf_timer_set_callback(&src_mac_entry->expiration_timer, mac_table_expiration_callback);
+    if (ret)
+    {
+        bpf_printk("failed to set timer callback\n");
+        return;
+    }
+
+    ret = bpf_timer_start(&src_mac_entry->expiration_timer, FIVE_MINUTES_IN_NS, 0);
+    if (ret)
+    {
+        bpf_printk("failed to start timer\n");
+        return;
     }
 }
 
@@ -571,51 +571,48 @@ static void __always_inline learn_from_packet_received_by_external_iface(struct 
     // - the external source border ip address that this mac address belongs to
 
     struct mac_table_entry *src_mac_entry = bpf_map_lookup_elem(&mac_table, inner_src_mac);
-    if (src_mac_entry == NULL)
+
+    if (src_mac_entry != NULL)
     {
-        src_mac_entry = &(struct mac_table_entry){
-            .last_seen_timestamp_ns = current_time_ns,
-            .ifindex = ctx->ingress_ifindex,
-            .border_ip.s_addr = *outer_src_border_ip,
-            .expiration_timer = {}};
-
-        bpf_map_update_elem(&mac_table, inner_src_mac, src_mac_entry, BPF_ANY);
-
-        src_mac_entry = bpf_map_lookup_elem(&mac_table, inner_src_mac);
-        if (!src_mac_entry)
-        {
-            bpf_printk("failed to lookup mac table after update\n");
-            return;
-        }
-
-        int ret;
-        ret = bpf_timer_init(&src_mac_entry->expiration_timer, &mac_table, CLOCK_BOOTTIME);
-        if (ret)
-        {
-            bpf_printk("failed to init timer\n");
-            return;
-        }
-
-        ret = bpf_timer_set_callback(&src_mac_entry->expiration_timer, mac_table_expiration_callback);
-        if (ret)
-        {
-            bpf_printk("failed to set timer callback\n");
-            return;
-        }
-
-        // 5 minutes
-        ret = bpf_timer_start(&src_mac_entry->expiration_timer, FIVE_MINUTES_IN_NS, 0);
-        if (ret)
-        {
-            bpf_printk("failed to start timer\n");
-            return;
-        }
+        bpf_timer_cancel(&src_mac_entry->expiration_timer);
     }
-    else
-    {
-        src_mac_entry->last_seen_timestamp_ns = current_time_ns;
 
-        bpf_map_update_elem(&mac_table, inner_src_mac, src_mac_entry, BPF_ANY);
+    src_mac_entry = &(struct mac_table_entry){
+        .last_seen_timestamp_ns = current_time_ns,
+        .ifindex = ctx->ingress_ifindex,
+        .border_ip.s_addr = *outer_src_border_ip,
+        .expiration_timer = {}};
+
+    bpf_map_update_elem(&mac_table, inner_src_mac, src_mac_entry, BPF_ANY);
+
+    src_mac_entry = bpf_map_lookup_elem(&mac_table, inner_src_mac);
+    if (!src_mac_entry)
+    {
+        bpf_printk("failed to lookup mac table after update\n");
+        return;
+    }
+
+    int ret;
+    ret = bpf_timer_init(&src_mac_entry->expiration_timer, &mac_table, CLOCK_BOOTTIME);
+    if (ret)
+    {
+        bpf_printk("failed to init timer\n");
+        return;
+    }
+
+    ret = bpf_timer_set_callback(&src_mac_entry->expiration_timer, mac_table_expiration_callback);
+    if (ret)
+    {
+        bpf_printk("failed to set timer callback\n");
+        return;
+    }
+
+    // 5 minutes
+    ret = bpf_timer_start(&src_mac_entry->expiration_timer, FIVE_MINUTES_IN_NS, 0);
+    if (ret)
+    {
+        bpf_printk("failed to start timer\n");
+        return;
     }
 }
 
