@@ -80,6 +80,9 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
 SEC("tcx/ingress")
 int vxlan_agent_unknown_unicast_flooding(struct __sk_buff *skb)
 {
+    if (skb == NULL)
+        return TC_ACT_SHOT;
+
     __u64 current_time = bpf_ktime_get_tai_ns();
 
     struct ethhdr *eth = (void *)(long)skb->data;
@@ -87,7 +90,8 @@ int vxlan_agent_unknown_unicast_flooding(struct __sk_buff *skb)
     if ((void *)(eth + 1) > (void *)(long)skb->data_end)
         return TC_ACT_SHOT;
 
-    bool *ifindex_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &skb->ingress_ifindex);
+    __u32 ifindex = skb->ingress_ifindex;
+    bool *ifindex_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &ifindex);
 
     if (ifindex_is_internal == NULL)
     {
@@ -179,24 +183,11 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
         return;
     }
 
-    // Recalculate data and data_end pointers after adjustment
-    data = (void *)(long)skb->data;
-    data_end = (void *)(long)skb->data_end;
-
-    // Ensure the packet is still valid after adjustment
-    if (data + new_len > data_end)
-    {
-        bpf_printk("packet is not valid after size adjustment");
-        return;
-    }
-
-    outer_eth = data;
-    outer_iph = data + ETH_HLEN; // ETH_HLEN == 14 & ETH_ALEN == 6
-    outer_udph = (void *)outer_iph + IP_HDR_LEN;
-    outer_vxh = (void *)outer_udph + UDP_HDR_LEN;
-
     bpf_for(i, 0, MAX_REMOTE_BORDERS_IPS)
     {
+
+        // ==============================================================================================================
+
         if (i >= number_of_remote_border_ips)
             break;
 
@@ -213,6 +204,69 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
         if (route_info == NULL)
         {
             bpf_printk("route_info for remote_border_ip %s is NULL", remote_border_ip);
+            return;
+        }
+
+        if (route_info->external_iface_mac.addr == NULL)
+        {
+            bpf_printk("route_info->external_iface_mac is NULL");
+            return;
+        }
+
+        if (route_info->external_iface_next_hop_mac.addr == NULL)
+        {
+            bpf_printk("route_info->external_iface_next_hop_mac is NULL");
+            return;
+        }
+
+        // ==============================================================================================================
+
+        // Recalculate data and data_end pointers after adjustment
+        data = (void *)(long)skb->data;
+        data_end = (void *)(long)skb->data_end;
+
+        // Ensure the packet is large enough to contain an Ethernet header
+        if (data + sizeof(struct ethhdr) > data_end)
+        {
+            bpf_printk("Packet is too small for Ethernet header");
+            return;
+        }
+
+        // Ensure the packet is still valid after adjustment
+        if (data + NEW_HDR_LEN > data_end)
+        {
+            bpf_printk("packet is not valid after size adjustment");
+            return;
+        }
+
+        outer_eth = data;
+        outer_iph = data + ETH_HLEN; // ETH_HLEN == 14 & ETH_ALEN == 6
+        outer_udph = (void *)outer_iph + IP_HDR_LEN;
+        outer_vxh = (void *)outer_udph + UDP_HDR_LEN;
+
+        // Ensure the packet is still valid after adjustment
+        if ((void *)(outer_eth + 1) > data_end)
+        {
+            bpf_printk("Packet is too small for Ethernet header");
+            return;
+        }
+
+        if ((void *)(outer_iph + 1) > data_end)
+        {
+            bpf_printk("Packet is too small for IP header");
+            return;
+        }
+
+        if ((void *)(outer_udph + 1) > data_end)
+        {
+            bpf_printk("Packet is too small for UDP header");
+            return;
+        }
+
+        // Ensure the packet is still valid after adjustment
+        if ((void *)(outer_vxh + 1) > data_end)
+        {
+            bpf_printk("Packet is too small for VXLAN header");
             return;
         }
 
@@ -241,6 +295,8 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
 
         // Calculate ip checksum
         outer_iph->check = ~bpf_csum_diff(0, 0, (__u32 *)outer_iph, IP_HDR_LEN, 0);
+
+        ifindex_ptr = &(route_info->external_iface_index);
 
         bpf_clone_redirect(skb, *ifindex_ptr, 0);
     }
