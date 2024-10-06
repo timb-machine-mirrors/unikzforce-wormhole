@@ -25,6 +25,9 @@ RUN apt install -y libbfd-dev
 RUN ln -sf /usr/include/asm-generic/ /usr/include/asm
 RUN apt install -y libcap-dev
 RUN apt install -y dwarves
+RUN apt install -y locales
+RUN locale-gen en_US.UTF-8
+RUN update-locale LANG=en_US.UTF-8
 RUN echo 'alias ll="ls -al"' >> ~/.bashrc
 
 RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf

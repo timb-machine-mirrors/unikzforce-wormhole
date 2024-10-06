@@ -139,9 +139,16 @@ enum {
 
 enum {
 	BINDER_DEBUG_USER_ERROR = 1,
+	BINDER_DEBUG_OPEN_CLOSE = 2,
+	BINDER_DEBUG_BUFFER_ALLOC = 4,
+	BINDER_DEBUG_BUFFER_ALLOC_ASYNC = 8,
+};
+
+enum {
+	BINDER_DEBUG_USER_ERROR___2 = 1,
 	BINDER_DEBUG_FAILED_TRANSACTION = 2,
 	BINDER_DEBUG_DEAD_TRANSACTION = 4,
-	BINDER_DEBUG_OPEN_CLOSE = 8,
+	BINDER_DEBUG_OPEN_CLOSE___2 = 8,
 	BINDER_DEBUG_DEAD_BINDER = 16,
 	BINDER_DEBUG_DEATH_NOTIFICATION = 32,
 	BINDER_DEBUG_READ_WRITE = 64,
@@ -153,13 +160,6 @@ enum {
 	BINDER_DEBUG_INTERNAL_REFS = 4096,
 	BINDER_DEBUG_PRIORITY_CAP = 8192,
 	BINDER_DEBUG_SPINLOCKS = 16384,
-};
-
-enum {
-	BINDER_DEBUG_USER_ERROR___2 = 1,
-	BINDER_DEBUG_OPEN_CLOSE___2 = 2,
-	BINDER_DEBUG_BUFFER_ALLOC = 4,
-	BINDER_DEBUG_BUFFER_ALLOC_ASYNC = 8,
 };
 
 enum {
@@ -7245,16 +7245,16 @@ enum {
 	Opt_uid___5 = 0,
 	Opt_gid___5 = 1,
 	Opt_mode___3 = 2,
+	Opt_ptmxmode = 3,
+	Opt_newinstance = 4,
+	Opt_max = 5,
+	Opt_err___11 = 6,
 };
 
 enum {
 	Opt_uid___6 = 0,
 	Opt_gid___6 = 1,
 	Opt_mode___4 = 2,
-	Opt_ptmxmode = 3,
-	Opt_newinstance = 4,
-	Opt_max = 5,
-	Opt_err___11 = 6,
 };
 
 enum {
@@ -13612,16 +13612,16 @@ enum bio_merge_status {
 };
 
 enum bio_post_read_step {
-	STEP_INITIAL = 0,
-	STEP_DECRYPT = 1,
-	STEP_VERITY = 2,
-	STEP_MAX = 3,
+	STEP_DECRYPT = 0,
+	STEP_DECOMPRESS = 0,
+	STEP_VERITY = 0,
 };
 
 enum bio_post_read_step___2 {
-	STEP_DECRYPT___2 = 0,
-	STEP_DECOMPRESS = 0,
-	STEP_VERITY___2 = 0,
+	STEP_INITIAL = 0,
+	STEP_DECRYPT___2 = 1,
+	STEP_VERITY___2 = 2,
+	STEP_MAX = 3,
 };
 
 enum bip_flags {
@@ -32035,11 +32035,12 @@ enum smb3_rw_credits_trace {
 	cifs_trace_rw_credits_old_session = 6,
 	cifs_trace_rw_credits_read_response_add = 7,
 	cifs_trace_rw_credits_read_response_clear = 8,
-	cifs_trace_rw_credits_read_submit = 9,
-	cifs_trace_rw_credits_write_prepare = 10,
-	cifs_trace_rw_credits_write_response_add = 11,
-	cifs_trace_rw_credits_write_response_clear = 12,
-	cifs_trace_rw_credits_zero_in_flight = 13,
+	cifs_trace_rw_credits_read_resubmit = 9,
+	cifs_trace_rw_credits_read_submit = 10,
+	cifs_trace_rw_credits_write_prepare = 11,
+	cifs_trace_rw_credits_write_response_add = 12,
+	cifs_trace_rw_credits_write_response_clear = 13,
+	cifs_trace_rw_credits_zero_in_flight = 14,
 } __attribute__((mode(byte)));
 
 enum smb3_tcon_ref_trace {
@@ -45729,22 +45730,22 @@ struct bio_map_data {
 	struct iovec iov[0];
 };
 
-struct bio_post_read_ctx {
-	struct bio *bio;
-	struct work_struct work;
-	unsigned int cur_step;
-	unsigned int enabled_steps;
-};
-
 struct f2fs_sb_info;
 
-struct bio_post_read_ctx___2 {
+struct bio_post_read_ctx {
 	struct bio *bio;
 	struct f2fs_sb_info *sbi;
 	struct work_struct work;
 	unsigned int enabled_steps;
 	bool decompression_attempted;
 	block_t fs_blkaddr;
+};
+
+struct bio_post_read_ctx___2 {
+	struct bio *bio;
+	struct work_struct work;
+	unsigned int cur_step;
+	unsigned int enabled_steps;
 };
 
 struct bio_slab {
@@ -54921,7 +54922,6 @@ struct btrfs_file_private {
 	void *filldir_buf;
 	u64 last_index;
 	struct extent_state *llseek_cached_state;
-	bool fsync_skip_inode_lock;
 };
 
 struct btrfs_free_cluster {
@@ -60201,6 +60201,7 @@ struct cifs_io_subrequest {
 		struct cifs_io_request *req;
 	};
 	ssize_t got_bytes;
+	size_t actual_len;
 	unsigned int xid;
 	int result;
 	bool have_xid;
@@ -71933,6 +71934,8 @@ struct fd {
 
 typedef struct fd class_fd_raw_t;
 
+typedef struct fd class_fd_t;
+
 struct fd_data {
 	fmode_t mode;
 	unsigned int fd;
@@ -76745,23 +76748,6 @@ union gic_base {
 	void __attribute__((btf_type_tag("percpu"))) **percpu_base;
 };
 
-struct gic_chip_data {
-	union gic_base dist_base;
-	union gic_base cpu_base;
-	void *raw_dist_base;
-	void *raw_cpu_base;
-	u32 percpu_offset;
-	u32 saved_spi_enable[32];
-	u32 saved_spi_active[32];
-	u32 saved_spi_conf[64];
-	u32 saved_spi_target[255];
-	u32 __attribute__((btf_type_tag("percpu"))) *saved_ppi_enable;
-	u32 __attribute__((btf_type_tag("percpu"))) *saved_ppi_active;
-	u32 __attribute__((btf_type_tag("percpu"))) *saved_ppi_conf;
-	struct irq_domain *domain;
-	unsigned int gic_irqs;
-};
-
 struct rdists {
 	struct {
 		raw_spinlock_t rd_lock;
@@ -76788,7 +76774,7 @@ struct redist_region;
 
 struct partition_desc;
 
-struct gic_chip_data___2 {
+struct gic_chip_data {
 	struct fwnode_handle *fwnode;
 	phys_addr_t dist_phys_base;
 	void *dist_base;
@@ -76801,6 +76787,23 @@ struct gic_chip_data___2 {
 	bool has_rss;
 	unsigned int ppi_nr;
 	struct partition_desc **ppi_descs;
+};
+
+struct gic_chip_data___2 {
+	union gic_base dist_base;
+	union gic_base cpu_base;
+	void *raw_dist_base;
+	void *raw_cpu_base;
+	u32 percpu_offset;
+	u32 saved_spi_enable[32];
+	u32 saved_spi_active[32];
+	u32 saved_spi_conf[64];
+	u32 saved_spi_target[255];
+	u32 __attribute__((btf_type_tag("percpu"))) *saved_ppi_enable;
+	u32 __attribute__((btf_type_tag("percpu"))) *saved_ppi_active;
+	u32 __attribute__((btf_type_tag("percpu"))) *saved_ppi_conf;
+	struct irq_domain *domain;
+	unsigned int gic_irqs;
 };
 
 struct gic_kvm_info {
@@ -95882,16 +95885,16 @@ struct mcast_member {
 };
 
 struct mcs_group {
+	u8 shift;
+	u16 duration[12];
+};
+
+struct mcs_group___2 {
 	u16 flags;
 	u8 streams;
 	u8 shift;
 	u8 bw;
 	u16 duration[10];
-};
-
-struct mcs_group___2 {
-	u8 shift;
-	u16 duration[12];
 };
 
 struct mcs_spinlock {
@@ -108929,7 +108932,6 @@ struct of_timer_clk {
 struct of_timer_irq {
 	int irq;
 	int index;
-	int percpu;
 	const char *name;
 	unsigned long flags;
 	irq_handler_t handler;
@@ -111328,6 +111330,7 @@ struct perf_buffer {
 	atomic_t mmap_count;
 	unsigned long mmap_locked;
 	struct user_struct *mmap_user;
+	struct mutex aux_mutex;
 	long aux_head;
 	unsigned int aux_nest;
 	long aux_wakeup;
@@ -115564,11 +115567,11 @@ struct rcu_data {
 	struct swait_queue_head nocb_state_wq;
 	struct task_struct *nocb_gp_kthread;
 	raw_spinlock_t nocb_lock;
-	atomic_t nocb_lock_contended;
 	int nocb_defer_wakeup;
 	struct timer_list nocb_timer;
 	unsigned long nocb_gp_adv_time;
 	struct mutex nocb_gp_kthread_mutex;
+	long: 64;
 	long: 64;
 	long: 64;
 	long: 64;
@@ -120175,6 +120178,8 @@ struct rw_aux_tree {
 	struct bpos k;
 };
 
+typedef struct rw_semaphore *class_rwsem_read_t;
+
 struct rwsem_waiter {
 	struct list_head list;
 	struct task_struct *task;
@@ -124223,7 +124228,6 @@ struct smb2_transform_hdr {
 struct smb_rqst {
 	struct kvec *rq_iov;
 	unsigned int rq_nvec;
-	size_t rq_iter_size;
 	struct iov_iter rq_iter;
 	struct xarray rq_buffer;
 };
@@ -132605,6 +132609,7 @@ struct timer_of {
 	struct of_timer_irq of_irq;
 	struct of_timer_clk of_clk;
 	void *private_data;
+	long: 64;
 	long: 64;
 	long: 64;
 };
@@ -157811,18 +157816,18 @@ struct workqueue_struct {
 };
 
 struct workspace {
-	void *mem;
-	void *buf;
-	void *cbuf;
-	struct list_head list;
-};
-
-struct workspace___2 {
 	z_stream strm;
 	char *buf;
 	unsigned int buf_size;
 	struct list_head list;
 	int level;
+};
+
+struct workspace___2 {
+	void *mem;
+	void *buf;
+	void *cbuf;
+	struct list_head list;
 };
 
 struct workspace___3 {

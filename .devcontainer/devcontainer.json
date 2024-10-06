@@ -43,7 +43,7 @@
 //		"target=/home/vscode/.vscode-server,type=volume",
 		"source=/sys/kernel/debug,target=/sys/kernel/debug,type=bind",
 		"source=/sys/fs/bpf,target=/sys/fs/bpf,type=bind"
-	]
+	],
 
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
@@ -53,7 +53,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "go version",
+	"postStartCommand": "if [ ! -f ~/.first_run_done ]; then echo '' > ~/.bash_history && touch ~/.first_run_done; fi"
 
 	// Configure tool-specific properties.
 	// "customizations": {},
