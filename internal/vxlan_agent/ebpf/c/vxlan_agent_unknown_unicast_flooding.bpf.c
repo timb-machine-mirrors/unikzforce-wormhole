@@ -150,28 +150,6 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
         }
     }
 
-    // if packet need to be forwarded to an external interface
-    // we must add outer headers to the packet
-    // and then forward it to the external interface
-    // so the packet will have:
-    // - outer ethernet header
-    // - outer ip header
-    // - outer udp header
-    // - outer vxlan header
-    // - inner original layer 2 frame
-
-    void *data = (void *)(long)skb->data;
-    void *data_end = (void *)(long)skb->data_end;
-    struct ethhdr *inner_eth = data;
-
-    struct ethhdr *outer_eth;
-    struct iphdr *outer_iph;
-    struct udphdr *outer_udph;
-    struct vxlanhdr *outer_vxh;
-
-    // Calculate the new packet length
-    int old_len = data_end - data;
-    int new_len = old_len + NEW_HDR_LEN;
 
     // Resize the packet buffer by increasing the headroom.
     // in bpf_xdp_adjust_head() if we want to increase the packet length, we must use negative number
@@ -207,30 +185,30 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
             return;
         }
 
-        if (route_info->external_iface_mac.addr == NULL)
-        {
-            bpf_printk("route_info->external_iface_mac is NULL");
-            return;
-        }
-
-        if (route_info->external_iface_next_hop_mac.addr == NULL)
-        {
-            bpf_printk("route_info->external_iface_next_hop_mac is NULL");
-            return;
-        }
-
         // ==============================================================================================================
 
-        // Recalculate data and data_end pointers after adjustment
-        data = (void *)(long)skb->data;
-        data_end = (void *)(long)skb->data_end;
+        // if packet need to be forwarded to an external interface
+        // we must add outer headers to the packet
+        // and then forward it to the external interface
+        // so the packet will have:
+        // - outer ethernet header
+        // - outer ip header
+        // - outer udp header
+        // - outer vxlan header
+        // - inner original layer 2 frame
 
-        // Ensure the packet is large enough to contain an Ethernet header
-        if (data + sizeof(struct ethhdr) > data_end)
-        {
-            bpf_printk("Packet is too small for Ethernet header");
-            return;
-        }
+        void *data = (void *)(long)skb->data;
+        void *data_end = (void *)(long)skb->data_end;
+        struct ethhdr *inner_eth = data;
+
+        struct ethhdr *outer_eth;
+        struct iphdr *outer_iph;
+        struct udphdr *outer_udph;
+        struct vxlanhdr *outer_vxh;
+
+        // Calculate the new packet length
+        int old_len = data_end - data;
+        int new_len = old_len + NEW_HDR_LEN;
 
         // Ensure the packet is still valid after adjustment
         if (data + NEW_HDR_LEN > data_end)
@@ -243,32 +221,6 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
         outer_iph = data + ETH_HLEN; // ETH_HLEN == 14 & ETH_ALEN == 6
         outer_udph = (void *)outer_iph + IP_HDR_LEN;
         outer_vxh = (void *)outer_udph + UDP_HDR_LEN;
-
-        // Ensure the packet is still valid after adjustment
-        if ((void *)(outer_eth + 1) > data_end)
-        {
-            bpf_printk("Packet is too small for Ethernet header");
-            return;
-        }
-
-        if ((void *)(outer_iph + 1) > data_end)
-        {
-            bpf_printk("Packet is too small for IP header");
-            return;
-        }
-
-        if ((void *)(outer_udph + 1) > data_end)
-        {
-            bpf_printk("Packet is too small for UDP header");
-            return;
-        }
-
-        // Ensure the packet is still valid after adjustment
-        if ((void *)(outer_vxh + 1) > data_end)
-        {
-            bpf_printk("Packet is too small for VXLAN header");
-            return;
-        }
 
         __builtin_memcpy(outer_eth->h_source, route_info->external_iface_mac.addr, ETH_ALEN);        // mac address is a byte sequence, not affected by endianness
         __builtin_memcpy(outer_eth->h_dest, route_info->external_iface_next_hop_mac.addr, ETH_ALEN); // mac address is a byte sequence, not affected by endianness
@@ -296,9 +248,7 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
         // Calculate ip checksum
         outer_iph->check = ~bpf_csum_diff(0, 0, (__u32 *)outer_iph, IP_HDR_LEN, 0);
 
-        ifindex_ptr = &(route_info->external_iface_index);
-
-        bpf_clone_redirect(skb, *ifindex_ptr, 0);
+        bpf_clone_redirect(skb, route_info->external_iface_index, 0);
     }
 }
 
