@@ -2,7 +2,7 @@
 
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
 
-#define FIVE_MINUTES_IN_NS 300000000000
+#define FIVE_MINUTES_IN_NS 20000000000
 
 // --------------------------------------------------------
 

@@ -7245,16 +7245,16 @@ enum {
 	Opt_uid___5 = 0,
 	Opt_gid___5 = 1,
 	Opt_mode___3 = 2,
-	Opt_ptmxmode = 3,
-	Opt_newinstance = 4,
-	Opt_max = 5,
-	Opt_err___11 = 6,
 };
 
 enum {
 	Opt_uid___6 = 0,
 	Opt_gid___6 = 1,
 	Opt_mode___4 = 2,
+	Opt_ptmxmode = 3,
+	Opt_newinstance = 4,
+	Opt_max = 5,
+	Opt_err___11 = 6,
 };
 
 enum {
@@ -13612,16 +13612,16 @@ enum bio_merge_status {
 };
 
 enum bio_post_read_step {
-	STEP_DECRYPT = 0,
-	STEP_DECOMPRESS = 0,
-	STEP_VERITY = 0,
+	STEP_INITIAL = 0,
+	STEP_DECRYPT = 1,
+	STEP_VERITY = 2,
+	STEP_MAX = 3,
 };
 
 enum bio_post_read_step___2 {
-	STEP_INITIAL = 0,
-	STEP_DECRYPT___2 = 1,
-	STEP_VERITY___2 = 2,
-	STEP_MAX = 3,
+	STEP_DECRYPT___2 = 0,
+	STEP_DECOMPRESS = 0,
+	STEP_VERITY___2 = 0,
 };
 
 enum bip_flags {
@@ -17704,6 +17704,38 @@ enum fsync_mode {
 	FSYNC_MODE_POSIX = 0,
 	FSYNC_MODE_STRICT = 1,
 	FSYNC_MODE_NOBARRIER = 2,
+};
+
+enum ftdi_chip_type {
+	SIO = 0,
+	FT232A = 1,
+	FT232B = 2,
+	FT2232C = 3,
+	FT232R = 4,
+	FT232H = 5,
+	FT2232H = 6,
+	FT4232H = 7,
+	FT4232HA = 8,
+	FT232HP = 9,
+	FT233HP = 10,
+	FT2232HP = 11,
+	FT2233HP = 12,
+	FT4232HP = 13,
+	FT4233HP = 14,
+	FTX___2 = 15,
+};
+
+enum ftdi_sio_baudrate {
+	ftdi_sio_b300 = 0,
+	ftdi_sio_b600 = 1,
+	ftdi_sio_b1200 = 2,
+	ftdi_sio_b2400 = 3,
+	ftdi_sio_b4800 = 4,
+	ftdi_sio_b9600 = 5,
+	ftdi_sio_b19200 = 6,
+	ftdi_sio_b38400 = 7,
+	ftdi_sio_b57600 = 8,
+	ftdi_sio_b115200 = 9,
 };
 
 enum ftr_type {
@@ -28956,6 +28988,16 @@ enum pkt_hash_types {
 	PKT_HASH_TYPE_L2 = 1,
 	PKT_HASH_TYPE_L3 = 2,
 	PKT_HASH_TYPE_L4 = 3,
+};
+
+enum pl2303_type {
+	TYPE_H = 0,
+	TYPE_HX = 1,
+	TYPE_TA = 2,
+	TYPE_TB = 3,
+	TYPE_HXD = 4,
+	TYPE_HXN = 5,
+	TYPE_COUNT = 6,
 };
 
 enum pm_qos_req_action {
@@ -41208,15 +41250,30 @@ struct arm64_midr_revidr {
 
 struct arm_cpuidle_irq_context {};
 
-struct mhu_db_link {
+struct mhu_link {
 	unsigned int irq;
 	void *tx_reg;
 	void *rx_reg;
 };
 
-struct mbox_chan_ops;
+struct mbox_controller;
 
-struct mbox_chan;
+struct mbox_client;
+
+struct mbox_chan {
+	struct mbox_controller *mbox;
+	unsigned int txdone_method;
+	struct mbox_client *cl;
+	struct completion tx_complete;
+	void *active_req;
+	unsigned int msg_count;
+	unsigned int msg_free;
+	void *msg_data[20];
+	spinlock_t lock;
+	void *con_priv;
+};
+
+struct mbox_chan_ops;
 
 struct of_phandle_args;
 
@@ -41236,37 +41293,22 @@ struct mbox_controller {
 
 struct arm_mhu {
 	void *base;
-	struct mhu_db_link mlink[3];
+	struct mhu_link mlink[3];
+	struct mbox_chan chan[3];
 	struct mbox_controller mbox;
-	struct device *dev;
 };
 
-struct mhu_link {
+struct mhu_db_link {
 	unsigned int irq;
 	void *tx_reg;
 	void *rx_reg;
 };
 
-struct mbox_client;
-
-struct mbox_chan {
-	struct mbox_controller *mbox;
-	unsigned int txdone_method;
-	struct mbox_client *cl;
-	struct completion tx_complete;
-	void *active_req;
-	unsigned int msg_count;
-	unsigned int msg_free;
-	void *msg_data[20];
-	spinlock_t lock;
-	void *con_priv;
-};
-
 struct arm_mhu___2 {
 	void *base;
-	struct mhu_link mlink[3];
-	struct mbox_chan chan[3];
+	struct mhu_db_link mlink[3];
 	struct mbox_controller mbox;
+	struct device *dev;
 };
 
 struct perf_cpu_pmu_context;
@@ -41881,6 +41923,20 @@ struct async_extent {
 	unsigned long nr_folios;
 	int compress_type;
 	struct list_head list;
+};
+
+struct async_icount {
+	__u32 cts;
+	__u32 dsr;
+	__u32 rng;
+	__u32 dcd;
+	__u32 tx;
+	__u32 rx;
+	__u32 frame;
+	__u32 parity;
+	__u32 overrun;
+	__u32 brk;
+	__u32 buf_overrun;
 };
 
 struct io_poll {
@@ -45730,22 +45786,22 @@ struct bio_map_data {
 	struct iovec iov[0];
 };
 
+struct bio_post_read_ctx {
+	struct bio *bio;
+	struct work_struct work;
+	unsigned int cur_step;
+	unsigned int enabled_steps;
+};
+
 struct f2fs_sb_info;
 
-struct bio_post_read_ctx {
+struct bio_post_read_ctx___2 {
 	struct bio *bio;
 	struct f2fs_sb_info *sbi;
 	struct work_struct work;
 	unsigned int enabled_steps;
 	bool decompression_attempted;
 	block_t fs_blkaddr;
-};
-
-struct bio_post_read_ctx___2 {
-	struct bio *bio;
-	struct work_struct work;
-	unsigned int cur_step;
-	unsigned int enabled_steps;
 };
 
 struct bio_slab {
@@ -74875,6 +74931,30 @@ struct fsync_node_entry {
 	unsigned int seq_id;
 };
 
+struct ftdi_private {
+	enum ftdi_chip_type chip_type;
+	int baud_base;
+	int custom_divisor;
+	u16 last_set_data_value;
+	int flags;
+	unsigned long last_dtr_rts;
+	char prev_status;
+	char transmit_empty;
+	u16 channel;
+	speed_t force_baud;
+	int force_rtscts;
+	unsigned int latency;
+	unsigned short max_packet_size;
+	struct mutex cfg_lock;
+};
+
+struct usb_serial;
+
+struct ftdi_quirk {
+	int (*probe)(struct usb_serial *);
+	void (*port_probe)(struct ftdi_private *);
+};
+
 struct ftp_search {
 	const char *pattern;
 	size_t plen;
@@ -76672,22 +76752,22 @@ struct getcpu_cache {
 	unsigned long blob[16];
 };
 
-struct linux_dirent;
-
 struct getdents_callback {
-	struct dir_context ctx;
-	struct linux_dirent __attribute__((btf_type_tag("user"))) *current_dir;
-	int prev_reclen;
-	int count;
-	int error;
-};
-
-struct getdents_callback___2 {
 	struct dir_context ctx;
 	char *name;
 	u64 ino;
 	int found;
 	int sequence;
+};
+
+struct linux_dirent;
+
+struct getdents_callback___2 {
+	struct dir_context ctx;
+	struct linux_dirent __attribute__((btf_type_tag("user"))) *current_dir;
+	int prev_reclen;
+	int count;
+	int error;
 };
 
 struct linux_dirent64;
@@ -95885,16 +95965,16 @@ struct mcast_member {
 };
 
 struct mcs_group {
-	u8 shift;
-	u16 duration[12];
-};
-
-struct mcs_group___2 {
 	u16 flags;
 	u8 streams;
 	u8 shift;
 	u8 bw;
 	u16 duration[10];
+};
+
+struct mcs_group___2 {
+	u8 shift;
+	u16 duration[12];
 };
 
 struct mcs_spinlock {
@@ -96536,7 +96616,7 @@ struct mgmt_frame_regs {
 };
 
 struct mhu_db_channel {
-	struct arm_mhu *mhu;
+	struct arm_mhu___2 *mhu;
 	unsigned int pchan;
 	unsigned int doorbell;
 };
@@ -107393,6 +107473,7 @@ struct nft_set_type {
 struct nft_socket {
 	enum nft_socket_keys key: 8;
 	u8 level;
+	u8 level_user;
 	u8 len;
 	union {
 		u8 dreg;
@@ -112695,6 +112776,29 @@ struct pl031_vendor_data {
 	timeu64_t range_max;
 };
 
+struct pl2303_private {
+	spinlock_t lock;
+	u8 line_control;
+	u8 line_status;
+	u8 line_settings[7];
+};
+
+struct pl2303_type_data;
+
+struct pl2303_serial_private {
+	const struct pl2303_type_data *type;
+	unsigned long quirks;
+};
+
+struct pl2303_type_data {
+	const char *name;
+	speed_t max_baud_rate;
+	unsigned long quirks;
+	unsigned int no_autoxonxoff: 1;
+	unsigned int no_divisors: 1;
+	unsigned int alt_divisors: 1;
+};
+
 struct plat_serial8250_port {
 	unsigned long iobase;
 	void *membase;
@@ -115406,9 +115510,15 @@ struct raw_iter_state {
 	int bucket;
 };
 
+struct raw_sock {
+	struct inet_sock inet;
+	struct icmp_filter filter;
+	u32 ipmr_table;
+};
+
 struct uniqframe;
 
-struct raw_sock {
+struct raw_sock___2 {
 	struct sock sk;
 	int bound;
 	int ifindex;
@@ -115429,12 +115539,6 @@ struct raw_sock {
 	struct can_filter *filter;
 	can_err_mask_t err_mask;
 	struct uniqframe __attribute__((btf_type_tag("percpu"))) *uniq;
-};
-
-struct raw_sock___2 {
-	struct inet_sock inet;
-	struct icmp_filter filter;
-	u32 ipmr_table;
 };
 
 struct rb_augment_callbacks {
@@ -152631,6 +152735,168 @@ struct uas_dev_info {
 	struct work_struct scan_work;
 };
 
+struct ublksrv_ctrl_dev_info {
+	__u16 nr_hw_queues;
+	__u16 queue_depth;
+	__u16 state;
+	__u16 pad0;
+	__u32 max_io_buf_bytes;
+	__u32 dev_id;
+	__s32 ublksrv_pid;
+	__u32 pad1;
+	__u64 flags;
+	__u64 ublksrv_flags;
+	__u32 owner_uid;
+	__u32 owner_gid;
+	__u64 reserved1;
+	__u64 reserved2;
+};
+
+struct ublk_param_basic {
+	__u32 attrs;
+	__u8 logical_bs_shift;
+	__u8 physical_bs_shift;
+	__u8 io_opt_shift;
+	__u8 io_min_shift;
+	__u32 max_sectors;
+	__u32 chunk_sectors;
+	__u64 dev_sectors;
+	__u64 virt_boundary_mask;
+};
+
+struct ublk_param_discard {
+	__u32 discard_alignment;
+	__u32 discard_granularity;
+	__u32 max_discard_sectors;
+	__u32 max_write_zeroes_sectors;
+	__u16 max_discard_segments;
+	__u16 reserved0;
+};
+
+struct ublk_param_devt {
+	__u32 char_major;
+	__u32 char_minor;
+	__u32 disk_major;
+	__u32 disk_minor;
+};
+
+struct ublk_param_zoned {
+	__u32 max_open_zones;
+	__u32 max_active_zones;
+	__u32 max_zone_append_sectors;
+	__u8 reserved[20];
+};
+
+struct ublk_params {
+	__u32 len;
+	__u32 types;
+	struct ublk_param_basic basic;
+	struct ublk_param_discard discard;
+	struct ublk_param_devt devt;
+	struct ublk_param_zoned zoned;
+};
+
+struct ublk_device {
+	struct gendisk *ub_disk;
+	char *__queues;
+	unsigned int queue_size;
+	struct ublksrv_ctrl_dev_info dev_info;
+	struct blk_mq_tag_set tag_set;
+	struct cdev cdev;
+	struct device cdev_dev;
+	unsigned long state;
+	int ub_number;
+	struct mutex mutex;
+	spinlock_t lock;
+	struct mm_struct *mm;
+	struct ublk_params params;
+	struct completion completion;
+	unsigned int nr_queues_ready;
+	unsigned int nr_privileged_daemon;
+	struct work_struct quiesce_work;
+	struct work_struct stop_work;
+};
+
+struct ublk_io {
+	__u64 addr;
+	unsigned int flags;
+	int res;
+	struct io_uring_cmd *cmd;
+};
+
+struct ublk_io_iter {
+	struct page *pages[32];
+	struct bio *bio;
+	struct bvec_iter iter;
+};
+
+struct ublk_params_header {
+	__u32 len;
+	__u32 types;
+};
+
+struct ublk_queue {
+	int q_id;
+	int q_depth;
+	unsigned long flags;
+	struct task_struct *ubq_daemon;
+	char *io_cmd_buf;
+	struct llist_head io_cmds;
+	unsigned long io_addr;
+	unsigned int max_io_sz;
+	bool force_abort;
+	bool timeout;
+	bool canceling;
+	unsigned short nr_io_ready;
+	spinlock_t cancel_lock;
+	struct ublk_device *dev;
+	struct ublk_io ios[0];
+};
+
+struct ublk_rq_data {
+	struct llist_node node;
+	struct kref ref;
+	__u64 sector;
+	__u32 operation;
+	__u32 nr_zones;
+};
+
+struct ublk_uring_cmd_pdu {
+	struct ublk_queue *ubq;
+	u16 tag;
+};
+
+struct ublksrv_ctrl_cmd {
+	__u32 dev_id;
+	__u16 queue_id;
+	__u16 len;
+	__u64 addr;
+	__u64 data[1];
+	__u16 dev_path_len;
+	__u16 pad;
+	__u32 reserved;
+};
+
+struct ublksrv_io_cmd {
+	__u16 q_id;
+	__u16 tag;
+	__s32 result;
+	union {
+		__u64 addr;
+		__u64 zone_append_lba;
+	};
+};
+
+struct ublksrv_io_desc {
+	__u32 op_flags;
+	union {
+		__u32 nr_sectors;
+		__u32 nr_zones;
+	};
+	__u64 start_sector;
+	__u64 addr;
+};
+
 struct ubuf_info_msgzc {
 	struct ubuf_info ubuf;
 	union {
@@ -154490,6 +154756,133 @@ struct usb_qualifier_descriptor {
 	__u8 bMaxPacketSize0;
 	__u8 bNumConfigurations;
 	__u8 bRESERVED;
+};
+
+struct usb_serial_driver;
+
+struct usb_serial_port;
+
+struct usb_serial {
+	struct usb_device *dev;
+	struct usb_serial_driver *type;
+	struct usb_interface *interface;
+	struct usb_interface *sibling;
+	unsigned int suspend_count;
+	unsigned char disconnected: 1;
+	unsigned char attached: 1;
+	unsigned char minors_reserved: 1;
+	unsigned char num_ports;
+	unsigned char num_port_pointers;
+	unsigned char num_interrupt_in;
+	unsigned char num_interrupt_out;
+	unsigned char num_bulk_in;
+	unsigned char num_bulk_out;
+	struct usb_serial_port *port[16];
+	struct kref kref;
+	struct mutex disc_mutex;
+	void *private;
+};
+
+struct usb_serial_endpoints;
+
+struct usb_serial_driver {
+	const char *description;
+	const struct usb_device_id *id_table;
+	struct list_head driver_list;
+	struct device_driver driver;
+	struct usb_driver *usb_driver;
+	struct usb_dynids dynids;
+	unsigned char num_ports;
+	unsigned char num_bulk_in;
+	unsigned char num_bulk_out;
+	unsigned char num_interrupt_in;
+	unsigned char num_interrupt_out;
+	size_t bulk_in_size;
+	size_t bulk_out_size;
+	int (*probe)(struct usb_serial *, const struct usb_device_id *);
+	int (*attach)(struct usb_serial *);
+	int (*calc_num_ports)(struct usb_serial *, struct usb_serial_endpoints *);
+	void (*disconnect)(struct usb_serial *);
+	void (*release)(struct usb_serial *);
+	int (*port_probe)(struct usb_serial_port *);
+	void (*port_remove)(struct usb_serial_port *);
+	int (*suspend)(struct usb_serial *, pm_message_t);
+	int (*resume)(struct usb_serial *);
+	int (*reset_resume)(struct usb_serial *);
+	int (*open)(struct tty_struct *, struct usb_serial_port *);
+	void (*close)(struct usb_serial_port *);
+	int (*write)(struct tty_struct *, struct usb_serial_port *, const unsigned char *, int);
+	unsigned int (*write_room)(struct tty_struct *);
+	int (*ioctl)(struct tty_struct *, unsigned int, unsigned long);
+	void (*get_serial)(struct tty_struct *, struct serial_struct *);
+	int (*set_serial)(struct tty_struct *, struct serial_struct *);
+	void (*set_termios)(struct tty_struct *, struct usb_serial_port *, const struct ktermios *);
+	int (*break_ctl)(struct tty_struct *, int);
+	unsigned int (*chars_in_buffer)(struct tty_struct *);
+	void (*wait_until_sent)(struct tty_struct *, long);
+	bool (*tx_empty)(struct usb_serial_port *);
+	void (*throttle)(struct tty_struct *);
+	void (*unthrottle)(struct tty_struct *);
+	int (*tiocmget)(struct tty_struct *);
+	int (*tiocmset)(struct tty_struct *, unsigned int, unsigned int);
+	int (*tiocmiwait)(struct tty_struct *, unsigned long);
+	int (*get_icount)(struct tty_struct *, struct serial_icounter_struct *);
+	void (*dtr_rts)(struct usb_serial_port *, int);
+	int (*carrier_raised)(struct usb_serial_port *);
+	void (*init_termios)(struct tty_struct *);
+	void (*read_int_callback)(struct urb *);
+	void (*write_int_callback)(struct urb *);
+	void (*read_bulk_callback)(struct urb *);
+	void (*write_bulk_callback)(struct urb *);
+	void (*process_read_urb)(struct urb *);
+	int (*prepare_write_buffer)(struct usb_serial_port *, void *, size_t);
+};
+
+struct usb_serial_endpoints {
+	unsigned char num_bulk_in;
+	unsigned char num_bulk_out;
+	unsigned char num_interrupt_in;
+	unsigned char num_interrupt_out;
+	struct usb_endpoint_descriptor *bulk_in[16];
+	struct usb_endpoint_descriptor *bulk_out[16];
+	struct usb_endpoint_descriptor *interrupt_in[16];
+	struct usb_endpoint_descriptor *interrupt_out[16];
+};
+
+struct usb_serial_port {
+	struct usb_serial *serial;
+	struct tty_port port;
+	spinlock_t lock;
+	u32 minor;
+	u8 port_number;
+	unsigned char *interrupt_in_buffer;
+	struct urb *interrupt_in_urb;
+	__u8 interrupt_in_endpointAddress;
+	unsigned char *interrupt_out_buffer;
+	int interrupt_out_size;
+	struct urb *interrupt_out_urb;
+	__u8 interrupt_out_endpointAddress;
+	unsigned char *bulk_in_buffer;
+	int bulk_in_size;
+	struct urb *read_urb;
+	__u8 bulk_in_endpointAddress;
+	unsigned char *bulk_in_buffers[2];
+	struct urb *read_urbs[2];
+	unsigned long read_urbs_free;
+	unsigned char *bulk_out_buffer;
+	int bulk_out_size;
+	struct urb *write_urb;
+	struct kfifo write_fifo;
+	unsigned char *bulk_out_buffers[2];
+	struct urb *write_urbs[2];
+	unsigned long write_urbs_free;
+	__u8 bulk_out_endpointAddress;
+	struct async_icount icount;
+	int tx_bytes;
+	unsigned long flags;
+	struct work_struct work;
+	unsigned long sysrq;
+	struct device dev;
 };
 
 struct usb_ss_cap_descriptor {
@@ -157468,16 +157861,6 @@ struct wakeup_source {
 };
 
 struct walk_control {
-	int free;
-	int pin;
-	int stage;
-	bool ignore_cur_inode;
-	struct btrfs_root *replay_dest;
-	struct btrfs_trans_handle *trans;
-	int (*process_func)(struct btrfs_root *, struct extent_buffer *, struct walk_control *, u64, int);
-};
-
-struct walk_control___2 {
 	u64 refs[8];
 	u64 flags[8];
 	struct btrfs_key update_progress;
@@ -157491,6 +157874,16 @@ struct walk_control___2 {
 	int reada_slot;
 	int reada_count;
 	int restarted;
+};
+
+struct walk_control___2 {
+	int free;
+	int pin;
+	int stage;
+	bool ignore_cur_inode;
+	struct btrfs_root *replay_dest;
+	struct btrfs_trans_handle *trans;
+	int (*process_func)(struct btrfs_root *, struct extent_buffer *, struct walk_control___2 *, u64, int);
 };
 
 struct walk_rcec_data {
@@ -157816,18 +158209,18 @@ struct workqueue_struct {
 };
 
 struct workspace {
+	void *mem;
+	void *buf;
+	void *cbuf;
+	struct list_head list;
+};
+
+struct workspace___2 {
 	z_stream strm;
 	char *buf;
 	unsigned int buf_size;
 	struct list_head list;
 	int level;
-};
-
-struct workspace___2 {
-	void *mem;
-	void *buf;
-	void *cbuf;
-	struct list_head list;
 };
 
 struct workspace___3 {
@@ -157892,12 +158285,12 @@ typedef void (*swap_func_t)(void *, void *, int);
 
 struct wrapper {
 	cmp_func_t cmp;
-	swap_func_t swap_func;
+	swap_func_t swap;
 };
 
 struct wrapper___2 {
 	cmp_func_t cmp;
-	swap_func_t swap;
+	swap_func_t swap_func;
 };
 
 struct writeback_control {
