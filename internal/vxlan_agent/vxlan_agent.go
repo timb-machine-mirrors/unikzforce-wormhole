@@ -164,7 +164,7 @@ func (vxlanAgent *VxlanAgent) initExternalRouteInfos() error {
 func (vxlanAgent *VxlanAgent) initVxlanAgentXdpMaps() error {
 
 	for _, internalNetworkInterface := range vxlanAgent.internalNetworkInterfaces {
-		err := vxlanAgent.xdpObjects.IfindexIsInternalMap.Put(uint32(internalNetworkInterface.Attrs().Index), uint32(1))
+		err := vxlanAgent.xdpObjects.IfindexIsInternalMap.Put(uint32(internalNetworkInterface.Attrs().Index), uint8(1))
 		if err != nil {
 			logrus.Error("Error putting value in IfindexIsInternalMap:", err)
 			return err
@@ -172,7 +172,7 @@ func (vxlanAgent *VxlanAgent) initVxlanAgentXdpMaps() error {
 	}
 
 	for _, externalNetworkInterface := range vxlanAgent.externalNetworkInterfaces {
-		err := vxlanAgent.xdpObjects.IfindexIsInternalMap.Put(uint32(externalNetworkInterface.Attrs().Index), uint32(0))
+		err := vxlanAgent.xdpObjects.IfindexIsInternalMap.Put(uint32(externalNetworkInterface.Attrs().Index), uint8(0))
 		if err != nil {
 			logrus.Error("Error putting value in IfindexIsInternalMap:", err)
 			return err
@@ -229,7 +229,7 @@ func (vxlanAgent *VxlanAgent) initVxlanAgentUnknownUnicastFloodingMaps() error {
 	}
 
 	for _, internalNetworkInterface := range vxlanAgent.internalNetworkInterfaces {
-		err := vxlanAgent.tcObjects.IfindexIsInternalMap.Put(uint32(internalNetworkInterface.Attrs().Index), uint32(1))
+		err := vxlanAgent.tcObjects.IfindexIsInternalMap.Put(uint32(internalNetworkInterface.Attrs().Index), uint8(1))
 		if err != nil {
 			logrus.Error("Error putting value in IfindexIsInternalMap:", err)
 			return err
@@ -237,7 +237,7 @@ func (vxlanAgent *VxlanAgent) initVxlanAgentUnknownUnicastFloodingMaps() error {
 	}
 
 	for _, externalNetworkInterface := range vxlanAgent.externalNetworkInterfaces {
-		err := vxlanAgent.tcObjects.IfindexIsInternalMap.Put(uint32(externalNetworkInterface.Attrs().Index), uint32(0))
+		err := vxlanAgent.tcObjects.IfindexIsInternalMap.Put(uint32(externalNetworkInterface.Attrs().Index), uint8(0))
 		if err != nil {
 			logrus.Error("Error putting value in IfindexIsInternalMap:", err)
 			return err
