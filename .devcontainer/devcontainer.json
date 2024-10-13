@@ -50,7 +50,7 @@
 	// "features": {},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	"forwardPorts": [5001],
+	"forwardPorts": [5001, 8070],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postStartCommand": "if [ ! -f ~/.first_run_done ]; then echo '' > ~/.bash_history && touch ~/.first_run_done; fi"
