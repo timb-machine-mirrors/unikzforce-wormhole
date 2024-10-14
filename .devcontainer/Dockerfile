@@ -26,9 +26,13 @@ RUN ln -sf /usr/include/asm-generic/ /usr/include/asm
 RUN apt install -y libcap-dev
 RUN apt install -y dwarves
 RUN apt install -y locales
+RUN apt install -y bash-completion
 RUN locale-gen en_US.UTF-8
 RUN update-locale LANG=en_US.UTF-8
 RUN echo 'alias ll="ls -al"' >> ~/.bashrc
+RUN echo 'if [ -f /etc/bash_completion ]; then . /etc/bash_completion; fi' >> ~/.bashrc
+RUN mkdir -p ~/.local/share/bash-completion/completions
+RUN echo 'docker completion bash > ~/.local/share/bash-completion/completions/docker' >> ~/.bashrc
 
 RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
 RUN ~/.fzf/install --all
