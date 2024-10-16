@@ -68,9 +68,9 @@ func (vxlanAgent *VxlanAgent) ActivateVxlanAgent() error {
 	}
 
 	if err := vxlanAgentEbpfGen.LoadVxlanAgentXDPObjects(&vxlanAgent.xdpObjects, &ciliumEbpf.CollectionOptions{
-		Maps: ciliumEbpf.MapOptions{
-			PinPath: pinPath,
-		},
+		// Maps: ciliumEbpf.MapOptions{
+		// 	PinPath: pinPath,
+		// },
 		Programs: ciliumEbpf.ProgramOptions{
 			LogLevel: ciliumEbpf.LogLevelInstruction, // Set log level to 1 to enable logs
 			LogSize:  1024 * 1024,                    // Set log size to 1MB
@@ -291,20 +291,35 @@ func (vxlanAgent *VxlanAgent) attachVxlanAgentXdpAndTcToAllInterfaces() ([]*link
 }
 
 func (vxlanAgent *VxlanAgent) closeAttachedLinks() {
+
+	logrus.Print("closing attached links")
 	for _, l := range vxlanAgent.attachedLinks {
-		(*l).Close()
+		err := (*l).Close()
+		if err != nil {
+			logrus.Errorf("Error closing link: %v", err)
+		}
+	}
+
+	err := vxlanAgent.xdpObjects.Close()
+	if err != nil {
+		logrus.Errorf("Error closing xdp objects: %v", err)
+	}
+	err = vxlanAgent.tcObjects.Close()
+	if err != nil {
+		logrus.Errorf("Error closing tc objects: %v", err)
 	}
 }
 
 func (vxlanAgent *VxlanAgent) waitForCtrlC() error {
 	// Periodically print user mac table
 	// exit the program when interrupted.
-	tick := time.Tick(time.Second)
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
 	stop := make(chan os.Signal, 5)
 	signal.Notify(stop, os.Interrupt)
 	for {
 		select {
-		case <-tick:
+		case <-ticker.C:
 			// logrus.Printf("userspace mac table size %d", vxlanAgent.xdpObjects.BorderIpToRouteInfoMap.Len())
 			var (
 				key   vxlanAgentEbpfGen.VxlanAgentXDPMacAddress
