@@ -13,6 +13,14 @@
 #define __weak __attribute__((weak))
 #endif
 
+#ifndef __bpf_fastcall
+#if __has_attribute(bpf_fastcall)
+#define __bpf_fastcall __attribute__((bpf_fastcall))
+#else
+#define __bpf_fastcall
+#endif
+#endif
+
 enum {
 	AD_CURRENT_WHILE_TIMER = 0,
 	AD_ACTOR_CHURN_TIMER = 1,
@@ -139,16 +147,9 @@ enum {
 
 enum {
 	BINDER_DEBUG_USER_ERROR = 1,
-	BINDER_DEBUG_OPEN_CLOSE = 2,
-	BINDER_DEBUG_BUFFER_ALLOC = 4,
-	BINDER_DEBUG_BUFFER_ALLOC_ASYNC = 8,
-};
-
-enum {
-	BINDER_DEBUG_USER_ERROR___2 = 1,
 	BINDER_DEBUG_FAILED_TRANSACTION = 2,
 	BINDER_DEBUG_DEAD_TRANSACTION = 4,
-	BINDER_DEBUG_OPEN_CLOSE___2 = 8,
+	BINDER_DEBUG_OPEN_CLOSE = 8,
 	BINDER_DEBUG_DEAD_BINDER = 16,
 	BINDER_DEBUG_DEATH_NOTIFICATION = 32,
 	BINDER_DEBUG_READ_WRITE = 64,
@@ -160,6 +161,13 @@ enum {
 	BINDER_DEBUG_INTERNAL_REFS = 4096,
 	BINDER_DEBUG_PRIORITY_CAP = 8192,
 	BINDER_DEBUG_SPINLOCKS = 16384,
+};
+
+enum {
+	BINDER_DEBUG_USER_ERROR___2 = 1,
+	BINDER_DEBUG_OPEN_CLOSE___2 = 2,
+	BINDER_DEBUG_BUFFER_ALLOC = 4,
+	BINDER_DEBUG_BUFFER_ALLOC_ASYNC = 8,
 };
 
 enum {
@@ -23703,15 +23711,15 @@ enum nf_ip_hook_priorities {
 };
 
 enum nf_ip_trace_comments {
-	NF_IP_TRACE_COMMENT_RULE = 0,
-	NF_IP_TRACE_COMMENT_RETURN = 1,
-	NF_IP_TRACE_COMMENT_POLICY = 2,
-};
-
-enum nf_ip_trace_comments___2 {
 	NF_IP6_TRACE_COMMENT_RULE = 0,
 	NF_IP6_TRACE_COMMENT_RETURN = 1,
 	NF_IP6_TRACE_COMMENT_POLICY = 2,
+};
+
+enum nf_ip_trace_comments___2 {
+	NF_IP_TRACE_COMMENT_RULE = 0,
+	NF_IP_TRACE_COMMENT_RETURN = 1,
+	NF_IP_TRACE_COMMENT_POLICY = 2,
 };
 
 enum nf_log_type {
@@ -34862,13 +34870,13 @@ typedef int16_t S16;
 
 typedef signed char __s8;
 
+typedef signed char int8_t;
+
 typedef __s8 s8;
 
-typedef s8 int8_t;
+typedef s8 int8_t___2;
 
-typedef signed char int8_t___2;
-
-typedef int8_t___2 int8x16_t[16];
+typedef int8_t int8x16_t[16];
 
 typedef unsigned __int128 __u128;
 
@@ -41250,30 +41258,15 @@ struct arm64_midr_revidr {
 
 struct arm_cpuidle_irq_context {};
 
-struct mhu_link {
+struct mhu_db_link {
 	unsigned int irq;
 	void *tx_reg;
 	void *rx_reg;
 };
 
-struct mbox_controller;
-
-struct mbox_client;
-
-struct mbox_chan {
-	struct mbox_controller *mbox;
-	unsigned int txdone_method;
-	struct mbox_client *cl;
-	struct completion tx_complete;
-	void *active_req;
-	unsigned int msg_count;
-	unsigned int msg_free;
-	void *msg_data[20];
-	spinlock_t lock;
-	void *con_priv;
-};
-
 struct mbox_chan_ops;
+
+struct mbox_chan;
 
 struct of_phandle_args;
 
@@ -41293,22 +41286,37 @@ struct mbox_controller {
 
 struct arm_mhu {
 	void *base;
-	struct mhu_link mlink[3];
-	struct mbox_chan chan[3];
+	struct mhu_db_link mlink[3];
 	struct mbox_controller mbox;
+	struct device *dev;
 };
 
-struct mhu_db_link {
+struct mhu_link {
 	unsigned int irq;
 	void *tx_reg;
 	void *rx_reg;
 };
 
+struct mbox_client;
+
+struct mbox_chan {
+	struct mbox_controller *mbox;
+	unsigned int txdone_method;
+	struct mbox_client *cl;
+	struct completion tx_complete;
+	void *active_req;
+	unsigned int msg_count;
+	unsigned int msg_free;
+	void *msg_data[20];
+	spinlock_t lock;
+	void *con_priv;
+};
+
 struct arm_mhu___2 {
 	void *base;
-	struct mhu_db_link mlink[3];
+	struct mhu_link mlink[3];
+	struct mbox_chan chan[3];
 	struct mbox_controller mbox;
-	struct device *dev;
 };
 
 struct perf_cpu_pmu_context;
@@ -45786,22 +45794,22 @@ struct bio_map_data {
 	struct iovec iov[0];
 };
 
-struct bio_post_read_ctx {
-	struct bio *bio;
-	struct work_struct work;
-	unsigned int cur_step;
-	unsigned int enabled_steps;
-};
-
 struct f2fs_sb_info;
 
-struct bio_post_read_ctx___2 {
+struct bio_post_read_ctx {
 	struct bio *bio;
 	struct f2fs_sb_info *sbi;
 	struct work_struct work;
 	unsigned int enabled_steps;
 	bool decompression_attempted;
 	block_t fs_blkaddr;
+};
+
+struct bio_post_read_ctx___2 {
+	struct bio *bio;
+	struct work_struct work;
+	unsigned int cur_step;
+	unsigned int enabled_steps;
 };
 
 struct bio_slab {
@@ -76752,22 +76760,22 @@ struct getcpu_cache {
 	unsigned long blob[16];
 };
 
-struct getdents_callback {
-	struct dir_context ctx;
-	char *name;
-	u64 ino;
-	int found;
-	int sequence;
-};
-
 struct linux_dirent;
 
-struct getdents_callback___2 {
+struct getdents_callback {
 	struct dir_context ctx;
 	struct linux_dirent __attribute__((btf_type_tag("user"))) *current_dir;
 	int prev_reclen;
 	int count;
 	int error;
+};
+
+struct getdents_callback___2 {
+	struct dir_context ctx;
+	char *name;
+	u64 ino;
+	int found;
+	int sequence;
 };
 
 struct linux_dirent64;
@@ -76813,19 +76821,36 @@ struct ghash_ctx {
 };
 
 struct ghash_desc_ctx {
+	u8 buffer[16];
+	u32 bytes;
+};
+
+struct ghash_desc_ctx___2 {
 	u64 digest[2];
 	u8 buf[16];
 	u32 count;
 };
 
-struct ghash_desc_ctx___2 {
-	u8 buffer[16];
-	u32 bytes;
-};
-
 union gic_base {
 	void *common_base;
 	void __attribute__((btf_type_tag("percpu"))) **percpu_base;
+};
+
+struct gic_chip_data {
+	union gic_base dist_base;
+	union gic_base cpu_base;
+	void *raw_dist_base;
+	void *raw_cpu_base;
+	u32 percpu_offset;
+	u32 saved_spi_enable[32];
+	u32 saved_spi_active[32];
+	u32 saved_spi_conf[64];
+	u32 saved_spi_target[255];
+	u32 __attribute__((btf_type_tag("percpu"))) *saved_ppi_enable;
+	u32 __attribute__((btf_type_tag("percpu"))) *saved_ppi_active;
+	u32 __attribute__((btf_type_tag("percpu"))) *saved_ppi_conf;
+	struct irq_domain *domain;
+	unsigned int gic_irqs;
 };
 
 struct rdists {
@@ -76854,7 +76879,7 @@ struct redist_region;
 
 struct partition_desc;
 
-struct gic_chip_data {
+struct gic_chip_data___2 {
 	struct fwnode_handle *fwnode;
 	phys_addr_t dist_phys_base;
 	void *dist_base;
@@ -76867,23 +76892,6 @@ struct gic_chip_data {
 	bool has_rss;
 	unsigned int ppi_nr;
 	struct partition_desc **ppi_descs;
-};
-
-struct gic_chip_data___2 {
-	union gic_base dist_base;
-	union gic_base cpu_base;
-	void *raw_dist_base;
-	void *raw_cpu_base;
-	u32 percpu_offset;
-	u32 saved_spi_enable[32];
-	u32 saved_spi_active[32];
-	u32 saved_spi_conf[64];
-	u32 saved_spi_target[255];
-	u32 __attribute__((btf_type_tag("percpu"))) *saved_ppi_enable;
-	u32 __attribute__((btf_type_tag("percpu"))) *saved_ppi_active;
-	u32 __attribute__((btf_type_tag("percpu"))) *saved_ppi_conf;
-	struct irq_domain *domain;
-	unsigned int gic_irqs;
 };
 
 struct gic_kvm_info {
@@ -95965,16 +95973,16 @@ struct mcast_member {
 };
 
 struct mcs_group {
+	u8 shift;
+	u16 duration[12];
+};
+
+struct mcs_group___2 {
 	u16 flags;
 	u8 streams;
 	u8 shift;
 	u8 bw;
 	u16 duration[10];
-};
-
-struct mcs_group___2 {
-	u8 shift;
-	u16 duration[12];
 };
 
 struct mcs_spinlock {
@@ -96616,7 +96624,7 @@ struct mgmt_frame_regs {
 };
 
 struct mhu_db_channel {
-	struct arm_mhu___2 *mhu;
+	struct arm_mhu *mhu;
 	unsigned int pchan;
 	unsigned int doorbell;
 };
@@ -107987,13 +107995,13 @@ struct nla_bitfield32 {
 };
 
 struct nla_map {
-	u32 key;
-	u32 val;
+	__u32 key;
+	__u32 val;
 };
 
 struct nla_map___2 {
-	__u32 key;
-	__u32 val;
+	u32 key;
+	u32 val;
 };
 
 struct nlattr {
@@ -111342,20 +111350,20 @@ struct perf_event_header {
 
 struct perf_aux_event {
 	struct perf_event_header header;
-	u64 offset;
-	u64 size;
-	u64 flags;
+	u64 hw_id;
 };
 
 struct perf_aux_event___2 {
 	struct perf_event_header header;
-	u64 hw_id;
+	u32 pid;
+	u32 tid;
 };
 
 struct perf_aux_event___3 {
 	struct perf_event_header header;
-	u32 pid;
-	u32 tid;
+	u64 offset;
+	u64 size;
+	u64 flags;
 };
 
 struct perf_bpf_event {
@@ -112716,6 +112724,9 @@ union pkthdr {
 		u8 type;
 		u8 code;
 	} icmphdr;
+	struct {
+		u8 type;
+	} igmphdr;
 };
 
 union pkthdr___2 {
@@ -112727,9 +112738,6 @@ union pkthdr___2 {
 		u8 type;
 		u8 code;
 	} icmphdr;
-	struct {
-		u8 type;
-	} igmphdr;
 };
 
 struct rtc_device;
@@ -130459,13 +130467,13 @@ struct syscall_metadata {
 struct syscall_tp_t {
 	struct trace_entry ent;
 	int syscall_nr;
-	unsigned long args[6];
+	unsigned long ret;
 };
 
 struct syscall_tp_t___2 {
 	struct trace_entry ent;
 	int syscall_nr;
-	unsigned long ret;
+	unsigned long args[6];
 };
 
 struct syscall_trace_enter {
@@ -157861,6 +157869,16 @@ struct wakeup_source {
 };
 
 struct walk_control {
+	int free;
+	int pin;
+	int stage;
+	bool ignore_cur_inode;
+	struct btrfs_root *replay_dest;
+	struct btrfs_trans_handle *trans;
+	int (*process_func)(struct btrfs_root *, struct extent_buffer *, struct walk_control *, u64, int);
+};
+
+struct walk_control___2 {
 	u64 refs[8];
 	u64 flags[8];
 	struct btrfs_key update_progress;
@@ -157874,16 +157892,6 @@ struct walk_control {
 	int reada_slot;
 	int reada_count;
 	int restarted;
-};
-
-struct walk_control___2 {
-	int free;
-	int pin;
-	int stage;
-	bool ignore_cur_inode;
-	struct btrfs_root *replay_dest;
-	struct btrfs_trans_handle *trans;
-	int (*process_func)(struct btrfs_root *, struct extent_buffer *, struct walk_control___2 *, u64, int);
 };
 
 struct walk_rcec_data {
@@ -158210,21 +158218,6 @@ struct workqueue_struct {
 
 struct workspace {
 	void *mem;
-	void *buf;
-	void *cbuf;
-	struct list_head list;
-};
-
-struct workspace___2 {
-	z_stream strm;
-	char *buf;
-	unsigned int buf_size;
-	struct list_head list;
-	int level;
-};
-
-struct workspace___3 {
-	void *mem;
 	size_t size;
 	char *buf;
 	unsigned int level;
@@ -158234,6 +158227,21 @@ struct workspace___3 {
 	struct list_head lru_list;
 	zstd_in_buffer in_buf;
 	zstd_out_buffer out_buf;
+};
+
+struct workspace___2 {
+	void *mem;
+	void *buf;
+	void *cbuf;
+	struct list_head list;
+};
+
+struct workspace___3 {
+	z_stream strm;
+	char *buf;
+	unsigned int buf_size;
+	struct list_head list;
+	int level;
 };
 
 struct workspace_manager {
@@ -161871,7 +161879,7 @@ struct xfs_ifork {
 	void *if_data;
 	xfs_extnum_t if_nextents;
 	short if_broot_bytes;
-	int8_t if_format;
+	int8_t___2 if_format;
 	uint8_t if_needextents;
 };
 
@@ -162095,8 +162103,8 @@ struct xfs_legacy_timestamp {
 struct xfs_log_dinode {
 	uint16_t di_magic;
 	uint16_t di_mode;
-	int8_t di_version;
-	int8_t di_format;
+	int8_t___2 di_version;
+	int8_t___2 di_format;
 	uint8_t di_pad3[2];
 	uint32_t di_uid;
 	uint32_t di_gid;
@@ -162128,7 +162136,7 @@ struct xfs_log_dinode {
 		} __attribute__((packed));
 	};
 	uint8_t di_forkoff;
-	int8_t di_aformat;
+	int8_t___2 di_aformat;
 	uint32_t di_dmevmask;
 	uint16_t di_dmstate;
 	uint16_t di_flags;
@@ -162299,7 +162307,7 @@ struct xfs_mount {
 	uint8_t m_blkbb_log;
 	uint8_t m_agno_log;
 	uint8_t m_sectbb_log;
-	int8_t m_rtxblklog;
+	int8_t___2 m_rtxblklog;
 	uint m_blockmask;
 	uint m_blockwsize;
 	uint m_blockwmask;
@@ -165149,9 +165157,9 @@ typedef u64 (*btf_sk_skb_change_tail)(struct sk_buff *, u32, u64);
 
 typedef u64 (*btf_sk_skb_pull_data)(struct sk_buff *, u32);
 
-typedef void (*btf_trace_9p_client_req)(void *, struct p9_client *, int8_t, int);
+typedef void (*btf_trace_9p_client_req)(void *, struct p9_client *, int8_t___2, int);
 
-typedef void (*btf_trace_9p_client_res)(void *, struct p9_client *, int8_t, int, int);
+typedef void (*btf_trace_9p_client_res)(void *, struct p9_client *, int8_t___2, int, int);
 
 typedef void (*btf_trace_9p_fid_ref)(void *, struct p9_fid *, __u8);
 
