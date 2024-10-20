@@ -1,0 +1,47 @@
+{
+    "artificialDelayMilliseconds": 700,
+    "keepExistingTerminalsOpen": false,
+    "runOnStartup": true,
+    "terminals": [
+      {
+        "splitTerminals": [
+          {
+            "name": "ebpf_explorer",
+            "commands": ["./scripts/ebpf_explorer_start.sh"]
+          }
+        ]
+      },
+      {
+        "splitTerminals": [
+          {
+            "name": "edgeshark",
+            "commands": ["./scripts/edgeshark_start.sh"]
+          }
+        ]
+      },
+      {
+        "splitTerminals": [
+          {
+            "name": "clab",
+            "commands": ["cd ./test/e2e/vxlan_agent/clab-topologies/"]
+          }
+        ]
+      },
+      {
+        "splitTerminals": [
+          {
+            "name": "build_image",
+            "commands": []
+          }
+        ]
+      },
+      {
+        "splitTerminals": [
+          {
+            "name": "docker_exec",
+            "commands": []
+          }
+        ]
+      }
+    ]
+  }

@@ -25,6 +25,18 @@
 	"privileged": true,
 
 	"customizations": {
+		"cursor": {
+			"extensions": [
+				"ms-azuretools.vscode-docker",
+				"tuxtina.json2yaml",
+				"vscode-icons-team.vscode-icons",
+				"mutantdino.resourcemonitor",
+				"ms-vscode.cpptools-extension-pack",
+				"ms-vscode.cpptools",
+				"ms-vscode.cpptools-themes",
+				"EthanSK.restore-terminals"
+			]
+		},
 		"vscode": {
 			"extensions": [
 				"ms-azuretools.vscode-docker",
@@ -33,14 +45,15 @@
 				"mutantdino.resourcemonitor",
 				"ms-vscode.cpptools-extension-pack",
 				"ms-vscode.cpptools",
-				"ms-vscode.cpptools-themes"
+				"ms-vscode.cpptools-themes",
+				"EthanSK.restore-terminals"
 			]
 		}
 	},
 	"mounts": [
 		"source=clab-vscode-home-dir,target=/home/vscode,type=volume",
 		"source=clab-docker-root-config,target=/root/.docker,type=volume",
-//		"target=/home/vscode/.vscode-server,type=volume",
+		// "target=/home/vscode/.vscode-server,type=volume",
 		"source=/sys/kernel/debug,target=/sys/kernel/debug,type=bind",
 		"source=/sys/fs/bpf,target=/sys/fs/bpf,type=bind"
 	],

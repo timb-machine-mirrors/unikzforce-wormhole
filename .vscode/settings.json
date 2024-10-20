@@ -1,0 +1,20 @@
+{
+    "files.associations": {
+        "bpf_helpers.h": "c",
+        "udp.h": "c",
+        "ip.h": "c",
+        "in.h": "c",
+        "if_tunnel.h": "c",
+        "vmlinux.h": "c",
+        "typeinfo": "c",
+        "if_ether.h": "c",
+        "vxlan_agent.bpf.h": "c",
+        "pkt_cls.h": "c",
+        "bpf_helper_defs.h": "c",
+        "time.h": "c",
+        "time_types.h": "c",
+        "types.h": "c",
+        "posix_types.h": "c",
+        "bpf_endian.h": "c"
+    }
+}

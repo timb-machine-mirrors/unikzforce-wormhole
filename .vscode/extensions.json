@@ -1,0 +1,17 @@
+{
+    // See http://go.microsoft.com/fwlink/?LinkId=827846
+    // for the documentation about the extensions.json format
+    "recommendations": [
+        "ms-azuretools.vscode-docker",
+        "tuxtina.json2yaml",
+        "vscode-icons-team.vscode-icons",
+        "mutantdino.resourcemonitor",
+        "ms-vscode.cpptools-extension-pack",
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-themes",
+        "EthanSK.restore-terminals",
+        "golang.go"
+    ],
+    "unwantedRecommendations": [
+    ]
+}
