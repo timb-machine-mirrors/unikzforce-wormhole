@@ -72,6 +72,7 @@ SEC("xdp")
 long vxlan_agent_xdp(struct xdp_md *ctx)
 {
     // we can use current_time_ns as something like a unique identifier for packet
+    bpf_printk("XDP. %d 1. packet recieved", ctx->ingress_ifindex);
     __u64 current_time_ns = bpf_ktime_get_tai_ns();
 
     struct ethhdr *eth = (void *)(long)ctx->data;
@@ -87,6 +88,8 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
     {
         return XDP_ABORTED;
     }
+
+    bpf_printk("XDP. %d 2. interface lookup done", ctx->ingress_ifindex);
 
     bool packet_is_received_by_internal_iface = *ifindex_is_internal;
 
@@ -127,6 +130,7 @@ static __always_inline bool is_broadcast_address(const struct mac_address *mac)
 
 static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time_ns, struct ethhdr *eth)
 {
+    bpf_printk("XDP. %d 3. handle packet received by internal iface", ctx->ingress_ifindex);
     // if packet has been received by an internal iface
     // it means this packet should have no outer headers.
     // we should:
@@ -138,20 +142,27 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
 
     learn_from_packet_received_by_internal_iface(ctx, current_time_ns, &src_mac);
 
+    bpf_printk("XDP. %d 4. learning from packet received by internal internal iface ", ctx->ingress_ifindex);
+
     struct mac_address dst_mac;
     __builtin_memcpy(dst_mac.addr, eth->h_dest, ETH_ALEN);
 
     struct mac_table_entry *dst_mac_entry = bpf_map_lookup_elem(&mac_table, &dst_mac);
 
+    bpf_printk("XDP. %d 5. searching for dest mac of packet recieved by internal iface ", ctx->ingress_ifindex);
+
     if (dst_mac_entry != NULL)
     {
         // if we already know this dst mac in mac_table
+
+        bpf_printk("XDP. %d 6. found entry for dest mac of packet recieved by internal iface. check if next hop interface is internal or external", ctx->ingress_ifindex);
 
         __u32 dst_mac_entry_ifindex = dst_mac_entry->ifindex;
         bool *ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &dst_mac_entry_ifindex);
 
         if (ifindex_to_redirect_is_internal == NULL)
         {
+            bpf_printk("XDP. %d 7. next hop not found. ABORT", ctx->ingress_ifindex);
             return XDP_ABORTED;
         }
 
@@ -159,11 +170,14 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
 
         if (packet_to_be_redirected_to_an_internal_interface)
         {
+            bpf_printk("XDP. %d 8. next hop is internal. REDIRECT", ctx->ingress_ifindex);
             // if packet need to be forwarded to an internal interface
             return bpf_redirect(dst_mac_entry->ifindex, 0);
         }
         else
         {
+
+            bpf_printk("XDP. %d 8. next hop is external. Add header", ctx->ingress_ifindex);
             // if packet need to be forwarded to an external interface
             enum vxlan_agent_processing_error error = add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(ctx, &dst_mac, dst_mac_entry);
 
@@ -172,11 +186,15 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
             else if (error == AGENT_ERROR_DROP)
                 return XDP_DROP;
 
+            bpf_printk("XDP. %d 9. adding header successful. REDIRECT", ctx->ingress_ifindex);
+
             return bpf_redirect(dst_mac_entry->ifindex, 0);
         }
     }
     else
     {
+        bpf_printk("XDP. %d 6. no information found for dest mac of packet received by internal iface. send UP to unknown unicast flooding TC", ctx->ingress_ifindex);
+
         // if we don't know this dst mac in mac_table
         // no matter why we are here:
         // - either because of a dst mac addr that we don't know where to find (unknown dst mac)
@@ -336,6 +354,7 @@ static void __always_inline learn_from_packet_received_by_internal_iface(const s
 
 static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time_ns)
 {
+    bpf_printk("XDP. %d 3. handle packet received by external iface", ctx->ingress_ifindex);
     // if packet has been received by an external interface
     // it means that this packet:
     // - has outer ethernet header

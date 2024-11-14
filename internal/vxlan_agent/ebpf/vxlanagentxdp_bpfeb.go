@@ -24,12 +24,12 @@ type VxlanAgentXDPInAddr struct{ S_addr uint32 }
 type VxlanAgentXDPMacAddress struct{ Addr [6]uint8 }
 
 type VxlanAgentXDPMacTableEntry struct {
+	ExpirationTimer     struct{ Opaque [2]uint64 }
 	Ifindex             uint32
 	_                   [4]byte
 	LastSeenTimestampNs uint64
 	BorderIp            VxlanAgentXDPInAddr
 	_                   [4]byte
-	ExpirationTimer     struct{ Opaque [2]uint64 }
 }
 
 // LoadVxlanAgentXDP returns the embedded CollectionSpec for VxlanAgentXDP.

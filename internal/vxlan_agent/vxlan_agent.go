@@ -193,7 +193,7 @@ func (vxlanAgent *VxlanAgent) initVxlanAgentXdpMaps() error {
 func (vxlanAgent *VxlanAgent) initVxlanAgentUnknownUnicastFloodingMaps() error {
 
 	for borderIp, externalRouteInfo := range vxlanAgent.borderIpToExternalRouteInfo {
-		err := vxlanAgent.xdpObjects.BorderIpToRouteInfoMap.Put(borderIp, externalRouteInfo)
+		err := vxlanAgent.tcObjects.BorderIpToRouteInfoMap.Put(borderIp, externalRouteInfo)
 		if err != nil {
 			logrus.Error("Error putting value in BorderIpToRouteInfoMap:", err)
 			return err
@@ -284,7 +284,7 @@ func (vxlanAgent *VxlanAgent) attachVxlanAgentXdpAndTcToAllInterfaces() ([]*link
 			return attachedLinks, err
 		}
 
-		attachedLinks = append(attachedLinks, &attachedXdpLink, &attachedTcLink)
+		attachedLinks = append(attachedLinks, &attachedXdpLink, &attachedTcLink /* &attachedTcIngresLink */)
 	}
 
 	return attachedLinks, nil
