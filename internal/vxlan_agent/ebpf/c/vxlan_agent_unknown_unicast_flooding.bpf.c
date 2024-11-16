@@ -250,6 +250,14 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
 
         __builtin_memcpy(outer_eth->h_source, route_info->external_iface_mac.addr, ETH_ALEN);        // mac address is a byte sequence, not affected by endianness
         __builtin_memcpy(outer_eth->h_dest, route_info->external_iface_next_hop_mac.addr, ETH_ALEN); // mac address is a byte sequence, not affected by endianness
+        bpf_printk("tcx/ingress. int_to_ext %d 16. outer_eth->h_dest = %02x:%02x:%02x:%02x:%02x:%02x",
+            skb->ingress_ifindex,
+            outer_eth->h_dest[0],
+            outer_eth->h_dest[1],
+            outer_eth->h_dest[2],
+            outer_eth->h_dest[3],
+            outer_eth->h_dest[4],
+            outer_eth->h_dest[5]);
         outer_eth->h_proto = bpf_htons(ETH_P_IP);                                                    // ip address is a multi-byte value, so it needs to be in network byte order
 
         outer_iph->version = 4;                                             // ip version
@@ -288,30 +296,6 @@ static void __always_inline clone_external_packet_and_send_to_all_internal_iface
     bpf_printk("tcx/ingress ext_to_int %d 5. start clone_external_packet_and_send_to_all_internal_ifaces", skb->ingress_ifindex);
     int i;
     __u32 *ifindex_ptr;
-
-    // Resize the packet buffer by decreasing the headroom.
-    // in bpf_xdp_adjust_head() if we want to decrease the packet length, we must use positive number
-    // in bpf_skb_adjust_room() if we want to decrease the packet length, we must use negative number
-    // TODO: check if this is the correct way to decrease the packet length
-    long ret = bpf_skb_adjust_room(skb, -NEW_HDR_LEN, BPF_ADJ_ROOM_MAC, 0);
-    if (ret)
-    {
-        bpf_printk("tcx/ingress ext_to_int %d 6. failed to decrease the packet head using bpf_skb_change_head(), error = %d", skb->ingress_ifindex, ret);
-        return;
-    } else {
-        bpf_printk("tcx/ingress ext_to_int %d 6. sucessful decreasing of the packet head using bpf_skb_change_head()", skb->ingress_ifindex);
-    }
-
-    // Recalculate data and data_end pointers after adjustment
-    void *data = (void *)(long)skb->data;
-    void *data_end = (void *)(long)skb->data_end;
-
-    // Ensure the packet is still valid after adjustment
-    if (data + sizeof(struct ethhdr) > data_end)
-    {
-        bpf_printk("tcx/ingress ext_to_int %d 7. invalid data & data_end after decreasing packet head size", skb->ingress_ifindex);
-        return;
-    }
 
     bpf_for(i, 0, MAX_INTERNAL_IFINDEXES)
     {

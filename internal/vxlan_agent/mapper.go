@@ -2,8 +2,8 @@ package vxlan_agent
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
+	"net"
 	"sync"
 	"wormhole/internal/vxlan_agent/ebpf"
 
@@ -31,10 +31,12 @@ func ConvertMacBytesToMac(macBytes []byte) ebpf.VxlanAgentXDPMacAddress {
 }
 
 func ConvertStringToMac(macStr string) ebpf.VxlanAgentXDPMacAddress {
-	macBytes, err := hex.DecodeString(macStr)
+	hwAddr, err := net.ParseMAC(macStr)
 	if err != nil {
 		logrus.Fatalln("Error decoding MAC address:", err)
 	}
+
+	macBytes := []byte(hwAddr)
 
 	var mac [6]uint8
 	copy(mac[:], macBytes)

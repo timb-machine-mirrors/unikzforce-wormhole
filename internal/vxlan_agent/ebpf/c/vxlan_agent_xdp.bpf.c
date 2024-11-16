@@ -428,6 +428,8 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
 static long __always_inline handle_packet_received_by_external_iface__arp_packet(struct xdp_md *ctx, __u64 current_time_ns, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address *inner_dst_mac)
 {
 
+    bpf_printk("XDP. ext_to_int %d 4. handling ARP packet received by external iface", ctx->ingress_ifindex);
+
     struct arphdr *inner_arph = (void *)(inner_eth + 1);
 
     // Ensure the inner ARP header is valid
@@ -450,6 +452,15 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
         //      - Source MAC Address: The MAC address of the sender.
         //      - Destination MAC Address: is set to broadcast address (ff:ff:ff:ff:ff:ff).
         // we need to perform Flooding, XDP_PASS --> handle in implemented TC flooding hook
+        
+        // because we cannot remove outher_eth & outer_ip & outer_udp & outer_vxlan header in
+        // the tc program, before passing it up to the TC we need to strip these headers off
+        bpf_printk("XDP. ext_to_int %d 5. remove outer headers before sending the packet to TC", ctx->ingress_ifindex);
+        if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
+            return XDP_DROP;
+
+        bpf_printk("XDP. ext_to_int %d 6. sending packet to TC", ctx->ingress_ifindex);
+
         return XDP_PASS;
     }
     else if (inner_arph->ar_op == bpf_htons(ARPOP_REPLY))
@@ -470,6 +481,15 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
         if (*(unsigned int *)inner_arp_payload->ar_sip == *(unsigned int *)inner_arp_payload->ar_tip && is_broadcast_address(inner_dst_mac))
         {
             // we need to perform Flooding, XDP_PASS --> handle in implemented TC flooding hook
+
+            // because we cannot remove outher_eth & outer_ip & outer_udp & outer_vxlan header in
+            // the tc program, before passing it up to the TC we need to strip these headers off
+            bpf_printk("XDP. ext_to_int %d 5. remove outer headers before sending the packet to TC", ctx->ingress_ifindex);
+            if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
+                return XDP_DROP;
+
+            bpf_printk("XDP. ext_to_int %d 6. sending packet to TC", ctx->ingress_ifindex);
+
             return XDP_PASS;
         }
 
@@ -528,6 +548,7 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
 
 static long __always_inline handle_packet_received_by_external_iface__ip_packet(struct xdp_md *ctx, __u64 current_time_ns, void *data, void *data_end, struct ethhdr *inner_eth, struct mac_address *inner_dst_mac)
 {
+    bpf_printk("XDP. %d 4. handling IP packet received by external iface", ctx->ingress_ifindex);
     // Extract inner source and destination MAC addresses
 
     struct iphdr *inner_iph = (void *)(inner_eth + 1);

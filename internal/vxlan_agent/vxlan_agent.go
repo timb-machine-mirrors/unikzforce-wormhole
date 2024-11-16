@@ -13,6 +13,7 @@ import (
 	"github.com/cilium/ebpf/link"
 	"github.com/cilium/ebpf/rlimit"
 	"github.com/mostlygeek/arp"
+	probing "github.com/prometheus-community/pro-bing"
 	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 )
@@ -126,33 +127,57 @@ func (vxlanAgent *VxlanAgent) initExternalRouteInfos() error {
 		vxlanAgent.borderIps = append(vxlanAgent.borderIps, binary.BigEndian.Uint32(net.ParseIP(borderIp).To4()))
 	}
 
-	for _, neighborBorderIp := range vxlanAgent.neighbourBorderIps {
+	for _, neighborBorderIpStr := range vxlanAgent.neighbourBorderIps {
 
-		dst := net.ParseIP(neighborBorderIp).To4()
+		pinger, err := probing.NewPinger(neighborBorderIpStr)
+		if err != nil {
+			logrus.Errorf("Failed to create pinger: %v", err)
+		}
 
-		routes, err := netlink.RouteGet(dst)
+		pinger.Count = 3
+		pinger.Timeout = 2 * time.Second
+		err = pinger.Run()
+		if err != nil {
+			logrus.Errorf("Ping failed: %v", err)
+		}
+
+		neighBorderIp := net.ParseIP(neighborBorderIpStr).To4()
+
+		routes, err := netlink.RouteGet(neighBorderIp)
 		if err != nil {
 			logrus.Errorf("Failed to get route: %v", err)
 			return err
 		}
 
-		logrus.Printf("Route to %s: %+v\n", neighborBorderIp, routes[0])
+		logrus.Printf("Route to %s: %+v\n", neighborBorderIpStr, routes[0])
 		if routes[0].Gw != nil {
 			logrus.Printf("Gateway: %s Mac: %s\n", routes[0].Gw.String(), arp.Search(routes[0].Gw.String()))
 		}
 
 		if routes[0].LinkIndex != 0 {
+			var externalNextHopMacStr string
+
+			if routes[0].Gw != nil {
+				externalNextHopMacStr = arp.Search(routes[0].Gw.String())
+				logrus.Printf("Next Hop mac address using Gateway: %s Mac: %s\n", routes[0].Gw.String(), externalNextHopMacStr)
+			} else {
+				externalNextHopMacStr = arp.Search(routes[0].Dst.IP.String())
+				logrus.Printf("Next Hop mac address using Destination: %s Mac: %s\n", routes[0].Dst.IP.String(), externalNextHopMacStr)
+			}
+
+			logrus.Printf("Next Hop mac address: %s", externalNextHopMacStr)
+
 			l, err := netlink.LinkByIndex(routes[0].LinkIndex)
 			if err != nil {
 				logrus.Errorf("Failed to get link by index: %v", err)
 				return err
 			}
 			logrus.Printf("Interface: %s\n", l.Attrs().Name)
-			vxlanAgent.borderIpToExternalRouteInfo[binary.BigEndian.Uint32(dst)] = vxlanAgentEbpfGen.VxlanAgentXDPExternalRouteInfo{
+			vxlanAgent.borderIpToExternalRouteInfo[binary.BigEndian.Uint32(neighBorderIp)] = vxlanAgentEbpfGen.VxlanAgentXDPExternalRouteInfo{
 				ExternalIfaceIndex:      uint32(l.Attrs().Index),
 				ExternalIfaceMac:        ConvertMacBytesToMac(l.Attrs().HardwareAddr),
-				ExternalIfaceNextHopMac: ConvertStringToMac(arp.Search(routes[0].Gw.String())),
-				ExternalIfaceIp:         vxlanAgentEbpfGen.VxlanAgentXDPInAddr{S_addr: binary.BigEndian.Uint32(net.ParseIP(neighborBorderIp).To4())},
+				ExternalIfaceNextHopMac: ConvertStringToMac(externalNextHopMacStr),
+				ExternalIfaceIp:         vxlanAgentEbpfGen.VxlanAgentXDPInAddr{S_addr: binary.BigEndian.Uint32(net.ParseIP(routes[0].Src.String()).To4())},
 			}
 		}
 
@@ -284,7 +309,7 @@ func (vxlanAgent *VxlanAgent) attachVxlanAgentXdpAndTcToAllInterfaces() ([]*link
 			return attachedLinks, err
 		}
 
-		attachedLinks = append(attachedLinks, &attachedXdpLink, &attachedTcLink /* &attachedTcIngresLink */)
+		attachedLinks = append(attachedLinks, &attachedXdpLink, &attachedTcLink)
 	}
 
 	return attachedLinks, nil
