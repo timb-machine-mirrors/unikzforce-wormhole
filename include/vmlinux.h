@@ -415,11 +415,6 @@ enum {
 };
 
 enum {
-	BPF_F_BROADCAST = 8,
-	BPF_F_EXCLUDE_INGRESS = 16,
-};
-
-enum {
 	BPF_F_CURRENT_NETNS = -1,
 };
 
@@ -439,12 +434,14 @@ enum {
 
 enum {
 	BPF_F_INGRESS = 1,
+	BPF_F_BROADCAST = 8,
+	BPF_F_EXCLUDE_INGRESS = 16,
 };
 
 enum {
-	BPF_F_NEIGH = 2,
-	BPF_F_PEER = 4,
-	BPF_F_NEXTHOP = 8,
+	BPF_F_NEIGH = 65536,
+	BPF_F_PEER = 131072,
+	BPF_F_NEXTHOP = 262144,
 };
 
 enum {
@@ -5738,12 +5735,10 @@ enum {
 
 enum {
 	MM_LEAF_TOTAL = 0,
-	MM_LEAF_OLD = 1,
-	MM_LEAF_YOUNG = 2,
-	MM_NONLEAF_TOTAL = 3,
-	MM_NONLEAF_FOUND = 4,
-	MM_NONLEAF_ADDED = 5,
-	NR_MM_STATS = 6,
+	MM_LEAF_YOUNG = 1,
+	MM_NONLEAF_FOUND = 2,
+	MM_NONLEAF_ADDED = 3,
+	NR_MM_STATS = 4,
 };
 
 enum {
@@ -14235,9 +14230,9 @@ enum bpf_arg_type {
 	ARG_PTR_TO_SOCKET_OR_NULL = 268,
 	ARG_PTR_TO_STACK_OR_NULL = 275,
 	ARG_PTR_TO_BTF_ID_OR_NULL = 269,
-	ARG_PTR_TO_UNINIT_MEM = 32772,
+	ARG_PTR_TO_UNINIT_MEM = 67141636,
 	ARG_PTR_TO_FIXED_SIZE_MEM = 262148,
-	__BPF_ARG_TYPE_LIMIT = 67108863,
+	__BPF_ARG_TYPE_LIMIT = 134217727,
 };
 
 enum bpf_async_type {
@@ -14818,7 +14813,7 @@ enum bpf_reg_type {
 	PTR_TO_SOCK_COMMON_OR_NULL = 268,
 	PTR_TO_TCP_SOCK_OR_NULL = 269,
 	PTR_TO_BTF_ID_OR_NULL = 272,
-	__BPF_REG_TYPE_LIMIT = 67108863,
+	__BPF_REG_TYPE_LIMIT = 134217727,
 };
 
 enum bpf_ret_code {
@@ -14848,7 +14843,7 @@ enum bpf_return_type {
 	RET_PTR_TO_DYNPTR_MEM_OR_NULL = 262,
 	RET_PTR_TO_BTF_ID_OR_NULL = 264,
 	RET_PTR_TO_BTF_ID_TRUSTED = 1048584,
-	__BPF_RET_TYPE_LIMIT = 67108863,
+	__BPF_RET_TYPE_LIMIT = 134217727,
 };
 
 enum bpf_stack_build_id_status {
@@ -14937,8 +14932,9 @@ enum bpf_type_flag {
 	DYNPTR_TYPE_SKB = 8388608,
 	DYNPTR_TYPE_XDP = 16777216,
 	MEM_ALIGNED = 33554432,
-	__BPF_TYPE_FLAG_MAX = 33554433,
-	__BPF_TYPE_LAST_FLAG = 33554432,
+	MEM_WRITE = 67108864,
+	__BPF_TYPE_FLAG_MAX = 67108865,
+	__BPF_TYPE_LAST_FLAG = 67108864,
 };
 
 enum bpf_xdp_mode {
@@ -33556,6 +33552,8 @@ enum task_work_notify_mode {
 	TWA_SIGNAL = 2,
 	TWA_SIGNAL_NO_IPI = 3,
 	TWA_NMI_CURRENT = 4,
+	TWA_FLAGS = 65280,
+	TWAF_NO_ALLOC = 256,
 };
 
 enum tc_clsbpf_command {
@@ -43413,7 +43411,7 @@ struct backing_aio {
 	struct kiocb iocb;
 	refcount_t ref;
 	struct kiocb *orig_iocb;
-	void (*end_write)(struct file *);
+	void (*end_write)(struct file *, loff_t, ssize_t);
 	struct work_struct work;
 	long res;
 };
@@ -43568,7 +43566,7 @@ struct backing_file_ctx {
 	const struct cred *cred;
 	struct file *user_file;
 	void (*accessed)(struct file *);
-	void (*end_write)(struct file *);
+	void (*end_write)(struct file *, loff_t, ssize_t);
 };
 
 struct btrfs_lru_cache_entry {
@@ -50661,7 +50659,7 @@ struct bpf_iter_bits_kern {
 		unsigned long *bits;
 		unsigned long bits_copy;
 	};
-	u32 nr_bits;
+	int nr_bits;
 	int bit;
 };
 
@@ -51462,6 +51460,7 @@ struct nf_defrag_hook;
 struct bpf_nf_link {
 	struct bpf_link link;
 	struct nf_hook_ops hook_ops;
+	netns_tracker ns_tracker;
 	struct net *net;
 	u32 dead;
 	const struct nf_defrag_hook *defrag_hook;
@@ -51844,7 +51843,7 @@ struct bpf_ringbuf {
 	long: 64;
 	long: 64;
 	long: 64;
-	spinlock_t spinlock;
+	raw_spinlock_t spinlock;
 	long: 64;
 	long: 64;
 	long: 64;
@@ -55646,6 +55645,7 @@ struct btrfs_bio {
 	atomic_t pending_ios;
 	struct work_struct end_io_work;
 	struct btrfs_fs_info *fs_info;
+	blk_status_t status;
 	struct bio bio;
 };
 
@@ -70615,12 +70615,15 @@ struct input_dev;
 
 struct input_handler;
 
+struct input_value;
+
 struct input_handle {
 	void *private;
 	int open;
 	const char *name;
 	struct input_dev *dev;
 	struct input_handler *handler;
+	unsigned int (*handle_events)(struct input_handle *, struct input_value *, unsigned int);
 	struct list_head d_node;
 	struct list_head h_node;
 };
@@ -88768,8 +88771,6 @@ struct input_dev_poller;
 
 struct input_mt;
 
-struct input_value;
-
 struct input_dev {
 	const char *name;
 	const char *phys;
@@ -97071,7 +97072,7 @@ struct lru_gen_mm_state {
 	struct list_head *head;
 	struct list_head *tail;
 	unsigned long *filters[2];
-	unsigned long stats[6];
+	unsigned long stats[4];
 };
 
 struct lruvec;
@@ -97081,7 +97082,7 @@ struct lru_gen_mm_walk {
 	unsigned long seq;
 	unsigned long next_addr;
 	int nr_pages[32];
-	int mm_stats[6];
+	int mm_stats[4];
 	int batched;
 	bool can_swap;
 	bool force_scan;
@@ -98000,6 +98001,8 @@ struct mem_cgroup_per_node {
 	long: 64;
 	struct cacheline_padding _pad1_;
 	struct lruvec lruvec;
+	long: 64;
+	long: 64;
 	long: 64;
 	long: 64;
 	long: 64;
@@ -108301,6 +108304,7 @@ struct nft_chain {
 	char *name;
 	u16 udlen;
 	u8 *udata;
+	struct callback_head callback_head;
 	struct nft_rule_blob *blob_next;
 };
 
@@ -109337,6 +109341,7 @@ struct nft_table {
 	struct list_head sets;
 	struct list_head objects;
 	struct list_head flowtables;
+	possible_net_t net;
 	u64 hgenerator;
 	u64 handle;
 	u32 use;
@@ -113962,6 +113967,9 @@ struct pglist_data {
 	unsigned long flags;
 	struct lru_gen_mm_walk mm_walk;
 	struct lru_gen_memcg memcg_lru;
+	long: 64;
+	long: 64;
+	long: 64;
 	long: 64;
 	long: 64;
 	long: 64;
@@ -123615,6 +123623,7 @@ struct scmi_mailbox {
 	struct mbox_chan *chan_platform_receiver;
 	struct scmi_chan_info *cinfo;
 	struct scmi_shared_mem *shmem;
+	struct mutex chan_lock;
 };
 
 struct scmi_msg {
@@ -160472,10 +160481,11 @@ struct virtio_net_ctrl_rss {
 	u32 hash_types;
 	u16 indirection_table_mask;
 	u16 unclassified_queue;
-	u16 indirection_table[128];
+	u16 hash_cfg_reserved;
 	u16 max_tx_vq;
 	u8 hash_key_length;
 	u8 key[40];
+	u16 *indirection_table;
 };
 
 struct virtio_net_stats_capabilities {
@@ -160795,7 +160805,7 @@ struct virtnet_stat_desc {
 struct virtnet_stats_ctx {
 	bool to_qstat;
 	u32 desc_num[3];
-	u32 bitmap[3];
+	u64 bitmap[3];
 	u32 size[3];
 	u64 *data;
 };
@@ -162986,6 +162996,17 @@ struct xfrm_dst {
 	u32 path_cookie;
 };
 
+struct xfrm_dst_lookup_params {
+	struct net *net;
+	int tos;
+	int oif;
+	xfrm_address_t *saddr;
+	xfrm_address_t *daddr;
+	u32 mark;
+	__u8 ipproto;
+	union flowi_uli uli;
+};
+
 struct xfrm_dump_info {
 	struct sk_buff *in_skb;
 	struct sk_buff *out_skb;
@@ -163238,8 +163259,8 @@ struct xfrm_policy {
 
 struct xfrm_policy_afinfo {
 	struct dst_ops *dst_ops;
-	struct dst_entry * (*dst_lookup)(struct net *, int, int, const xfrm_address_t *, const xfrm_address_t *, u32);
-	int (*get_saddr)(struct net *, int, xfrm_address_t *, xfrm_address_t *, u32);
+	struct dst_entry * (*dst_lookup)(const struct xfrm_dst_lookup_params *);
+	int (*get_saddr)(xfrm_address_t *, const struct xfrm_dst_lookup_params *);
 	int (*fill_dst)(struct xfrm_dst *, struct net_device *, const struct flowi *);
 	struct dst_entry * (*blackhole_route)(struct net *, struct dst_entry *);
 };
@@ -173861,7 +173882,7 @@ typedef void (*btf_trace_xfs_filestream_free)(void *, struct xfs_perag *, xfs_in
 
 typedef void (*btf_trace_xfs_filestream_lookup)(void *, struct xfs_perag *, xfs_ino_t);
 
-typedef void (*btf_trace_xfs_filestream_pick)(void *, struct xfs_perag *, xfs_ino_t, xfs_extlen_t);
+typedef void (*btf_trace_xfs_filestream_pick)(void *, struct xfs_perag *, xfs_ino_t);
 
 typedef void (*btf_trace_xfs_filestream_scan)(void *, struct xfs_perag *, xfs_ino_t);
 

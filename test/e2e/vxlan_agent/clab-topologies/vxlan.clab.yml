@@ -16,6 +16,7 @@ topology:
         - /sys/kernel/debug:/sys/kernel/debug
         - /sys/fs/bpf:/sys/fs/bpf
       exec:
+        - sh -c 'echo "ping 192.168.1.11" >> /root/.bash_history'
         - ip addr add 192.168.1.10/24 dev eth1
         - touch /tmp/is_clab_container_ready
 
@@ -26,6 +27,7 @@ topology:
         - /sys/kernel/debug:/sys/kernel/debug
         - /sys/fs/bpf:/sys/fs/bpf
       exec:
+        - sh -c 'echo "/build/vxlan_agent --internal-interface-names eth1 --external-interface-names eth2 --remote-border-ips 3.3.3.2" >> /root/.bash_history'
         - ip addr add 3.3.3.1/24 dev eth2
         - touch /tmp/is_clab_container_ready
 
@@ -36,6 +38,7 @@ topology:
         - /sys/kernel/debug:/sys/kernel/debug
         - /sys/fs/bpf:/sys/fs/bpf
       exec:
+        - sh -c 'echo "/build/vxlan_agent --internal-interface-names eth1 --external-interface-names eth2 --remote-border-ips 3.3.3.1" >> /root/.bash_history'
         - ip addr add 3.3.3.2/24 dev eth2
         - touch /tmp/is_clab_container_ready
 
@@ -53,6 +56,7 @@ topology:
         - /sys/kernel/debug:/sys/kernel/debug
         - /sys/fs/bpf:/sys/fs/bpf
       exec:
+        - sh -c 'echo "ping 192.168.1.10" >> /root/.bash_history'
         - ip addr add 192.168.1.11/24 dev eth1
         - touch /tmp/is_clab_container_ready
 

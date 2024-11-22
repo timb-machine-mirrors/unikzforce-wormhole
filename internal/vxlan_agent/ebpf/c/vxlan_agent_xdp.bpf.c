@@ -247,8 +247,8 @@ static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_in
 
     outer_eth = data;
     outer_iph = data + ETH_HLEN; // ETH_HLEN == 14 & ETH_ALEN == 6
-    outer_udph = (void *)outer_iph + IP_HDR_LEN;
-    outer_vxh = (void *)outer_udph + UDP_HDR_LEN;
+    outer_udph = data + ETH_HLEN + IP_HDR_LEN;
+    outer_vxh = data + ETH_HLEN + IP_HDR_LEN + UDP_HDR_LEN;
 
     // Ensure the packet is still valid after adjustment
     if ((void *)(outer_vxh + 1) > data_end)
@@ -290,7 +290,7 @@ static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_in
     outer_iph->daddr = bpf_htonl(dst_border_ip->s_addr);                // ip destination address
 
     outer_udph->source = bpf_htons(get_ephemeral_port());         // Source UDP port
-    outer_udph->dest = bpf_htons(4789);                           // Destination UDP port (VXLAN default)
+    outer_udph->dest = bpf_htons(4790);                           // Destination UDP port (VXLAN default)
     outer_udph->len = bpf_htons(new_len - ETH_HLEN - IP_HDR_LEN); // UDP length
     outer_udph->check = 0;                                        // UDP checksum is optional in IPv4
 
@@ -354,7 +354,7 @@ static void __always_inline learn_from_packet_received_by_internal_iface(const s
 
 static long __always_inline handle_packet_received_by_external_iface(struct xdp_md *ctx, __u64 current_time_ns)
 {
-    bpf_printk("XDP. %d 3. handle packet received by external iface", ctx->ingress_ifindex);
+    bpf_printk("XDP. ext_to_int %d 3. handle packet received by external iface", ctx->ingress_ifindex);
     // if packet has been received by an external interface
     // it means that this packet:
     // - has outer ethernet header
@@ -370,10 +370,14 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
     void *data = (void *)(long)ctx->data;
     void *data_end = (void *)(long)ctx->data_end;
 
+    int packet_size = data_end - data;
+
+    bpf_printk("XDP. ext_to_int. %d 3.1 Packet size: %d bytes\n", ctx->ingress_ifindex, packet_size);
+
     struct ethhdr *outer_eth = data;
-    struct iphdr *outer_iph = data + sizeof(struct ethhdr);
-    struct udphdr *outer_udph = (void *)outer_iph + sizeof(struct iphdr);
-    struct vxlanhdr *outer_vxh = (void *)outer_udph + sizeof(struct udphdr);
+    struct iphdr *outer_iph = data + ETH_HLEN;
+    struct udphdr *outer_udph = data + ETH_HLEN + IP_HDR_LEN;
+    struct vxlanhdr *outer_vxh = data + ETH_HLEN + IP_HDR_LEN + UDP_HDR_LEN;
 
     // Ensure the packet is valid
     if ((void *)(outer_vxh + 1) > data_end)
@@ -387,7 +391,7 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
     // when we perform (+1), it will not add 1 to the pointer
     // it will add the size of the vxlan header which is 8 bytes
     // in this case, it will point to the start of the inner ethernet header
-    struct ethhdr *inner_eth = (void *)(outer_vxh + 1);
+    struct ethhdr *inner_eth = data + ETH_HLEN + IP_HDR_LEN + UDP_HDR_LEN + VXLAN_HDR_LEN;
 
     // Ensure the inner Ethernet header is valid
     if ((void *)(inner_eth + 1) > data_end)
@@ -397,9 +401,14 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
     struct mac_address inner_src_mac;
     struct mac_address inner_dst_mac;
 
-    if (inner_eth->h_proto == bpf_htons(ETH_P_ARP))
+    bpf_printk("XDP. ext_to_int %d 3. the protocol is proto %x", ctx->ingress_ifindex, bpf_ntohs(inner_eth->h_proto));
+
+    __u16 h_proto = bpf_ntohs(inner_eth->h_proto);
+
+    if (h_proto == ETH_P_ARP)
     {
         // if the inner packet is an ARP packet
+        bpf_printk("XDP. ext_to_int %d 3. detected ext_to_int ARP packet", ctx->ingress_ifindex);
 
         __builtin_memcpy(inner_src_mac.addr, inner_eth->h_source, ETH_ALEN);
         __builtin_memcpy(inner_dst_mac.addr, inner_eth->h_dest, ETH_ALEN);
@@ -408,9 +417,10 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
 
         return handle_packet_received_by_external_iface__arp_packet(ctx, current_time_ns, data, data_end, inner_eth, &inner_dst_mac);
     }
-    else if (inner_eth->h_proto == bpf_htons(ETH_P_IP))
+    else if (h_proto == ETH_P_IP)
     {
         // if the inner packet is an IP packet
+        bpf_printk("XDP. ext_to_int %d 3. detected ext_to_int IP packet", ctx->ingress_ifindex);
 
         __builtin_memcpy(inner_src_mac.addr, inner_eth->h_source, ETH_ALEN);
         __builtin_memcpy(inner_dst_mac.addr, inner_eth->h_dest, ETH_ALEN);
@@ -421,6 +431,10 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
     }
     else
     {
+        bpf_printk("XDP. ext_to_int %d 3. ext_to_int neither ARP, nor IP detected -> XDP_DROP", ctx->ingress_ifindex);
+        bpf_printk("inner_eth->h_proto (network byte order) = %x\n", inner_eth->h_proto);
+        bpf_printk("inner_eth->h_proto (host byte order) = %x\n", bpf_ntohs(inner_eth->h_proto));
+
         return XDP_DROP;
     }
 }
