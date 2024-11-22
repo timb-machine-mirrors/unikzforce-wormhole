@@ -10,7 +10,8 @@
         "ms-vscode.cpptools",
         "ms-vscode.cpptools-themes",
         "EthanSK.restore-terminals",
-        "golang.go"
+        "golang.go",
+        "kdl-org.kdl"
     ],
     "unwantedRecommendations": [
     ]
