@@ -24,21 +24,9 @@
           {
             "name": "clab",
             "commands": ["cd ./test/e2e/vxlan_agent/clab-topologies/"]
-          }
-        ]
-      },
-      {
-        "splitTerminals": [
+          },
           {
             "name": "build_image",
-            "commands": []
-          }
-        ]
-      },
-      {
-        "splitTerminals": [
-          {
-            "name": "docker_exec",
             "commands": []
           }
         ]
