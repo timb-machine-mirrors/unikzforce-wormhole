@@ -30,6 +30,14 @@
             "commands": []
           }
         ]
+      },
+      {
+        "splitTerminals": [
+          {
+            "name": "zellij",
+            "commands": ["zellij --layout .zellij/zellij_docker_exec_layout.kdl"]
+          }
+        ]
       }
     ]
   }
