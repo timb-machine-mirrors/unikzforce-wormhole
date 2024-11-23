@@ -24,6 +24,14 @@
 #define VXLAN_HDR_LEN (int)sizeof(struct vxlanhdr)
 #define NEW_HDR_LEN (ETH_HLEN + IP_HDR_LEN + UDP_HDR_LEN + VXLAN_HDR_LEN)
 
+static volatile const struct {
+    char hostname[64];
+} vxlan_agent_metadata SEC(".rodata");
+
+
+#define my_bpf_printk(fmt, args...) bpf_printk("%s :::: " fmt, vxlan_agent_metadata.hostname, ##args)
+
+
 enum vxlan_agent_processing_error
 {
     AGENT_ERROR_ABORT = 0,

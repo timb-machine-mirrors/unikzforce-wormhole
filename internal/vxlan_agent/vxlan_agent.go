@@ -30,6 +30,10 @@ type VxlanAgent struct {
 	attachedLinks               []*link.Link
 }
 
+type VxlanAgentMetadata struct {
+	Hostname [64]byte
+}
+
 // NewVxlanAgent initializes and returns a new VxlanAgent instance
 func NewVxlanAgent(internalNetworkInterfaces []netlink.Link, externalNetworkInterfaces []netlink.Link, neighborBorderIps []string) *VxlanAgent {
 	return &VxlanAgent{
@@ -68,23 +72,16 @@ func (vxlanAgent *VxlanAgent) ActivateVxlanAgent() error {
 		return err
 	}
 
-	if err := vxlanAgentEbpfGen.LoadVxlanAgentXDPObjects(&vxlanAgent.xdpObjects, &ciliumEbpf.CollectionOptions{
-		// Maps: ciliumEbpf.MapOptions{
-		// 	PinPath: pinPath,
-		// },
-		Programs: ciliumEbpf.ProgramOptions{
-			LogLevel: ciliumEbpf.LogLevelInstruction, // Set log level to 1 to enable logs
-			LogSize:  1024 * 1024,                    // Set log size to 1MB
-		},
-	}); err != nil {
-		logrus.Error("Error loading XDP eBPF program:", err)
+	if err := vxlanAgent.loadVxlanAgentXdpProgram(); err != nil {
+		logrus.Error("Error loading VxlanAgent.XDP", err)
 		return err
 	}
 	defer vxlanAgent.xdpObjects.Close()
 
 	logrus.Print("2.1. load TC eBPF program")
-	if err := vxlanAgentEbpfGen.LoadVxlanAgentUnknownUnicastFloodingObjects(&vxlanAgent.tcObjects, nil); err != nil {
-		logrus.Error("Error loading TC eBPF program:", err)
+
+	if err := vxlanAgent.loadVxlanAgentUnknownUnicastFloodingProgram(); err != nil {
+		logrus.Error("Error loading VxlanAgent.UnknownUnicastFlooding(TC)", err)
 		return err
 	}
 	defer vxlanAgent.tcObjects.Close()
@@ -117,6 +114,81 @@ func (vxlanAgent *VxlanAgent) ActivateVxlanAgent() error {
 
 	logrus.Print("6. wait for ctrl+c to stop")
 	return vxlanAgent.waitForCtrlC()
+}
+
+func (vxlanAgent *VxlanAgent) loadVxlanAgentXdpProgram() error {
+	var err error
+
+	xdpSpec, err := vxlanAgentEbpfGen.LoadVxlanAgentXDP()
+	if err != nil {
+		logrus.Error("Error loading XDP eBPF program:", err)
+		return err
+	}
+
+	var hostBytes [64]byte
+	hostname, err := os.Hostname()
+	if err != nil {
+		logrus.Println("Error retrieving hostname:", err)
+		hostname = "Unnamed"
+	}
+
+	copy(hostBytes[:], hostname)
+
+	metadata := VxlanAgentMetadata{
+		Hostname: hostBytes,
+	}
+
+	xdpSpec.RewriteConstants(map[string]interface{}{
+		"vxlan_agent_metadata": metadata,
+	})
+
+	err = xdpSpec.LoadAndAssign(&vxlanAgent.xdpObjects, &ciliumEbpf.CollectionOptions{
+		Programs: ciliumEbpf.ProgramOptions{
+			LogLevel: ciliumEbpf.LogLevelInstruction, // Set log level to 1 to enable logs
+			LogSize:  1024 * 1024,                    // Set log size to 1MB
+		},
+	})
+	if err != nil {
+		logrus.Error("Error loading XDP eBPF program:", err)
+		return err
+	}
+
+	return err
+}
+
+func (vxlanAgent *VxlanAgent) loadVxlanAgentUnknownUnicastFloodingProgram() error {
+	var err error
+
+	tcSpec, err := vxlanAgentEbpfGen.LoadVxlanAgentUnknownUnicastFlooding()
+	if err != nil {
+		return err
+	}
+
+	var hostBytes [64]byte
+	hostname, err := os.Hostname()
+	if err != nil {
+		logrus.Println("Error retrieving hostname:", err)
+		hostname = "Unnamed"
+	}
+
+	copy(hostBytes[:], hostname)
+
+	metadata := VxlanAgentMetadata{
+		Hostname: hostBytes,
+	}
+
+	tcSpec.RewriteConstants(map[string]interface{}{
+		"vxlan_agent_metadata": metadata,
+	})
+
+	err = tcSpec.LoadAndAssign(&vxlanAgent.tcObjects, nil)
+
+	if err != nil {
+		logrus.Error("Error loading TC eBPF program:", err)
+		return err
+	}
+
+	return err
 }
 
 func (vxlanAgent *VxlanAgent) initExternalRouteInfos() error {
