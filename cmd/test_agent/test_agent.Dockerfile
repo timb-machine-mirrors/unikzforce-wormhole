@@ -25,6 +25,7 @@ RUN apt install -y libbfd-dev
 RUN ln -sf /usr/include/asm-generic/ /usr/include/asm
 RUN apt install -y libcap-dev
 RUN apt install -y dwarves
+RUN apt install -y ethtool
 RUN echo 'alias ll="ls -al"' >> ~/.bashrc
 RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
 RUN ~/.fzf/install --all

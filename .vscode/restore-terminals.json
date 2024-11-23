@@ -15,7 +15,8 @@
         "splitTerminals": [
           {
             "name": "edgeshark",
-            "commands": ["./scripts/edgeshark_start.sh"]
+            "commands": ["./scripts/edgeshark_start.sh"],
+            "shouldRunCommands": false
           }
         ]
       },
@@ -35,7 +36,7 @@
         "splitTerminals": [
           {
             "name": "zellij",
-            "commands": ["zellij --layout .zellij/zellij_docker_exec_layout.kdl"]
+            "commands": ["zellij --layout .zellij/zellij_docker_exec_layout.kdl options --default-shell bash"]
           }
         ]
       }
