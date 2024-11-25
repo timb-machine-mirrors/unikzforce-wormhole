@@ -360,7 +360,7 @@ func (vxlanAgent *VxlanAgent) attachVxlanAgentXdpAndTcToAllInterfaces() ([]*link
 		attachedXdpLink, err := link.AttachXDP(link.XDPOptions{
 			Program:   vxlanAgent.xdpObjects.VxlanAgentXdp,
 			Interface: iface.Attrs().Index,
-			Flags:     link.XDPGenericMode,
+			Flags:     link.XDPDriverMode,
 		})
 
 		if err != nil {
