@@ -21,6 +21,11 @@ type VxlanAgentXDPExternalRouteInfo struct {
 
 type VxlanAgentXDPInAddr struct{ S_addr uint32 }
 
+type VxlanAgentXDPIpv4LpmKey struct {
+	Prefixlen uint32
+	Data      uint32
+}
+
 type VxlanAgentXDPMacAddress struct{ Addr [6]uint8 }
 
 type VxlanAgentXDPMacTableEntry struct {
@@ -82,6 +87,7 @@ type VxlanAgentXDPProgramSpecs struct {
 type VxlanAgentXDPMapSpecs struct {
 	BorderIpToRouteInfoMap *ebpf.MapSpec `ebpf:"border_ip_to_route_info_map"`
 	IfindexIsInternalMap   *ebpf.MapSpec `ebpf:"ifindex_is_internal_map"`
+	InternalNetworks       *ebpf.MapSpec `ebpf:"internal_networks"`
 	MacTable               *ebpf.MapSpec `ebpf:"mac_table"`
 }
 
@@ -106,6 +112,7 @@ func (o *VxlanAgentXDPObjects) Close() error {
 type VxlanAgentXDPMaps struct {
 	BorderIpToRouteInfoMap *ebpf.Map `ebpf:"border_ip_to_route_info_map"`
 	IfindexIsInternalMap   *ebpf.Map `ebpf:"ifindex_is_internal_map"`
+	InternalNetworks       *ebpf.Map `ebpf:"internal_networks"`
 	MacTable               *ebpf.Map `ebpf:"mac_table"`
 }
 
@@ -113,6 +120,7 @@ func (m *VxlanAgentXDPMaps) Close() error {
 	return _VxlanAgentXDPClose(
 		m.BorderIpToRouteInfoMap,
 		m.IfindexIsInternalMap,
+		m.InternalNetworks,
 		m.MacTable,
 	)
 }

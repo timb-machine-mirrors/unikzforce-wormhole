@@ -6,6 +6,20 @@ char LICENSE[] SEC("license") = "Dual BSD/GPL";
 
 // --------------------------------------------------------
 
+// internal networks. a LPM trie data structure
+// for example 192.168.1.0/24 --> VNI 0
+
+struct
+{
+    __uint(type, BPF_MAP_TYPE_LPM_TRIE);
+    __type(key, struct ipv4_lpm_key);
+    __type(value, struct internal_network_vni);
+    __uint(map_flags, BPF_F_NO_PREALLOC);
+    __uint(max_entries, 255);
+} internal_networks_map SEC(".maps");
+
+// --------------------------------------------------------
+
 // will use these info in case we want to forward a packet to
 // external network
 struct
@@ -51,8 +65,6 @@ struct
 } mac_table SEC(".maps");
 
 // --------------------------------------------------------
-
-static __always_inline bool is_broadcast_address(const struct mac_address *mac);
 
 static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time_ns, struct ethhdr *eth);
 static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address *dst_mac, struct mac_table_entry *dst_mac_entry);
@@ -103,27 +115,6 @@ long vxlan_agent_xdp(struct xdp_md *ctx)
         // if packet has been received by an external interface
         return handle_packet_received_by_external_iface(ctx, current_time_ns);
     }
-}
-
-// --------------------------------------------------------
-
-// Function to check if the MAC address is the broadcast address
-static __always_inline bool is_broadcast_address(const struct mac_address *mac)
-{
-    // Check if the MAC address is the broadcast address (FF:FF:FF:FF:FF:FF)
-    if (mac->addr[0] != 0xFF)
-        return false;
-    if (mac->addr[1] != 0xFF)
-        return false;
-    if (mac->addr[2] != 0xFF)
-        return false;
-    if (mac->addr[3] != 0xFF)
-        return false;
-    if (mac->addr[4] != 0xFF)
-        return false;
-    if (mac->addr[5] != 0xFF)
-        return false;
-    return true;
 }
 
 // --------------------------------------------------------
@@ -387,6 +378,18 @@ static long __always_inline handle_packet_received_by_external_iface(struct xdp_
     __u32 outer_src_ip = outer_iph->saddr;
     __u32 outer_dst_ip = outer_iph->daddr;
 
+    // Check if packet really belongs to internal network
+    struct ipv4_lpm_key key = {
+        .prefixlen = 32,
+        .data = outer_dst_ip};
+
+
+    // if the packet is not for internal network do XDP_PASS here and 
+    int *internal_network_vni = bpf_map_lookup_elem(&internal_networks_map, &key);
+    if (internal_network_vni == NULL) {
+        return XDP_PASS;
+    }
+
     // Calculate the start of the inner Ethernet header
     // when we perform (+1), it will not add 1 to the pointer
     // it will add the size of the vxlan header which is 8 bytes
@@ -466,12 +469,12 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
         //      - Source MAC Address: The MAC address of the sender.
         //      - Destination MAC Address: is set to broadcast address (ff:ff:ff:ff:ff:ff).
         // we need to perform Flooding, XDP_PASS --> handle in implemented TC flooding hook
-        
-        // because we cannot remove outher_eth & outer_ip & outer_udp & outer_vxlan header in
-        // the tc program, before passing it up to the TC we need to strip these headers off
-        my_bpf_printk("XDP. ext_to_int %d 5. remove outer headers before sending the packet to TC", ctx->ingress_ifindex);
-        if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
-            return XDP_DROP;
+
+        // // because we cannot remove outher_eth & outer_ip & outer_udp & outer_vxlan header in
+        // // the tc program, before passing it up to the TC we need to strip these headers off
+        // my_bpf_printk("XDP. ext_to_int %d 5. remove outer headers before sending the packet to TC", ctx->ingress_ifindex);
+        // if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
+        //     return XDP_DROP;
 
         my_bpf_printk("XDP. ext_to_int %d 6. sending packet to TC", ctx->ingress_ifindex);
 
@@ -496,11 +499,11 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
         {
             // we need to perform Flooding, XDP_PASS --> handle in implemented TC flooding hook
 
-            // because we cannot remove outher_eth & outer_ip & outer_udp & outer_vxlan header in
-            // the tc program, before passing it up to the TC we need to strip these headers off
-            my_bpf_printk("XDP. ext_to_int %d 5. remove outer headers before sending the packet to TC", ctx->ingress_ifindex);
-            if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
-                return XDP_DROP;
+            // // because we cannot remove outher_eth & outer_ip & outer_udp & outer_vxlan header in
+            // // the tc program, before passing it up to the TC we need to strip these headers off
+            // my_bpf_printk("XDP. ext_to_int %d 5. remove outer headers before sending the packet to TC", ctx->ingress_ifindex);
+            // if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
+            //     return XDP_DROP;
 
             my_bpf_printk("XDP. ext_to_int %d 6. sending packet to TC", ctx->ingress_ifindex);
 
@@ -565,6 +568,7 @@ static long __always_inline handle_packet_received_by_external_iface__ip_packet(
     my_bpf_printk("XDP. %d 4. handling IP packet received by external iface", ctx->ingress_ifindex);
     // Extract inner source and destination MAC addresses
 
+    // TODO TODO TODO is this correct?
     struct iphdr *inner_iph = (void *)(inner_eth + 1);
 
     // Ensure the inner IP header is valid
