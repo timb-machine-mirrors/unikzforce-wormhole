@@ -15,6 +15,7 @@
         "time_types.h": "c",
         "types.h": "c",
         "posix_types.h": "c",
-        "bpf_endian.h": "c"
+        "bpf_endian.h": "c",
+        "vxlan_common.bpf.h": "c"
     }
 }
