@@ -69,7 +69,7 @@ struct arp_payload
 struct ipv4_lpm_key
 {
     __u32 prefixlen;
-    __u32 data;
+    __u8  data[4];
 };
 
 struct internal_network_vni

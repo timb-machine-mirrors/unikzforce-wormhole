@@ -21,6 +21,13 @@ type VxlanCommonExternalRouteInfo struct {
 
 type VxlanCommonInAddr struct{ S_addr uint32 }
 
+type VxlanCommonInternalNetworkVni struct{ Vni uint32 }
+
+type VxlanCommonIpv4LpmKey struct {
+	Prefixlen uint32
+	Data      [4]uint8
+}
+
 type VxlanCommonMacAddress struct{ Addr [6]uint8 }
 
 type VxlanCommonMacTableEntry struct {
@@ -79,10 +86,12 @@ type VxlanCommonProgramSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type VxlanCommonMapSpecs struct {
-	DummyExternalRouteInfo *ebpf.MapSpec `ebpf:"dummy_external_route_info"`
-	DummyInAddr            *ebpf.MapSpec `ebpf:"dummy_in_addr"`
-	DummyMacAddress        *ebpf.MapSpec `ebpf:"dummy_mac_address"`
-	DummyMacTableEntry     *ebpf.MapSpec `ebpf:"dummy_mac_table_entry"`
+	DummyExternalRouteInfo  *ebpf.MapSpec `ebpf:"dummy_external_route_info"`
+	DummyInAddr             *ebpf.MapSpec `ebpf:"dummy_in_addr"`
+	DummyInternalNetworkVni *ebpf.MapSpec `ebpf:"dummy_internal_network_vni"`
+	DummyIpv4LpmKey         *ebpf.MapSpec `ebpf:"dummy_ipv4_lpm_key"`
+	DummyMacAddress         *ebpf.MapSpec `ebpf:"dummy_mac_address"`
+	DummyMacTableEntry      *ebpf.MapSpec `ebpf:"dummy_mac_table_entry"`
 }
 
 // VxlanCommonObjects contains all objects after they have been loaded into the kernel.
@@ -104,16 +113,20 @@ func (o *VxlanCommonObjects) Close() error {
 //
 // It can be passed to LoadVxlanCommonObjects or ebpf.CollectionSpec.LoadAndAssign.
 type VxlanCommonMaps struct {
-	DummyExternalRouteInfo *ebpf.Map `ebpf:"dummy_external_route_info"`
-	DummyInAddr            *ebpf.Map `ebpf:"dummy_in_addr"`
-	DummyMacAddress        *ebpf.Map `ebpf:"dummy_mac_address"`
-	DummyMacTableEntry     *ebpf.Map `ebpf:"dummy_mac_table_entry"`
+	DummyExternalRouteInfo  *ebpf.Map `ebpf:"dummy_external_route_info"`
+	DummyInAddr             *ebpf.Map `ebpf:"dummy_in_addr"`
+	DummyInternalNetworkVni *ebpf.Map `ebpf:"dummy_internal_network_vni"`
+	DummyIpv4LpmKey         *ebpf.Map `ebpf:"dummy_ipv4_lpm_key"`
+	DummyMacAddress         *ebpf.Map `ebpf:"dummy_mac_address"`
+	DummyMacTableEntry      *ebpf.Map `ebpf:"dummy_mac_table_entry"`
 }
 
 func (m *VxlanCommonMaps) Close() error {
 	return _VxlanCommonClose(
 		m.DummyExternalRouteInfo,
 		m.DummyInAddr,
+		m.DummyInternalNetworkVni,
+		m.DummyIpv4LpmKey,
 		m.DummyMacAddress,
 		m.DummyMacTableEntry,
 	)

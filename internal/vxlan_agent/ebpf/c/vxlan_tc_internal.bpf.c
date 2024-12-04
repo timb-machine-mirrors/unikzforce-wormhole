@@ -13,6 +13,7 @@ struct
     __type(key, struct in_addr);
     __type(value, struct external_route_info);
     __uint(max_entries, 4 * 1024);
+    __uint(pinning, LIBBPF_PIN_BY_NAME);
 } border_ip_to_route_info_map SEC(".maps");
 
 // --------------------------------------------------------
@@ -25,6 +26,7 @@ struct
     __type(key, __u32);
     __type(value, __u32);
     __uint(max_entries, MAX_INTERNAL_IFINDEXES);
+    __uint(pinning, LIBBPF_PIN_BY_NAME);
 } internal_ifindexes_array SEC(".maps");
 
 // --------------------------------------------------------
@@ -35,6 +37,7 @@ struct
     __type(key, __u32);
     __type(value, __u32);
     __uint(max_entries, 1);
+    __uint(pinning, LIBBPF_PIN_BY_NAME);
 } internal_ifindexes_array_length SEC(".maps");
 
 // --------------------------------------------------------
@@ -57,6 +60,7 @@ struct
     __type(key, __u32);
     __type(value, struct in_addr);
     __uint(max_entries, 1);
+    __uint(pinning, LIBBPF_PIN_BY_NAME);
 } remote_border_ips_array_length SEC(".maps");
 
 // --------------------------------------------------------
@@ -68,7 +72,7 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
 SEC("tcx/ingress")
 int vxlan_tc_internal(struct __sk_buff *skb)
 {
-    my_bpf_printk("tcx/ingress. %d 1. packet received", skb->ifindex);
+    my_bpf_printk("tcx/ingress INTERNAL. %d 1. packet received", skb->ifindex);
 
     if (skb == NULL)
         return TC_ACT_SHOT;
@@ -80,7 +84,7 @@ int vxlan_tc_internal(struct __sk_buff *skb)
     if ((void *)(eth + 1) > (void *)(long)skb->data_end)
         return TC_ACT_SHOT;
 
-    my_bpf_printk("tcx/ingress %d 2. packet recieved", skb->ifindex);
+    my_bpf_printk("tcx/ingress INTERNAL %d 2. packet recieved", skb->ifindex);
 
     int zero = 0; // Key for the first element
     __u32 *number_of_internal_ifindexes = bpf_map_lookup_elem(&internal_ifindexes_array_length, &zero);
@@ -88,7 +92,7 @@ int vxlan_tc_internal(struct __sk_buff *skb)
 
     if (number_of_internal_ifindexes == NULL || number_of_remote_border_ips == NULL || *number_of_internal_ifindexes == 0 || *number_of_remote_border_ips == 0)
     {
-        my_bpf_printk("tcx/ingress %d 4. number_of_internal_ifindexes or number_of_external_ifindexes is NULL or 0", skb->ingress_ifindex);
+        my_bpf_printk("tcx/ingress INTERNAL %d 4. number_of_internal_ifindexes or number_of_external_ifindexes is NULL or 0", skb->ingress_ifindex);
         return TC_ACT_SHOT;
     }
 
@@ -101,7 +105,7 @@ int vxlan_tc_internal(struct __sk_buff *skb)
 
 static void __always_inline clone_internal_packet_and_send_to_all_internal_ifaces_and_external_border_ips(struct __sk_buff *skb, __u32 number_of_internal_ifindexes, __u32 number_of_remote_border_ips)
 {
-    my_bpf_printk("tcx/ingress int_to_ext %d 5. start clone_internal_packet_and_send_to_all_internal_ifaces_and_external_border_ips", skb->ingress_ifindex);
+    my_bpf_printk("tcx/ingress INTERNAL  %d 5. start clone_internal_packet_and_send_to_all_internal_ifaces_and_external_border_ips", skb->ingress_ifindex);
     int i;
     __u32 *ifindex_ptr;
 
@@ -110,19 +114,19 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
         if (i >= number_of_internal_ifindexes)
             break;
 
-        my_bpf_printk("tcx/ingress int_to_ext %d 6. find internal if index i=%d", skb->ingress_ifindex, i);
+        my_bpf_printk("tcx/ingress INTERNAL  %d 6. find internal if index i=%d", skb->ingress_ifindex, i);
 
         ifindex_ptr = bpf_map_lookup_elem(&internal_ifindexes_array, &i);
 
         if (ifindex_ptr == NULL)
         {
-            my_bpf_printk("tcx/ingress int_to_ext %d 7. internal_ifindexes_array[%d] is NULL", skb->ingress_ifindex, i);
+            my_bpf_printk("tcx/ingress INTERNAL  %d 7. internal_ifindexes_array[%d] is NULL", skb->ingress_ifindex, i);
             return;
         }
 
         if (*ifindex_ptr != skb->ingress_ifindex)
         {
-            my_bpf_printk("tcx/ingress int_to_ext %d 8. cloning and redirecting packet i=%d to internal interface", skb->ingress_ifindex, i);
+            my_bpf_printk("tcx/ingress INTERNAL  %d 8. cloning and redirecting packet i=%d to internal interface", skb->ingress_ifindex, i);
             bpf_clone_redirect(skb, *ifindex_ptr, 0);
         }
     }
@@ -134,27 +138,27 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
 
     // Calculate the new packet length
     int old_len = data_end - data;
-    my_bpf_printk("tcx/ingress. int_to_ext %d 16. old_len=%d", skb->ingress_ifindex, old_len);
+    my_bpf_printk("tcx/ingress INTERNAL.  %d 16. old_len=%d", skb->ingress_ifindex, old_len);
 
 
     // Resize the packet buffer by increasing the headroom.
     // in bpf_xdp_adjust_head() if we want to increase the packet length, we must use negative number
     // in bpf_skb_adjust_room() if we want to increase the packet length, we must use positive number
     // TODO: check if this is the correct way to increase the packet length
-    my_bpf_printk("tcx/ingress int_to_ext %d 9. cloning and redirecting packet to remote borders", skb->ingress_ifindex);
+    my_bpf_printk("tcx/ingress INTERNAL  %d 9. cloning and redirecting packet to remote borders", skb->ingress_ifindex);
     long ret = bpf_skb_change_head(skb, NEW_HDR_LEN, 0);
     if (ret)
     {
-        my_bpf_printk("tcx/ingress. int_to_ext %d 10. failed to adjust room for external interface %d error %d", skb->ingress_ifindex, i, ret);
+        my_bpf_printk("tcx/ingress INTERNAL.  %d 10. failed to adjust room for external interface %d error %d", skb->ingress_ifindex, i, ret);
         return;
     } else {
-        my_bpf_printk("tcx/ingress. int_to_ext %d 10. successful adjust room for external interface %d", skb->ingress_ifindex, i);
+        my_bpf_printk("tcx/ingress INTERNAL.  %d 10. successful adjust room for external interface %d", skb->ingress_ifindex, i);
     }
 
     int new_len = old_len + NEW_HDR_LEN;
-    my_bpf_printk("tcx/ingress. int_to_ext %d 16. new_len=%d", skb->ingress_ifindex, new_len);
+    my_bpf_printk("tcx/ingress INTERNAL.  %d 16. new_len=%d", skb->ingress_ifindex, new_len);
 
-    my_bpf_printk("tcx/ingress. int_to_ext %d 10. cloning & redirecting to remote borders", skb->ingress_ifindex);
+    my_bpf_printk("tcx/ingress INTERNAL.  %d 10. cloning & redirecting to remote borders", skb->ingress_ifindex);
 
     bpf_for(i, 0, MAX_REMOTE_BORDERS_IPS)
     {
@@ -164,22 +168,22 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
         if (i >= number_of_remote_border_ips)
             break;
 
-        my_bpf_printk("tcx/ingress. int_to_ext %d 11. try to find remote border ip i=[%d]", skb->ingress_ifindex, i);
+        my_bpf_printk("tcx/ingress INTERNAL.  %d 11. try to find remote border ip i=[%d]", skb->ingress_ifindex, i);
 
         struct in_addr *remote_border_ip = bpf_map_lookup_elem(&remote_border_ips_array, &i);
 
         if (remote_border_ip == NULL)
         {
-            my_bpf_printk("tcx/ingress. int_to_ext %d 12. unable to find remote border ip i=[%d]", skb->ingress_ifindex, i);
+            my_bpf_printk("tcx/ingress INTERNAL.  %d 12. unable to find remote border ip i=[%d]", skb->ingress_ifindex, i);
             return;
         }
 
-        my_bpf_printk("tcx/ingress. int_to_ext %d 13. try to find remote border route_info i=[%d]", skb->ingress_ifindex, i);
+        my_bpf_printk("tcx/ingress INTERNAL.  %d 13. try to find remote border route_info i=[%d]", skb->ingress_ifindex, i);
         struct external_route_info *route_info = bpf_map_lookup_elem(&border_ip_to_route_info_map, remote_border_ip);
 
         if (route_info == NULL)
         {
-            my_bpf_printk("tcx/ingress. int_to_ext %d 14. unable to find remote border route_info i=[%d]", skb->ingress_ifindex, i);
+            my_bpf_printk("tcx/ingress INTERNAL.  %d 14. unable to find remote border route_info i=[%d]", skb->ingress_ifindex, i);
             return;
         }
 
@@ -195,7 +199,7 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
         // - outer vxlan header
         // - inner original layer 2 frame
 
-        my_bpf_printk("tcx/ingress. int_to_ext %d 15. setting packet fields before redirecting i=[%d]", skb->ingress_ifindex, i);
+        my_bpf_printk("tcx/ingress INTERNAL.  %d 15. setting packet fields before redirecting i=[%d]", skb->ingress_ifindex, i);
 
         void *data = (void *)(long)skb->data;
         void *data_end = (void *)(long)skb->data_end;
@@ -209,7 +213,7 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
         // Ensure the packet is still valid after adjustment
         if (data + NEW_HDR_LEN > data_end)
         {
-            my_bpf_printk("tcx/ingress. int_to_ext %d 16. incorrect data & data_end size after adjusting size i=[%d]", skb->ingress_ifindex, i);
+            my_bpf_printk("tcx/ingress INTERNAL.  %d 16. incorrect data & data_end size after adjusting size i=[%d]", skb->ingress_ifindex, i);
             return;
         }
 
@@ -226,7 +230,7 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
         outer_iph->ihl = 5;                                                 // ip header length
         outer_iph->tos = 0;                                                 // ip type of service
         outer_iph->tot_len = bpf_htons(new_len - ETH_HLEN);                 // ip total length
-        my_bpf_printk("tcx/ingress. int_to_ext %d 16. outer_iph->tot_len=%d", skb->ingress_ifindex, new_len - ETH_HLEN);
+        my_bpf_printk("tcx/ingress INTERNAL.  %d 16. outer_iph->tot_len=%d", skb->ingress_ifindex, new_len - ETH_HLEN);
         outer_iph->id = 0;                                                  // ip id
         outer_iph->frag_off = 0;                                            // ip fragment offset
         outer_iph->ttl = 64;                                                // ip time to live
@@ -243,10 +247,10 @@ static void __always_inline clone_internal_packet_and_send_to_all_internal_iface
         // for now we don't set VXLAN header
 
         // Calculate ip checksum
-        my_bpf_printk("tcx/ingress. int_to_ext %d 16. fixing checksum before redirecting i=[%d]", skb->ingress_ifindex, i);
+        my_bpf_printk("tcx/ingress INTERNAL.  %d 16. fixing checksum before redirecting i=[%d]", skb->ingress_ifindex, i);
         outer_iph->check = ~bpf_csum_diff(0, 0, (__u32 *)outer_iph, IP_HDR_LEN, 0);
 
-        my_bpf_printk("tcx/ingress. int_to_ext %d 16. performing the redirection i=[%d]", skb->ingress_ifindex, i);
+        my_bpf_printk("tcx/ingress INTERNAL.  %d 16. performing the redirection i=[%d]", skb->ingress_ifindex, i);
         bpf_clone_redirect(skb, route_info->external_iface_index, 0);
     }
 }

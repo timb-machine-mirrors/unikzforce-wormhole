@@ -25,7 +25,7 @@ type VxlanXDPInternalInternalNetworkVni struct{ Vni uint32 }
 
 type VxlanXDPInternalIpv4LpmKey struct {
 	Prefixlen uint32
-	Data      uint32
+	Data      [4]uint8
 }
 
 type VxlanXDPInternalMacAddress struct{ Addr [6]uint8 }

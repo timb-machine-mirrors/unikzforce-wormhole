@@ -61,6 +61,8 @@ func (vxlanAgent *VxlanAgent) ActivateVxlanAgent() error {
 		return err
 	}
 
+	logrus.Println("Size of borderIp", len(vxlanAgent.borderIpToExternalRouteInfo))
+
 	// Load the compiled XDP eBPF ELF into the kernel.
 	// the xdp program would need to be loaded only once on the system.
 	// the tc program also needs to be loaded only once on the system.
@@ -359,6 +361,8 @@ func (vxlanAgent *VxlanAgent) initExternalRouteInfos() error {
 				ExternalIfaceNextHopMac: ConvertStringToMac(externalNextHopMacStr),
 				ExternalIfaceIp:         vxlanAgentEbpfGen.VxlanCommonInAddr{S_addr: binary.BigEndian.Uint32(net.ParseIP(routes[0].Src.String()).To4())},
 			}
+
+			logrus.Println("borderIpToExternalRouteInfo->ExternalIfaceIp: ", vxlanAgent.borderIpToExternalRouteInfo[binary.BigEndian.Uint32(neighBorderIp)].ExternalIfaceIp.S_addr)
 		}
 
 	}
@@ -413,6 +417,20 @@ func (vxlanAgent *VxlanAgent) initVxlanXdpMaps() error {
 			return err
 		}
 	}
+
+	// -----------------------
+
+	var ip_bytes [4]uint8
+	ip := net.ParseIP("192.168.1.0").To4()
+	copy(ip_bytes[:], ip)
+	network_prefix := vxlanAgentEbpfGen.VxlanCommonIpv4LpmKey{
+		Prefixlen: 24,
+		Data:      ip_bytes,
+	}
+	network_vni := vxlanAgentEbpfGen.VxlanCommonInternalNetworkVni{
+		Vni: 0,
+	}
+	vxlanAgent.xdpExternalObjects.InternalNetworksMap.Put(network_prefix, network_vni)
 
 	return nil
 }
@@ -476,6 +494,20 @@ func (vxlanAgent *VxlanAgent) initVxlanTCMaps() error {
 		logrus.Error("Error putting value in RemoteBorderIpsArrayLength:", err)
 		return err
 	}
+
+	// ----------------------
+
+	var ip_bytes [4]uint8
+	ip := net.ParseIP("192.168.1.0").To4()
+	copy(ip_bytes[:], ip)
+	network_prefix := vxlanAgentEbpfGen.VxlanCommonIpv4LpmKey{
+		Prefixlen: 24,
+		Data:      ip_bytes,
+	}
+	network_vni := vxlanAgentEbpfGen.VxlanCommonInternalNetworkVni{
+		Vni: 0,
+	}
+	vxlanAgent.tcExternalObjects.InternalNetworksMap.Put(network_prefix, network_vni)
 
 	return nil
 }

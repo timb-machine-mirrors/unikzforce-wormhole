@@ -12,6 +12,13 @@ import (
 	"github.com/cilium/ebpf"
 )
 
+type VxlanTCExternalInternalNetworkVni struct{ Vni uint32 }
+
+type VxlanTCExternalIpv4LpmKey struct {
+	Prefixlen uint32
+	Data      [4]uint8
+}
+
 // LoadVxlanTCExternal returns the embedded CollectionSpec for VxlanTCExternal.
 func LoadVxlanTCExternal() (*ebpf.CollectionSpec, error) {
 	reader := bytes.NewReader(_VxlanTCExternalBytes)
@@ -62,6 +69,7 @@ type VxlanTCExternalProgramSpecs struct {
 type VxlanTCExternalMapSpecs struct {
 	InternalIfindexesArray       *ebpf.MapSpec `ebpf:"internal_ifindexes_array"`
 	InternalIfindexesArrayLength *ebpf.MapSpec `ebpf:"internal_ifindexes_array_length"`
+	InternalNetworksMap          *ebpf.MapSpec `ebpf:"internal_networks_map"`
 }
 
 // VxlanTCExternalObjects contains all objects after they have been loaded into the kernel.
@@ -85,12 +93,14 @@ func (o *VxlanTCExternalObjects) Close() error {
 type VxlanTCExternalMaps struct {
 	InternalIfindexesArray       *ebpf.Map `ebpf:"internal_ifindexes_array"`
 	InternalIfindexesArrayLength *ebpf.Map `ebpf:"internal_ifindexes_array_length"`
+	InternalNetworksMap          *ebpf.Map `ebpf:"internal_networks_map"`
 }
 
 func (m *VxlanTCExternalMaps) Close() error {
 	return _VxlanTCExternalClose(
 		m.InternalIfindexesArray,
 		m.InternalIfindexesArrayLength,
+		m.InternalNetworksMap,
 	)
 }
 
