@@ -56,9 +56,11 @@ WORKDIR /wormhole-source/
 RUN go mod download
 RUN go generate ./internal/switch_agent/ebpf/
 RUN go generate ./internal/vxlan_agent/ebpf/
+RUN go generate ./internal/dummy_xdp/ebpf/
 
 RUN go build -o /build/switch_agent ./cmd/switch_agent/main.go
 RUN go build -o /build/vxlan_agent ./cmd/vxlan_agent/main.go
+RUN go build -o /build/dummy_xdp ./cmd/dummy_xdp/main.go
 RUN go build -o /build/test_agent ./cmd/test_agent/test_agent_grpc.server_bootstrap.go
 # for debuging comment above and uncomment below 2 commands & comment above
 #RUN go build -gcflags="all=-N -l" -o /build/switch_agent ./cmd/switch_agent/main.go
