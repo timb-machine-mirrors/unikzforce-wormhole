@@ -218,23 +218,20 @@ static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_in
 
     struct in_addr *dst_border_ip = &(dst_mac_entry->border_ip);
 
-    uint32_t ip = dst_border_ip->s_addr;
-
     // Convert to host byte order
-    ip = bpf_ntohl(ip);
-    dst_border_ip->s_addr = ip;
+    uint32_t host_order_dst_border_ip = bpf_ntohl(dst_border_ip->s_addr);
 
     // Extract octets
-    uint8_t octet1 = (ip >> 24) & 0xFF;
-    uint8_t octet2 = (ip >> 16) & 0xFF;
-    uint8_t octet3 = (ip >> 8) & 0xFF;
-    uint8_t octet4 = ip & 0xFF;
+    uint8_t octet1 = (host_order_dst_border_ip >> 24) & 0xFF;
+    uint8_t octet2 = (host_order_dst_border_ip >> 16) & 0xFF;
+    uint8_t octet3 = (host_order_dst_border_ip >> 8) & 0xFF;
+    uint8_t octet4 = host_order_dst_border_ip & 0xFF;
 
     // Print the address
     my_bpf_printk("XDP. INTERNAL IPv4 address: %d.%d.%d.%d\n", octet1, octet2, octet3, octet4);
 
     my_bpf_printk("XDP. INTERNAL %d 12. try to find route info", ctx->ingress_ifindex);
-    struct external_route_info *route_info = bpf_map_lookup_elem(&border_ip_to_route_info_map, dst_border_ip);
+    struct external_route_info *route_info = bpf_map_lookup_elem(&border_ip_to_route_info_map, &host_order_dst_border_ip);
 
     if (route_info == NULL)
     {
