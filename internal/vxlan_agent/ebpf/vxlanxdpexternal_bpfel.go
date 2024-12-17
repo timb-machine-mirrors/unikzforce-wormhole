@@ -12,8 +12,6 @@ import (
 	"github.com/cilium/ebpf"
 )
 
-type VxlanXDPExternalInternalNetworkVni struct{ Vni uint32 }
-
 type VxlanXDPExternalIpv4LpmKey struct {
 	Prefixlen uint32
 	Data      [4]uint8
@@ -28,6 +26,15 @@ type VxlanXDPExternalMacTableEntry struct {
 	LastSeenTimestampNs uint64
 	BorderIp            struct{ S_addr uint32 }
 	_                   [4]byte
+}
+
+type VxlanXDPExternalNetworkVni struct {
+	Vni                   uint32
+	Network               VxlanXDPExternalIpv4LpmKey
+	InternalIfindexes     [10]uint32
+	InternalIfindexesSize uint32
+	BorderIps             [10]struct{ S_addr uint32 }
+	BorderIpsSize         uint32
 }
 
 // LoadVxlanXDPExternal returns the embedded CollectionSpec for VxlanXDPExternal.
@@ -79,8 +86,8 @@ type VxlanXDPExternalProgramSpecs struct {
 // It can be passed ebpf.CollectionSpec.Assign.
 type VxlanXDPExternalMapSpecs struct {
 	IfindexIsInternalMap *ebpf.MapSpec `ebpf:"ifindex_is_internal_map"`
-	InternalNetworksMap  *ebpf.MapSpec `ebpf:"internal_networks_map"`
 	MacTable             *ebpf.MapSpec `ebpf:"mac_table"`
+	NetworksMap          *ebpf.MapSpec `ebpf:"networks_map"`
 }
 
 // VxlanXDPExternalObjects contains all objects after they have been loaded into the kernel.
@@ -103,15 +110,15 @@ func (o *VxlanXDPExternalObjects) Close() error {
 // It can be passed to LoadVxlanXDPExternalObjects or ebpf.CollectionSpec.LoadAndAssign.
 type VxlanXDPExternalMaps struct {
 	IfindexIsInternalMap *ebpf.Map `ebpf:"ifindex_is_internal_map"`
-	InternalNetworksMap  *ebpf.Map `ebpf:"internal_networks_map"`
 	MacTable             *ebpf.Map `ebpf:"mac_table"`
+	NetworksMap          *ebpf.Map `ebpf:"networks_map"`
 }
 
 func (m *VxlanXDPExternalMaps) Close() error {
 	return _VxlanXDPExternalClose(
 		m.IfindexIsInternalMap,
-		m.InternalNetworksMap,
 		m.MacTable,
+		m.NetworksMap,
 	)
 }
 

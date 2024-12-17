@@ -21,8 +21,6 @@ type VxlanXDPInternalExternalRouteInfo struct {
 
 type VxlanXDPInternalInAddr struct{ S_addr uint32 }
 
-type VxlanXDPInternalInternalNetworkVni struct{ Vni uint32 }
-
 type VxlanXDPInternalIpv4LpmKey struct {
 	Prefixlen uint32
 	Data      [4]uint8
@@ -37,6 +35,15 @@ type VxlanXDPInternalMacTableEntry struct {
 	LastSeenTimestampNs uint64
 	BorderIp            VxlanXDPInternalInAddr
 	_                   [4]byte
+}
+
+type VxlanXDPInternalNetworkVni struct {
+	Vni                   uint32
+	Network               VxlanXDPInternalIpv4LpmKey
+	InternalIfindexes     [10]uint32
+	InternalIfindexesSize uint32
+	BorderIps             [10]VxlanXDPInternalInAddr
+	BorderIpsSize         uint32
 }
 
 // LoadVxlanXDPInternal returns the embedded CollectionSpec for VxlanXDPInternal.
@@ -89,8 +96,8 @@ type VxlanXDPInternalProgramSpecs struct {
 type VxlanXDPInternalMapSpecs struct {
 	BorderIpToRouteInfoMap *ebpf.MapSpec `ebpf:"border_ip_to_route_info_map"`
 	IfindexIsInternalMap   *ebpf.MapSpec `ebpf:"ifindex_is_internal_map"`
-	InternalNetworksMap    *ebpf.MapSpec `ebpf:"internal_networks_map"`
 	MacTable               *ebpf.MapSpec `ebpf:"mac_table"`
+	NetworksMap            *ebpf.MapSpec `ebpf:"networks_map"`
 }
 
 // VxlanXDPInternalObjects contains all objects after they have been loaded into the kernel.
@@ -114,16 +121,16 @@ func (o *VxlanXDPInternalObjects) Close() error {
 type VxlanXDPInternalMaps struct {
 	BorderIpToRouteInfoMap *ebpf.Map `ebpf:"border_ip_to_route_info_map"`
 	IfindexIsInternalMap   *ebpf.Map `ebpf:"ifindex_is_internal_map"`
-	InternalNetworksMap    *ebpf.Map `ebpf:"internal_networks_map"`
 	MacTable               *ebpf.Map `ebpf:"mac_table"`
+	NetworksMap            *ebpf.Map `ebpf:"networks_map"`
 }
 
 func (m *VxlanXDPInternalMaps) Close() error {
 	return _VxlanXDPInternalClose(
 		m.BorderIpToRouteInfoMap,
 		m.IfindexIsInternalMap,
-		m.InternalNetworksMap,
 		m.MacTable,
+		m.NetworksMap,
 	)
 }
 

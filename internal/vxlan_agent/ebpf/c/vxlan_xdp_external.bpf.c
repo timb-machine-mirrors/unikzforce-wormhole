@@ -4,18 +4,18 @@ char LICENSE[] SEC("license") = "Dual BSD/GPL";
 
 // --------------------------------------------------------
 
-// internal networks. a LPM trie data structure
+// a LPM trie data structure
 // for example 192.168.1.0/24 --> VNI 0
 
 struct
 {
     __uint(type, BPF_MAP_TYPE_LPM_TRIE);
     __type(key, struct ipv4_lpm_key);
-    __type(value, struct internal_network_vni);
+    __type(value, struct network_vni);
     __uint(map_flags, BPF_F_NO_PREALLOC);
     __uint(max_entries, 255);
     __uint(pinning, LIBBPF_PIN_BY_NAME);
-} internal_networks_map SEC(".maps");
+} networks_map SEC(".maps");
 
 // --------------------------------------------------------
 
@@ -174,12 +174,12 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
         return XDP_DROP;
 
     // Check if packet really belongs to internal network
-    struct ipv4_lpm_key key = {.prefixlen = 24};
+    struct ipv4_lpm_key key = {.prefixlen = 32};
     __builtin_memcpy(key.data, inner_arp_payload->ar_tip, sizeof(key.data));
 
-    // if the packet is not for internal network do XDP_PASS here and
-    int *internal_network_vni = bpf_map_lookup_elem(&internal_networks_map, &key);
-    if (internal_network_vni == NULL)
+    // if the packet is not for internal network do XDP_PASS in here and similar thing in TC
+    struct network_vni *dst_network_vni = bpf_map_lookup_elem(&networks_map, &key);
+    if (dst_network_vni == NULL)
     {
         my_bpf_printk("XDP does not belong to internal network. pass it up");
         return XDP_PASS;
@@ -323,8 +323,8 @@ static long __always_inline handle_packet_received_by_external_iface__ip_packet(
     __builtin_memcpy(key.data, &inner_dst_ip, sizeof(key.data));
 
     // if the packet is not for internal network do XDP_PASS here and
-    int *internal_network_vni = bpf_map_lookup_elem(&internal_networks_map, &key);
-    if (internal_network_vni == NULL)
+    int *network_vni = bpf_map_lookup_elem(&networks_map, &key);
+    if (network_vni == NULL)
     {
         my_bpf_printk("XDP does not belong to internal network. pass it up");
         return XDP_PASS;
@@ -357,7 +357,7 @@ static long __always_inline handle_packet_received_by_external_iface__ip_packet(
             // Ensure the packet is still valid after adjustment
             if (data + sizeof(struct ethhdr) > data_end)
                 return XDP_DROP;
-            
+
             // Redirect the resulting internal frame buffer to the proper interface
             return bpf_redirect(dst_mac_entry->ifindex, 0);
         }

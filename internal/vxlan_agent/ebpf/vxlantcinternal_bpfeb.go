@@ -21,6 +21,20 @@ type VxlanTCInternalExternalRouteInfo struct {
 
 type VxlanTCInternalInAddr struct{ S_addr uint32 }
 
+type VxlanTCInternalIpv4LpmKey struct {
+	Prefixlen uint32
+	Data      [4]uint8
+}
+
+type VxlanTCInternalNetworkVni struct {
+	Vni                   uint32
+	Network               VxlanTCInternalIpv4LpmKey
+	InternalIfindexes     [10]uint32
+	InternalIfindexesSize uint32
+	BorderIps             [10]VxlanTCInternalInAddr
+	BorderIpsSize         uint32
+}
+
 // LoadVxlanTCInternal returns the embedded CollectionSpec for VxlanTCInternal.
 func LoadVxlanTCInternal() (*ebpf.CollectionSpec, error) {
 	reader := bytes.NewReader(_VxlanTCInternalBytes)
@@ -69,11 +83,8 @@ type VxlanTCInternalProgramSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type VxlanTCInternalMapSpecs struct {
-	BorderIpToRouteInfoMap       *ebpf.MapSpec `ebpf:"border_ip_to_route_info_map"`
-	InternalIfindexesArray       *ebpf.MapSpec `ebpf:"internal_ifindexes_array"`
-	InternalIfindexesArrayLength *ebpf.MapSpec `ebpf:"internal_ifindexes_array_length"`
-	RemoteBorderIpsArray         *ebpf.MapSpec `ebpf:"remote_border_ips_array"`
-	RemoteBorderIpsArrayLength   *ebpf.MapSpec `ebpf:"remote_border_ips_array_length"`
+	BorderIpToRouteInfoMap *ebpf.MapSpec `ebpf:"border_ip_to_route_info_map"`
+	NetworksMap            *ebpf.MapSpec `ebpf:"networks_map"`
 }
 
 // VxlanTCInternalObjects contains all objects after they have been loaded into the kernel.
@@ -95,20 +106,14 @@ func (o *VxlanTCInternalObjects) Close() error {
 //
 // It can be passed to LoadVxlanTCInternalObjects or ebpf.CollectionSpec.LoadAndAssign.
 type VxlanTCInternalMaps struct {
-	BorderIpToRouteInfoMap       *ebpf.Map `ebpf:"border_ip_to_route_info_map"`
-	InternalIfindexesArray       *ebpf.Map `ebpf:"internal_ifindexes_array"`
-	InternalIfindexesArrayLength *ebpf.Map `ebpf:"internal_ifindexes_array_length"`
-	RemoteBorderIpsArray         *ebpf.Map `ebpf:"remote_border_ips_array"`
-	RemoteBorderIpsArrayLength   *ebpf.Map `ebpf:"remote_border_ips_array_length"`
+	BorderIpToRouteInfoMap *ebpf.Map `ebpf:"border_ip_to_route_info_map"`
+	NetworksMap            *ebpf.Map `ebpf:"networks_map"`
 }
 
 func (m *VxlanTCInternalMaps) Close() error {
 	return _VxlanTCInternalClose(
 		m.BorderIpToRouteInfoMap,
-		m.InternalIfindexesArray,
-		m.InternalIfindexesArrayLength,
-		m.RemoteBorderIpsArray,
-		m.RemoteBorderIpsArrayLength,
+		m.NetworksMap,
 	)
 }
 

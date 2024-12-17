@@ -17,9 +17,9 @@ topology:
         - /sys/fs/bpf:/sys/fs/bpf
       exec:
         - sh -c 'echo "ping 192.168.1.11" >> /root/.bash_history'
+        - sh -c 'echo "/build/dummy_xdp --interface-name eth1" >> /root/.bash_history'
         - ip addr add 192.168.1.10/24 dev eth1
         - touch /tmp/is_clab_container_ready
-      cpu: 2
 
     border1:
       kind: linux
@@ -28,10 +28,21 @@ topology:
         - /sys/kernel/debug:/sys/kernel/debug
         - /sys/fs/bpf:/sys/fs/bpf
       exec:
-        - sh -c 'echo "/build/vxlan_agent --internal-interface-names eth1 --external-interface-names eth2 --remote-border-ips 3.3.3.2" >> /root/.bash_history'
+        - sh -c 'echo "/build/vxlan_agent --config /build/vxlan_agent.config.yaml" >> /root/.bash_history'
         - ip addr add 3.3.3.1/24 dev eth2
+        - |
+          sh -c 'cat << EOF > /build/vxlan_agent.config.yaml
+          networks:
+            - vni: 0
+              address: 192.168.1.0/24
+              internal-network-interfaces:
+                - eth1
+              external-network-interfaces:
+                - eth2
+              border-ips:
+                - 3.3.3.2
+          EOF'
         - touch /tmp/is_clab_container_ready
-      cpu: 2
 
     border2:
       kind: linux
@@ -40,10 +51,21 @@ topology:
         - /sys/kernel/debug:/sys/kernel/debug
         - /sys/fs/bpf:/sys/fs/bpf
       exec:
-        - sh -c 'echo "/build/vxlan_agent --internal-interface-names eth1 --external-interface-names eth2 --remote-border-ips 3.3.3.1" >> /root/.bash_history'
+        - sh -c 'echo "/build/vxlan_agent --config /build/vxlan_agent.config.yaml" >> /root/.bash_history'
         - ip addr add 3.3.3.2/24 dev eth2
+        - |
+          sh -c 'cat << EOF > /build/vxlan_agent.config.yaml
+          networks:
+            - vni: 0
+              address: 192.168.1.0/24
+              internal-network-interfaces:
+                - eth1
+              external-network-interfaces:
+                - eth2
+              border-ips:
+                - 3.3.3.1
+          EOF'
         - touch /tmp/is_clab_container_ready
-      cpu: 2
 
     dst:
       kind: linux
@@ -60,9 +82,9 @@ topology:
         - /sys/fs/bpf:/sys/fs/bpf
       exec:
         - sh -c 'echo "ping 192.168.1.10" >> /root/.bash_history'
+        - sh -c 'echo "/build/dummy_xdp --interface-name eth1" >> /root/.bash_history'
         - ip addr add 192.168.1.11/24 dev eth1
         - touch /tmp/is_clab_container_ready
-      cpu: 2
 
   links:
     - endpoints: [src:eth1, border1:eth1]
@@ -70,6 +92,9 @@ topology:
       # if the MTU is high the libbpf would complain like this:
       #   libbpf: Kernel error message: veth: Peer MTU is too large to set XDP
       #   Error: interface xdp attach failed: Numerical result out of range
+      # But if you change the program type from SEC("xdp") to SEC("xdp.frags")
+      # then the mtu can be anything, you'll be able to deal with the first page 
+      # of the jumbo frames in xdp.frags easily.
       # mtu: 1500
     - endpoints: [border1:eth2, border2:eth2]
       # mtu: 1500

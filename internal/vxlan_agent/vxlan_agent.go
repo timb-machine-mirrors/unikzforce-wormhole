@@ -18,12 +18,18 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
+type VxlanAgentNetwork struct {
+	VNI                       int
+	Prefix                    int
+	Address                   string
+	InternalNetworkInterfaces []netlink.Link
+	ExternalNetworkInterfaces []netlink.Link
+	BorderIPs                 []string
+}
+
 // VxlanAgent struct encapsulates all related functions and data
 type VxlanAgent struct {
-	internalNetworkInterfaces   []netlink.Link
-	externalNetworkInterfaces   []netlink.Link
-	neighbourBorderIps          []string
-	borderIps                   []uint32
+	networks                    []VxlanAgentNetwork
 	borderIpToExternalRouteInfo map[uint32]vxlanAgentEbpfGen.VxlanCommonExternalRouteInfo
 	xdpExternalObjects          vxlanAgentEbpfGen.VxlanXDPExternalObjects
 	xdpInternalObjects          vxlanAgentEbpfGen.VxlanXDPInternalObjects
@@ -37,11 +43,9 @@ type VxlanAgentMetadata struct {
 }
 
 // NewVxlanAgent initializes and returns a new VxlanAgent instance
-func NewVxlanAgent(internalNetworkInterfaces []netlink.Link, externalNetworkInterfaces []netlink.Link, neighborBorderIps []string) *VxlanAgent {
+func NewVxlanAgent(networks []VxlanAgentNetwork) *VxlanAgent {
 	return &VxlanAgent{
-		internalNetworkInterfaces: internalNetworkInterfaces,
-		externalNetworkInterfaces: externalNetworkInterfaces,
-		neighbourBorderIps:        neighborBorderIps,
+		networks: networks,
 	}
 }
 
@@ -56,7 +60,7 @@ func (vxlanAgent *VxlanAgent) ActivateVxlanAgent() error {
 
 	logrus.Print("1. find neighbor forwarding mac table")
 
-	if err := vxlanAgent.initExternalRouteInfos(); err != nil {
+	if err := vxlanAgent.initBorderIpToExternalRouteInfo(); err != nil {
 		logrus.Error("Error finding forwarding macs for neighbor ips using traceroute:", err)
 		return err
 	}
@@ -108,24 +112,11 @@ func (vxlanAgent *VxlanAgent) ActivateVxlanAgent() error {
 	// ---------------------------------------------------------------------------
 
 	// initialize maps needed by vxlan agent xdp program
-	logrus.Print("3. initialize xdp maps")
-	if err := vxlanAgent.initVxlanXdpMaps(); err != nil {
+	logrus.Print("3. initialize maps")
+	if err := vxlanAgent.initVxlanMaps(); err != nil {
 		logrus.Error("Error initializing xdp maps:", err)
 		return err
 	}
-
-	logrus.Print("size of internalNetworkInterfaces ", len(vxlanAgent.internalNetworkInterfaces))
-
-	// ---------------------
-
-	// initialize maps needed by vxlan agent unknown unicast flooding program
-	logrus.Print("4. add network interfaces to unknown unicast flooding maps")
-	if err := vxlanAgent.initVxlanTCMaps(); err != nil {
-		logrus.Error("Error initializing unknown unicast flooding maps:", err)
-		return err
-	}
-
-	// ---------------------------------------------------------------------------
 
 	// Attach the loaded XDP ebpf program to the network interfaces.
 	logrus.Print("5. attach vxlan agent XDP & Unknown Unicast Flooding TC program to interfaces")
@@ -301,17 +292,21 @@ func (vxlanAgent *VxlanAgent) loadVxlanTcExternalProgram() error {
 	return err
 }
 
-func (vxlanAgent *VxlanAgent) initExternalRouteInfos() error {
+func (vxlanAgent *VxlanAgent) initBorderIpToExternalRouteInfo() error {
 
 	vxlanAgent.borderIpToExternalRouteInfo = make(map[uint32]vxlanAgentEbpfGen.VxlanCommonExternalRouteInfo)
 
-	for _, borderIp := range vxlanAgent.neighbourBorderIps {
-		vxlanAgent.borderIps = append(vxlanAgent.borderIps, binary.BigEndian.Uint32(net.ParseIP(borderIp).To4()))
+	borderIpStrList := map[string]bool{}
+
+	for _, network := range vxlanAgent.networks {
+		for _, borderIpStr := range network.BorderIPs {
+			borderIpStrList[borderIpStr] = true
+		}
 	}
 
-	for _, neighborBorderIpStr := range vxlanAgent.neighbourBorderIps {
+	for borderIpStr := range borderIpStrList {
 
-		pinger, err := probing.NewPinger(neighborBorderIpStr)
+		pinger, err := probing.NewPinger(borderIpStr)
 		if err != nil {
 			logrus.Errorf("Failed to create pinger: %v", err)
 		}
@@ -323,15 +318,15 @@ func (vxlanAgent *VxlanAgent) initExternalRouteInfos() error {
 			logrus.Errorf("Ping failed: %v", err)
 		}
 
-		neighBorderIp := net.ParseIP(neighborBorderIpStr).To4()
+		borderIp := net.ParseIP(borderIpStr).To4()
 
-		routes, err := netlink.RouteGet(neighBorderIp)
+		routes, err := netlink.RouteGet(borderIp)
 		if err != nil {
 			logrus.Errorf("Failed to get route: %v", err)
 			return err
 		}
 
-		logrus.Printf("Route to %s: %+v\n", neighborBorderIpStr, routes[0])
+		logrus.Printf("Route to %s: %+v\n", borderIpStr, routes[0])
 		if routes[0].Gw != nil {
 			logrus.Printf("Gateway: %s Mac: %s\n", routes[0].Gw.String(), arp.Search(routes[0].Gw.String()))
 		}
@@ -355,14 +350,14 @@ func (vxlanAgent *VxlanAgent) initExternalRouteInfos() error {
 				return err
 			}
 			logrus.Printf("Interface: %s\n", l.Attrs().Name)
-			vxlanAgent.borderIpToExternalRouteInfo[binary.BigEndian.Uint32(neighBorderIp)] = vxlanAgentEbpfGen.VxlanCommonExternalRouteInfo{
+			vxlanAgent.borderIpToExternalRouteInfo[binary.BigEndian.Uint32(borderIp)] = vxlanAgentEbpfGen.VxlanCommonExternalRouteInfo{
 				ExternalIfaceIndex:      uint32(l.Attrs().Index),
 				ExternalIfaceMac:        ConvertMacBytesToMac(l.Attrs().HardwareAddr),
 				ExternalIfaceNextHopMac: ConvertStringToMac(externalNextHopMacStr),
 				ExternalIfaceIp:         vxlanAgentEbpfGen.VxlanCommonInAddr{S_addr: binary.BigEndian.Uint32(net.ParseIP(routes[0].Src.String()).To4())},
 			}
 
-			logrus.Println("borderIpToExternalRouteInfo->ExternalIfaceIp: ", vxlanAgent.borderIpToExternalRouteInfo[binary.BigEndian.Uint32(neighBorderIp)].ExternalIfaceIp.S_addr)
+			logrus.Println("borderIpToExternalRouteInfo->ExternalIfaceIp: ", vxlanAgent.borderIpToExternalRouteInfo[binary.BigEndian.Uint32(borderIp)].ExternalIfaceIp.S_addr)
 		}
 
 	}
@@ -370,11 +365,24 @@ func (vxlanAgent *VxlanAgent) initExternalRouteInfos() error {
 	return nil
 }
 
-func (vxlanAgent *VxlanAgent) initVxlanXdpMaps() error {
+func (vxlanAgent *VxlanAgent) initVxlanMaps() error {
 
 	// -----------------------
 
-	for _, internalNetworkInterface := range vxlanAgent.internalNetworkInterfaces {
+	internalNetworks := map[netlink.Link]bool{}
+	externalNetworks := map[netlink.Link]bool{}
+
+	for _, network := range vxlanAgent.networks {
+		for _, net := range network.InternalNetworkInterfaces {
+			internalNetworks[net] = true
+		}
+
+		for _, net := range network.ExternalNetworkInterfaces {
+			externalNetworks[net] = true
+		}
+	}
+
+	for internalNetworkInterface := range internalNetworks {
 		err := vxlanAgent.xdpInternalObjects.IfindexIsInternalMap.Put(uint32(internalNetworkInterface.Attrs().Index), uint8(1))
 		if err != nil {
 			logrus.Error("Error putting value in IfindexIsInternalMap:", err)
@@ -382,26 +390,8 @@ func (vxlanAgent *VxlanAgent) initVxlanXdpMaps() error {
 		}
 	}
 
-	for _, externalNetworkInterface := range vxlanAgent.externalNetworkInterfaces {
+	for externalNetworkInterface := range externalNetworks {
 		err := vxlanAgent.xdpInternalObjects.IfindexIsInternalMap.Put(uint32(externalNetworkInterface.Attrs().Index), uint8(0))
-		if err != nil {
-			logrus.Error("Error putting value in IfindexIsInternalMap:", err)
-			return err
-		}
-	}
-
-	// -----------------------
-
-	for _, internalNetworkInterface := range vxlanAgent.internalNetworkInterfaces {
-		err := vxlanAgent.xdpExternalObjects.IfindexIsInternalMap.Put(uint32(internalNetworkInterface.Attrs().Index), uint8(1))
-		if err != nil {
-			logrus.Error("Error putting value in IfindexIsInternalMap:", err)
-			return err
-		}
-	}
-
-	for _, externalNetworkInterface := range vxlanAgent.externalNetworkInterfaces {
-		err := vxlanAgent.xdpExternalObjects.IfindexIsInternalMap.Put(uint32(externalNetworkInterface.Attrs().Index), uint8(0))
 		if err != nil {
 			logrus.Error("Error putting value in IfindexIsInternalMap:", err)
 			return err
@@ -420,96 +410,60 @@ func (vxlanAgent *VxlanAgent) initVxlanXdpMaps() error {
 
 	// -----------------------
 
-	var ip_bytes [4]uint8
-	ip := net.ParseIP("192.168.1.0").To4()
-	copy(ip_bytes[:], ip)
-	network_prefix := vxlanAgentEbpfGen.VxlanCommonIpv4LpmKey{
-		Prefixlen: 24,
-		Data:      ip_bytes,
+	for _, network := range vxlanAgent.networks {
+
+		logrus.Printf("networks address %s prefix %d", network.Address, network.Prefix)
+
+		network_lpm_key := vxlanAgentEbpfGen.VxlanCommonIpv4LpmKey{
+			Prefixlen: uint32(network.Prefix),
+			Data: func() [4]uint8 {
+				var ip_bytes [4]uint8
+				ip := net.ParseIP(network.Address).To4()
+				copy(ip_bytes[:], ip)
+				return ip_bytes
+			}(),
+		}
+
+		internalIfindexes := []uint32{}
+		for _, internalIfindex := range network.InternalNetworkInterfaces {
+			internalIfindexes = append(internalIfindexes, uint32(internalIfindex.Attrs().Index))
+		}
+
+		borderIps := []vxlanAgentEbpfGen.VxlanCommonInAddr{}
+		for _, borderIp := range network.BorderIPs {
+			borderIps = append(
+				borderIps,
+				vxlanAgentEbpfGen.VxlanCommonInAddr{S_addr: binary.BigEndian.Uint32(net.ParseIP(borderIp).To4())},
+			)
+		}
+
+		logrus.Print("Something")
+
+		vxlanAgent.xdpExternalObjects.NetworksMap.Put(network_lpm_key, vxlanAgentEbpfGen.VxlanCommonNetworkVni{
+			Vni:     uint32(network.VNI),
+			Network: network_lpm_key,
+			InternalIfindexes: func(slice []uint32) [10]uint32 {
+				var array [10]uint32
+				copy(array[:], slice)
+				return array
+			}(internalIfindexes),
+			InternalIfindexesSize: uint32(len(internalIfindexes)),
+			BorderIps: func(slice []vxlanAgentEbpfGen.VxlanCommonInAddr) [10]vxlanAgentEbpfGen.VxlanCommonInAddr {
+				var array [10]vxlanAgentEbpfGen.VxlanCommonInAddr
+				copy(array[:], slice)
+				return array
+			}(borderIps),
+			BorderIpsSize: uint32(len(borderIps)),
+		})
 	}
-	network_vni := vxlanAgentEbpfGen.VxlanCommonInternalNetworkVni{
-		Vni: 0,
-	}
-	vxlanAgent.xdpExternalObjects.InternalNetworksMap.Put(network_prefix, network_vni)
 
 	return nil
 }
 
-func (vxlanAgent *VxlanAgent) initVxlanTCMaps() error {
-
-	for borderIp, externalRouteInfo := range vxlanAgent.borderIpToExternalRouteInfo {
-		err := vxlanAgent.tcInternalObjects.BorderIpToRouteInfoMap.Put(borderIp, externalRouteInfo)
-		if err != nil {
-			logrus.Error("Error putting value in BorderIpToRouteInfoMap:", err)
-			return err
-		}
-	}
-
-	// ----------------------
-
-	for i, networkInterface := range vxlanAgent.internalNetworkInterfaces {
-		err := vxlanAgent.tcInternalObjects.InternalIfindexesArray.Put(uint32(i), uint32(networkInterface.Attrs().Index))
-		if err != nil {
-			logrus.Error("Error putting value in InternalIfindexesArray:", err)
-			return err
-		}
-	}
-
-	for i, networkInterface := range vxlanAgent.internalNetworkInterfaces {
-		err := vxlanAgent.tcExternalObjects.InternalIfindexesArray.Put(uint32(i), uint32(networkInterface.Attrs().Index))
-		if err != nil {
-			logrus.Error("Error putting value in InternalIfindexesArray:", err)
-			return err
-		}
-	}
-
-	// ----------------------
-
-	err := vxlanAgent.tcInternalObjects.InternalIfindexesArrayLength.Put(uint32(0), uint32(len(vxlanAgent.internalNetworkInterfaces)))
-	if err != nil {
-		logrus.Error("Error putting value in InternalIfindexesArrayLength:", err)
-		return err
-	}
-
-	err = vxlanAgent.tcExternalObjects.InternalIfindexesArrayLength.Put(uint32(0), uint32(len(vxlanAgent.internalNetworkInterfaces)))
-	if err != nil {
-		logrus.Error("Error putting value in InternalIfindexesArrayLength:", err)
-		return err
-	}
-
-	// ----------------------
-
-	for i, borderIp := range vxlanAgent.borderIps {
-		err := vxlanAgent.tcInternalObjects.RemoteBorderIpsArray.Put(uint32(i), borderIp)
-		if err != nil {
-			logrus.Error("Error putting value in RemoteBorderIpsArray:", err)
-			return err
-		}
-	}
-
-	// ----------------------
-
-	err = vxlanAgent.tcInternalObjects.RemoteBorderIpsArrayLength.Put(uint32(0), uint32(len(vxlanAgent.borderIps)))
-	if err != nil {
-		logrus.Error("Error putting value in RemoteBorderIpsArrayLength:", err)
-		return err
-	}
-
-	// ----------------------
-
-	var ip_bytes [4]uint8
-	ip := net.ParseIP("192.168.1.0").To4()
-	copy(ip_bytes[:], ip)
-	network_prefix := vxlanAgentEbpfGen.VxlanCommonIpv4LpmKey{
-		Prefixlen: 24,
-		Data:      ip_bytes,
-	}
-	network_vni := vxlanAgentEbpfGen.VxlanCommonInternalNetworkVni{
-		Vni: 0,
-	}
-	vxlanAgent.tcExternalObjects.InternalNetworksMap.Put(network_prefix, network_vni)
-
-	return nil
+func ToFixedArray[T any](slice []T, size int) []T {
+	result := make([]T, size)
+	copy(result, slice)
+	return result
 }
 
 func (vxlanAgent *VxlanAgent) attachVxlanXdpAndTcToInterfaces() ([]*link.Link, error) {
@@ -517,9 +471,20 @@ func (vxlanAgent *VxlanAgent) attachVxlanXdpAndTcToInterfaces() ([]*link.Link, e
 
 	logrus.Print("5.1")
 
-	// Combine internal and external interfaces
+	internalNetworks := map[netlink.Link]bool{}
+	externalNetworks := map[netlink.Link]bool{}
 
-	for _, iface := range vxlanAgent.internalNetworkInterfaces {
+	for _, network := range vxlanAgent.networks {
+		for _, net := range network.InternalNetworkInterfaces {
+			internalNetworks[net] = true
+		}
+
+		for _, net := range network.ExternalNetworkInterfaces {
+			externalNetworks[net] = true
+		}
+	}
+
+	for iface := range internalNetworks {
 		var err error
 
 		logrus.Print("5.2.element")
@@ -554,7 +519,7 @@ func (vxlanAgent *VxlanAgent) attachVxlanXdpAndTcToInterfaces() ([]*link.Link, e
 		attachedLinks = append(attachedLinks, &attachedTcLink)
 	}
 
-	for _, iface := range vxlanAgent.externalNetworkInterfaces {
+	for iface := range externalNetworks {
 		var err error
 
 		logrus.Print("5.2.element")

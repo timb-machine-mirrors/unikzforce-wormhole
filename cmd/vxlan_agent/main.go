@@ -1,14 +1,29 @@
 package main
 
 import (
+	"io"
 	"os"
+	"strconv"
 	"strings"
 	"wormhole/internal/vxlan_agent"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 	"github.com/vishvananda/netlink"
+	"gopkg.in/yaml.v3"
 )
+
+type VxlanAgentConfig struct {
+	Networks []VxlanAgentNetworkConfig `yaml:"networks"`
+}
+
+type VxlanAgentNetworkConfig struct {
+	VNI                       int      `yaml:"vni"`
+	Address                   string   `yaml:"address"`
+	InternalNetworkInterfaces []string `yaml:"internal-network-interfaces"`
+	ExternalNetworkInterfaces []string `yaml:"external-network-interfaces"`
+	BorderIPs                 []string `yaml:"border-ips"`
+}
 
 func main() {
 	app := &cli.App{
@@ -16,19 +31,9 @@ func main() {
 		Usage: "vxlan_agent, is the program that will reside in each network and facilitate forwarding packets to other networks and also will report to controller",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "internal-interface-names",
+				Name:  "config",
 				Value: "",
-				Usage: "the name of the internal network interfaces",
-			},
-			&cli.StringFlag{
-				Name:  "external-interface-names",
-				Value: "",
-				Usage: "the name of the external network interfaces",
-			},
-			&cli.StringFlag{
-				Name:  "remote-border-ips",
-				Value: "",
-				Usage: "IPs of other remote vxlan agents",
+				Usage: "path to vxlan network config file",
 			},
 		},
 		Action: ActivateVxlanAgent,
@@ -41,25 +46,66 @@ func main() {
 }
 
 func ActivateVxlanAgent(cCtx *cli.Context) error {
-	internalNetworkInterfaces := findNetworkInterfaces(cCtx, "internal-interface-names")
-	externalNetworkInterfaces := findNetworkInterfaces(cCtx, "external-interface-names")
-	remoteBorderIps := findRemoteBorderIps(cCtx)
+	networks := extractVxlanNetworks(readVxlanConfigFromFile(cCtx))
 
-	vxlanAgent := vxlan_agent.NewVxlanAgent(internalNetworkInterfaces, externalNetworkInterfaces, remoteBorderIps)
+	vxlanAgent := vxlan_agent.NewVxlanAgent(networks)
 
 	return vxlanAgent.ActivateVxlanAgent()
 }
 
-func findNetworkInterfaces(cCtx *cli.Context, argumentName string) []netlink.Link {
-	cliInterfaceNames := strings.TrimSpace(cCtx.String(argumentName))
-	if cliInterfaceNames == "" {
-		logrus.Fatalf("%s should be present and not empty", argumentName)
+func readVxlanConfigFromFile(cCtx *cli.Context) VxlanAgentConfig {
+	configFilePath := strings.TrimSpace(cCtx.String("config"))
+
+	file, err := os.Open(configFilePath)
+	if err != nil {
+		logrus.Fatalf("failed to open file: %s", err)
+	}
+	defer file.Close()
+
+	content, err := io.ReadAll(file)
+	if err != nil {
+		logrus.Fatalf("failed to read file: %s", err)
 	}
 
-	logrus.Println(cliInterfaceNames)
+	var config VxlanAgentConfig
 
-	interfaceNames := strings.Split(cliInterfaceNames, ",")
-	logrus.Println(interfaceNames)
+	err = yaml.Unmarshal(content, &config)
+	if err != nil {
+		logrus.Fatalf("failed to convert yaml to struct: %s", err)
+	}
+	return config
+}
+
+func extractVxlanNetworks(config VxlanAgentConfig) []vxlan_agent.VxlanAgentNetwork {
+	networks := []vxlan_agent.VxlanAgentNetwork{}
+
+	for _, netConfig := range config.Networks {
+
+		parts := strings.Split(netConfig.Address, "/")
+		if len(parts) != 2 {
+			logrus.Fatalf("Invalid CIDR format %s", netConfig.Address)
+		}
+
+		address := parts[0]
+
+		prefixlen, err := strconv.Atoi(parts[1])
+		if err != nil {
+			logrus.Fatalf("Error parsing prefix length: %s", err)
+		}
+
+		networks = append(networks, vxlan_agent.VxlanAgentNetwork{
+			VNI:                       netConfig.VNI,
+			Prefix:                    prefixlen,
+			Address:                   address,
+			InternalNetworkInterfaces: findNetworkInterfaces(netConfig.InternalNetworkInterfaces),
+			ExternalNetworkInterfaces: findNetworkInterfaces(netConfig.ExternalNetworkInterfaces),
+			BorderIPs:                 netConfig.BorderIPs,
+		})
+	}
+	return networks
+}
+
+func findNetworkInterfaces(interfaceNames []string) []netlink.Link {
 
 	var ifaces []netlink.Link
 
@@ -71,14 +117,6 @@ func findNetworkInterfaces(cCtx *cli.Context, argumentName string) []netlink.Lin
 
 		ifaces = append(ifaces, iface)
 	}
+
 	return ifaces
-}
-
-func findRemoteBorderIps(cCtx *cli.Context) []string {
-	cliRemoteBorderIps := strings.TrimSpace(cCtx.String("remote-border-ips"))
-	if cliRemoteBorderIps == "" {
-		logrus.Fatal("--remote-border-ips should be present and not empty")
-	}
-
-	return strings.Split(cliRemoteBorderIps, ",")
 }

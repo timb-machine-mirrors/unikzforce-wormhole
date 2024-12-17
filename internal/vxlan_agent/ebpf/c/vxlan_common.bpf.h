@@ -72,9 +72,17 @@ struct ipv4_lpm_key
     __u8  data[4];
 };
 
-struct internal_network_vni
+#define MAX_INTERNAL_IFINDEXES 10
+#define MAX_BORDER_IPS 10
+
+struct network_vni
 {
     __u32 vni;
+    struct ipv4_lpm_key network;
+    __u32 internal_ifindexes[MAX_INTERNAL_IFINDEXES];
+    __u32 internal_ifindexes_size;
+    struct in_addr border_ips[MAX_BORDER_IPS];
+    __u32 border_ips_size;
 };
 
 // Function to get a random port within the ephemeral range

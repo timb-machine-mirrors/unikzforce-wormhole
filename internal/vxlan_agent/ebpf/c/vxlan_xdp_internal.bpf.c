@@ -4,18 +4,18 @@ char LICENSE[] SEC("license") = "Dual BSD/GPL";
 
 // --------------------------------------------------------
 
-// internal networks. a LPM trie data structure
+// a LPM trie data structure
 // for example 192.168.1.0/24 --> VNI 0
 
 struct
 {
     __uint(type, BPF_MAP_TYPE_LPM_TRIE);
     __type(key, struct ipv4_lpm_key);
-    __type(value, struct internal_network_vni);
+    __type(value, struct network_vni);
     __uint(map_flags, BPF_F_NO_PREALLOC);
     __uint(max_entries, 255);
     __uint(pinning, LIBBPF_PIN_BY_NAME);
-} internal_networks_map SEC(".maps");
+} networks_map SEC(".maps");
 
 // --------------------------------------------------------
 
@@ -116,7 +116,7 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
 
         if (ifindex_to_redirect_is_internal == NULL)
         {
-            my_bpf_printk("XDP. INTERNAL %d 7. next hop not found. ABORT", ctx->ingress_ifindex);
+            my_bpf_printk("XDP. INTERNAL %d 7. next hop not found. ABORT, %d", ctx->ingress_ifindex, dst_mac_entry_ifindex);
             return XDP_ABORTED;
         }
 
