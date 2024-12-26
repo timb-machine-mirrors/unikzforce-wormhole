@@ -439,7 +439,7 @@ func (vxlanAgent *VxlanAgent) initVxlanMaps() error {
 
 		logrus.Print("Something")
 
-		vxlanAgent.xdpExternalObjects.NetworksMap.Put(network_lpm_key, vxlanAgentEbpfGen.VxlanCommonNetworkVni{
+		vxlanAgent.xdpInternalObjects.NetworksMap.Put(network_lpm_key, vxlanAgentEbpfGen.VxlanCommonNetworkVni{
 			Vni:     uint32(network.VNI),
 			Network: network_lpm_key,
 			InternalIfindexes: func(slice []uint32) [10]uint32 {
@@ -454,6 +454,12 @@ func (vxlanAgent *VxlanAgent) initVxlanMaps() error {
 				return array
 			}(borderIps),
 			BorderIpsSize: uint32(len(borderIps)),
+		})
+
+		// the xdp_external would only need a lighter version of networks map.
+		vxlanAgent.xdpExternalObjects.NetworksLightMap.Put(network_lpm_key, vxlanAgentEbpfGen.VxlanCommonNetworkVniLight{
+			Vni:     uint32(network.VNI),
+			Network: network_lpm_key,
 		})
 	}
 

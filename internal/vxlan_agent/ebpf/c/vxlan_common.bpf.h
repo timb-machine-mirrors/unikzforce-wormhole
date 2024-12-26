@@ -85,6 +85,12 @@ struct network_vni
     __u32 border_ips_size;
 };
 
+struct network_vni_light
+{
+    __u32 vni;
+    struct ipv4_lpm_key network;
+};
+
 // Function to get a random port within the ephemeral range
 static __always_inline __u16
 get_ephemeral_port()

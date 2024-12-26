@@ -11,11 +11,11 @@ struct
 {
     __uint(type, BPF_MAP_TYPE_LPM_TRIE);
     __type(key, struct ipv4_lpm_key);
-    __type(value, struct network_vni);
+    __type(value, struct network_vni_light);
     __uint(map_flags, BPF_F_NO_PREALLOC);
     __uint(max_entries, 255);
     __uint(pinning, LIBBPF_PIN_BY_NAME);
-} networks_map SEC(".maps");
+} networks_light_map SEC(".maps");
 
 // --------------------------------------------------------
 
@@ -178,7 +178,7 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
     __builtin_memcpy(key.data, inner_arp_payload->ar_tip, sizeof(key.data));
 
     // if the packet is not for internal network do XDP_PASS in here and similar thing in TC
-    struct network_vni *dst_network_vni = bpf_map_lookup_elem(&networks_map, &key);
+    struct network_vni *dst_network_vni = bpf_map_lookup_elem(&networks_light_map, &key);
     if (dst_network_vni == NULL)
     {
         my_bpf_printk("XDP does not belong to internal network. pass it up");
@@ -323,8 +323,8 @@ static long __always_inline handle_packet_received_by_external_iface__ip_packet(
     __builtin_memcpy(key.data, &inner_dst_ip, sizeof(key.data));
 
     // if the packet is not for internal network do XDP_PASS here and
-    int *network_vni = bpf_map_lookup_elem(&networks_map, &key);
-    if (network_vni == NULL)
+    int *dst_network_vni = bpf_map_lookup_elem(&networks_light_map, &key);
+    if (dst_network_vni == NULL)
     {
         my_bpf_printk("XDP does not belong to internal network. pass it up");
         return XDP_PASS;

@@ -46,6 +46,11 @@ type VxlanCommonNetworkVni struct {
 	BorderIpsSize         uint32
 }
 
+type VxlanCommonNetworkVniLight struct {
+	Vni     uint32
+	Network VxlanCommonIpv4LpmKey
+}
+
 // LoadVxlanCommon returns the embedded CollectionSpec for VxlanCommon.
 func LoadVxlanCommon() (*ebpf.CollectionSpec, error) {
 	reader := bytes.NewReader(_VxlanCommonBytes)
@@ -99,6 +104,7 @@ type VxlanCommonMapSpecs struct {
 	DummyMacAddress        *ebpf.MapSpec `ebpf:"dummy_mac_address"`
 	DummyMacTableEntry     *ebpf.MapSpec `ebpf:"dummy_mac_table_entry"`
 	DummyNetworkVni        *ebpf.MapSpec `ebpf:"dummy_network_vni"`
+	DummyNetworkVniLight   *ebpf.MapSpec `ebpf:"dummy_network_vni_light"`
 }
 
 // VxlanCommonObjects contains all objects after they have been loaded into the kernel.
@@ -126,6 +132,7 @@ type VxlanCommonMaps struct {
 	DummyMacAddress        *ebpf.Map `ebpf:"dummy_mac_address"`
 	DummyMacTableEntry     *ebpf.Map `ebpf:"dummy_mac_table_entry"`
 	DummyNetworkVni        *ebpf.Map `ebpf:"dummy_network_vni"`
+	DummyNetworkVniLight   *ebpf.Map `ebpf:"dummy_network_vni_light"`
 }
 
 func (m *VxlanCommonMaps) Close() error {
@@ -136,6 +143,7 @@ func (m *VxlanCommonMaps) Close() error {
 		m.DummyMacAddress,
 		m.DummyMacTableEntry,
 		m.DummyNetworkVni,
+		m.DummyNetworkVniLight,
 	)
 }
 
