@@ -11,7 +11,8 @@
         "ms-vscode.cpptools-themes",
         "EthanSK.restore-terminals",
         "golang.go",
-        "kdl-org.kdl"
+        "kdl-org.kdl",
+        "GitHub.copilot",
     ],
     "unwantedRecommendations": [
     ]

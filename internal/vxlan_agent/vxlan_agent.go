@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"time"
-	vxlanAgentEbpfGen "wormhole/internal/vxlan_agent/ebpf"
+	vxlanAgentEbpfGen "wormhole/internal/vxlan_agent/ebpf/gen"
 
 	ciliumEbpf "github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/link"

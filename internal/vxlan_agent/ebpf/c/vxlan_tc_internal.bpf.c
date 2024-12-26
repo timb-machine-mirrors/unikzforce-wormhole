@@ -114,7 +114,7 @@ static int __always_inline clone_internal_packet_and_send_to_all_internal_ifaces
         return TC_ACT_OK;
     }
 
-    if (dst_network_vni->internal_ifindexes == NULL || dst_network_vni->internal_ifindexes_size == NULL || dst_network_vni->border_ips == NULL || dst_network_vni->border_ips_size == NULL)
+    if (dst_network_vni->internal_ifindexes_size == 0 || dst_network_vni->border_ips_size == 0)
     {
         my_bpf_printk("tcx/ingres INTERNAL invalid dst_network_vni");
         return TC_ACT_SHOT;

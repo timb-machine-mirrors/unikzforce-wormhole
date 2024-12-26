@@ -37698,6 +37698,10 @@ typedef struct {
 
 typedef struct {
 	void *lock;
+} class_preempt_notrace_t;
+
+typedef struct {
+	void *lock;
 } class_preempt_t;
 
 struct raw_spinlock;
@@ -51996,6 +52000,9 @@ struct bpf_prog_aux {
 	bool xdp_has_frags;
 	bool exception_cb;
 	bool exception_boundary;
+	bool is_extended;
+	u64 prog_array_member_cnt;
+	struct mutex ext_mutex;
 	struct bpf_arena *arena;
 	const struct btf_type *attach_func_proto;
 	const char *attach_func_name;
@@ -56447,6 +56454,7 @@ struct btrfs_dev_replace {
 	struct btrfs_scrub_progress scrub_progress;
 	struct percpu_counter bio_counter;
 	wait_queue_head_t replace_wait;
+	struct task_struct *replace_task;
 };
 
 struct btrfs_dev_replace_item {
@@ -62795,6 +62803,7 @@ struct clocksource {
 	u32 maxadj;
 	u32 uncertainty_margin;
 	u64 max_cycles;
+	u64 max_raw_delta;
 	const char *name;
 	struct list_head list;
 	u32 freq_khz;
@@ -69205,6 +69214,7 @@ struct eeprom_93cx6 {
 	void (*register_read)(struct eeprom_93cx6 *);
 	void (*register_write)(struct eeprom_93cx6 *);
 	int width;
+	unsigned int quirks;
 	char drive_data;
 	char reg_data_in;
 	char reg_data_out;
@@ -73349,6 +73359,7 @@ struct f2fs_sb_info {
 	struct mutex flush_lock;
 	struct extent_tree_info extent_tree[2];
 	atomic64_t allocated_data_blocks;
+	unsigned int max_read_extent_count;
 	unsigned int hot_data_age_threshold;
 	unsigned int warm_data_age_threshold;
 	unsigned int last_age_weight;
@@ -109597,6 +109608,7 @@ struct nft_inner {
 };
 
 struct nft_inner_tun_ctx {
+	unsigned long cookie;
 	u16 type;
 	u16 inner_tunoff;
 	u16 inner_lloff;
@@ -109956,6 +109968,7 @@ struct nft_reject {
 struct nft_rhash {
 	struct rhashtable ht;
 	struct delayed_work gc_work;
+	u32 wq_gc_seq;
 };
 
 struct nft_rhash_cmp_arg {
@@ -109973,6 +109986,7 @@ struct nft_rhash_ctx {
 struct nft_rhash_elem {
 	struct nft_elem_priv priv;
 	struct rhash_head node;
+	u32 wq_gc_seq;
 	struct nft_set_ext ext;
 };
 
@@ -119484,6 +119498,7 @@ struct regmap {
 			unsigned long raw_spinlock_flags;
 		};
 	};
+	struct lock_class_key *lock_key;
 	regmap_lock lock;
 	regmap_unlock unlock;
 	void *lock_arg;
@@ -120310,6 +120325,7 @@ struct ring_buffer_per_cpu {
 	unsigned long nr_pages;
 	unsigned int current_context;
 	struct list_head *pages;
+	unsigned long cnt;
 	struct buffer_page *head_page;
 	struct buffer_page *tail_page;
 	struct buffer_page *commit_page;
