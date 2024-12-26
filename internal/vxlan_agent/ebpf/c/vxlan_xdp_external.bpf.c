@@ -19,18 +19,6 @@ struct
 
 // --------------------------------------------------------
 
-// it will tell us whether a iface index is external or internal
-struct
-{
-    __uint(type, BPF_MAP_TYPE_HASH);
-    __type(key, __u32);
-    __type(value, bool);
-    __uint(max_entries, 4 * 1024);
-    __uint(pinning, LIBBPF_PIN_BY_NAME);
-} ifindex_is_internal_map SEC(".maps");
-
-// --------------------------------------------------------
-
 struct
 {
     __uint(type, BPF_MAP_TYPE_HASH);
@@ -247,45 +235,27 @@ static long __always_inline handle_packet_received_by_external_iface__arp_packet
         {
             my_bpf_printk("XDP. EXTERNAL  %d 4. found inner_dst_mac in mac_table", ctx->ingress_ifindex);
             __u32 dst_mac_entry_ifindex = dst_mac_entry->ifindex;
-            bool *ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &dst_mac_entry_ifindex);
 
-            if (ifindex_to_redirect_is_internal == NULL)
-            {
-                return XDP_ABORTED;
-            }
 
-            bool packet_to_be_redirected_to_an_internal_interface = *ifindex_to_redirect_is_internal;
-
-            if (packet_to_be_redirected_to_an_internal_interface)
-            {
-                my_bpf_printk("XDP. EXTERNAL  %d 4. try to remove outer header", ctx->ingress_ifindex);
-                // Handle ARP reply: remove outer headers and forward
-                if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
-                    return XDP_DROP;
-
-                my_bpf_printk("XDP. EXTERNAL  %d 4. sucessfully removed outer header", ctx->ingress_ifindex);
-
-                // Recalculate data and data_end pointers after adjustment
-                data = (void *)(long)ctx->data;
-                data_end = (void *)(long)ctx->data_end;
-
-                // Ensure the packet is still valid after adjustment
-                if (data + sizeof(struct ethhdr) > data_end)
-                    return XDP_DROP;
-
-                my_bpf_printk("XDP. EXTERNAL  %d 4. trying to redirect to %d, packet size %d", ctx->ingress_ifindex, dst_mac_entry->ifindex, data_end - data);
-
-                // Redirect the resulting internal frame buffer to the proper interface
-                return bpf_redirect(dst_mac_entry->ifindex, 0);
-            }
-            else
-            {
-                my_bpf_printk("XDP. EXTERNAL  %d 4. didn't find inner_dst_mac in mac_table", ctx->ingress_ifindex);
-                // if we recieve a arp packet from external interface
-                // that is meant to be redirected to another remote vxlan border agent
-                // then we need to drop it
+            my_bpf_printk("XDP. EXTERNAL  %d 4. try to remove outer header", ctx->ingress_ifindex);
+            // Handle ARP reply: remove outer headers and forward
+            if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
                 return XDP_DROP;
-            }
+
+            my_bpf_printk("XDP. EXTERNAL  %d 4. sucessfully removed outer header", ctx->ingress_ifindex);
+
+            // Recalculate data and data_end pointers after adjustment
+            data = (void *)(long)ctx->data;
+            data_end = (void *)(long)ctx->data_end;
+
+            // Ensure the packet is still valid after adjustment
+            if (data + sizeof(struct ethhdr) > data_end)
+                return XDP_DROP;
+
+            my_bpf_printk("XDP. EXTERNAL  %d 4. trying to redirect to %d, packet size %d", ctx->ingress_ifindex, dst_mac_entry->ifindex, data_end - data);
+
+            // Redirect the resulting internal frame buffer to the proper interface
+            return bpf_redirect(dst_mac_entry->ifindex, 0);
         }
         else
         {
@@ -335,36 +305,21 @@ static long __always_inline handle_packet_received_by_external_iface__ip_packet(
     if (dst_mac_entry != NULL)
     {
         __u32 dst_mac_entry_ifindex = dst_mac_entry->ifindex;
-        bool *ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &dst_mac_entry_ifindex);
 
-        if (ifindex_to_redirect_is_internal == NULL)
-        {
-            return XDP_ABORTED;
-        }
-
-        bool packet_to_be_redirected_to_an_internal_interface = *ifindex_to_redirect_is_internal;
-
-        if (packet_to_be_redirected_to_an_internal_interface)
-        {
-            // Remove outer headers by adjusting the headroom
-            if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
-                return XDP_DROP;
-
-            // Recalculate data and data_end pointers after adjustment
-            void *data = (void *)(long)ctx->data;
-            void *data_end = (void *)(long)ctx->data_end;
-
-            // Ensure the packet is still valid after adjustment
-            if (data + sizeof(struct ethhdr) > data_end)
-                return XDP_DROP;
-
-            // Redirect the resulting internal frame buffer to the proper interface
-            return bpf_redirect(dst_mac_entry->ifindex, 0);
-        }
-        else
-        {
+        // Remove outer headers by adjusting the headroom
+        if (bpf_xdp_adjust_head(ctx, NEW_HDR_LEN))
             return XDP_DROP;
-        }
+
+        // Recalculate data and data_end pointers after adjustment
+        void *data = (void *)(long)ctx->data;
+        void *data_end = (void *)(long)ctx->data_end;
+
+        // Ensure the packet is still valid after adjustment
+        if (data + sizeof(struct ethhdr) > data_end)
+            return XDP_DROP;
+
+        // Redirect the resulting internal frame buffer to the proper interface
+        return bpf_redirect(dst_mac_entry->ifindex, 0);
     }
     else
     {
