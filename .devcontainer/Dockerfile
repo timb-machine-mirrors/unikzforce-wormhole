@@ -66,7 +66,7 @@ RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
 # install CLAB
 # containelab version will be set in devcontainer.json
-ARG _CLAB_VERSION
+# ARG _CLAB_VERSION
 
 # Set permissions for mounts in devcontainer.json
 #RUN mkdir -p /home/vscode/.vscode-server/bin
@@ -87,4 +87,4 @@ RUN apt-get update && \
     && apt-get clean
 
 # install preferred version of the containerlab
-RUN bash -c "$(curl -sL https://get.containerlab.dev)" -- -v ${_CLAB_VERSION}
+RUN bash -c "$(curl -sL https://get.containerlab.dev)"

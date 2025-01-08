@@ -40,6 +40,8 @@ type VxlanAgent struct {
 
 type VxlanAgentMetadata struct {
 	Hostname [64]byte
+	Type     [64]byte
+	SubType  [64]byte
 }
 
 // NewVxlanAgent initializes and returns a new VxlanAgent instance
@@ -147,11 +149,18 @@ func (vxlanAgent *VxlanAgent) loadVxlanXdpInternalProgram() error {
 		logrus.Println("Error retrieving hostname:", err)
 		hostname = "Unnamed"
 	}
-
 	copy(hostBytes[:], hostname)
+
+	var typeBytes [64]byte
+	copy(typeBytes[:], "XDP")
+
+	var subTypeBytes [64]byte
+	copy(subTypeBytes[:], "INTERNAL")
 
 	metadata := VxlanAgentMetadata{
 		Hostname: hostBytes,
+		Type:     typeBytes,
+		SubType:  subTypeBytes,
 	}
 
 	xdpSpec.RewriteConstants(map[string]interface{}{
@@ -190,11 +199,18 @@ func (vxlanAgent *VxlanAgent) loadVxlanXdpExternalProgram() error {
 		logrus.Println("Error retrieving hostname:", err)
 		hostname = "Unnamed"
 	}
-
 	copy(hostBytes[:], hostname)
+
+	var typeBytes [64]byte
+	copy(typeBytes[:], "XDP")
+
+	var subTypeBytes [64]byte
+	copy(subTypeBytes[:], "EXTERNAL")
 
 	metadata := VxlanAgentMetadata{
 		Hostname: hostBytes,
+		Type:     typeBytes,
+		SubType:  subTypeBytes,
 	}
 
 	xdpSpec.RewriteConstants(map[string]interface{}{
@@ -231,8 +247,16 @@ func (vxlanAgent *VxlanAgent) loadVxlanTcInternalProgram() error {
 
 	copy(hostBytes[:], hostname)
 
+	var typeBytes [64]byte
+	copy(typeBytes[:], "TC")
+
+	var subTypeBytes [64]byte
+	copy(subTypeBytes[:], "INTERNAL")
+
 	metadata := VxlanAgentMetadata{
 		Hostname: hostBytes,
+		Type:     typeBytes,
+		SubType:  subTypeBytes,
 	}
 
 	tcSpec.RewriteConstants(map[string]interface{}{
@@ -270,8 +294,16 @@ func (vxlanAgent *VxlanAgent) loadVxlanTcExternalProgram() error {
 
 	copy(hostBytes[:], hostname)
 
+	var typeBytes [64]byte
+	copy(typeBytes[:], "TC")
+
+	var subTypeBytes [64]byte
+	copy(subTypeBytes[:], "EXTERNAL")
+
 	metadata := VxlanAgentMetadata{
 		Hostname: hostBytes,
+		Type:     typeBytes,
+		SubType:  subTypeBytes,
 	}
 
 	tcSpec.RewriteConstants(map[string]interface{}{

@@ -81,9 +81,8 @@ type VxlanXDPExternalProgramSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type VxlanXDPExternalMapSpecs struct {
-	IfindexIsInternalMap *ebpf.MapSpec `ebpf:"ifindex_is_internal_map"`
-	MacTable             *ebpf.MapSpec `ebpf:"mac_table"`
-	NetworksLightMap     *ebpf.MapSpec `ebpf:"networks_light_map"`
+	MacTable         *ebpf.MapSpec `ebpf:"mac_table"`
+	NetworksLightMap *ebpf.MapSpec `ebpf:"networks_light_map"`
 }
 
 // VxlanXDPExternalObjects contains all objects after they have been loaded into the kernel.
@@ -105,14 +104,12 @@ func (o *VxlanXDPExternalObjects) Close() error {
 //
 // It can be passed to LoadVxlanXDPExternalObjects or ebpf.CollectionSpec.LoadAndAssign.
 type VxlanXDPExternalMaps struct {
-	IfindexIsInternalMap *ebpf.Map `ebpf:"ifindex_is_internal_map"`
-	MacTable             *ebpf.Map `ebpf:"mac_table"`
-	NetworksLightMap     *ebpf.Map `ebpf:"networks_light_map"`
+	MacTable         *ebpf.Map `ebpf:"mac_table"`
+	NetworksLightMap *ebpf.Map `ebpf:"networks_light_map"`
 }
 
 func (m *VxlanXDPExternalMaps) Close() error {
 	return _VxlanXDPExternalClose(
-		m.IfindexIsInternalMap,
 		m.MacTable,
 		m.NetworksLightMap,
 	)

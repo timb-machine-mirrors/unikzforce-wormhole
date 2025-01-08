@@ -6,13 +6,11 @@
 	"build": {
 		"dockerfile": "Dockerfile",
 		"args": {
-			"_CLAB_VERSION": "0.57.0"
+			"_CLAB_VERSION": "0.61.0"
 		}
 	},
 	"features": {
-		"ghcr.io/devcontainers/features/docker-in-docker:latest": {
-			"version": "latest"
-		},
+		"ghcr.io/devcontainers/features/docker-in-docker:latest": {},
 		"ghcr.io/devcontainers/features/go:latest": {},
 		"ghcr.io/guiyomh/features/golangci-lint:latest": {},
 		"ghcr.io/guiyomh/features/goreleaser:latest": {},

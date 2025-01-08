@@ -56,7 +56,7 @@ struct
 // --------------------------------------------------------
 
 static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time_ns, struct ethhdr *eth);
-static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address *dst_mac, struct mac_table_entry *dst_mac_entry);
+static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct ethhdr *eth, struct mac_address *dst_mac, struct mac_table_entry *dst_mac_entry);
 static void __always_inline learn_from_packet_received_by_internal_iface(const struct xdp_md *ctx, __u64 current_time_ns, struct mac_address *src_mac);
 
 // --------------------------------------------------------
@@ -66,7 +66,7 @@ SEC("xdp.frags")
 long vxlan_xdp_internal(struct xdp_md *ctx)
 {
     // we can use current_time_ns as something like a unique identifier for packet
-    my_bpf_printk("XDP. INTERNAL %d 1. packet received", ctx->ingress_ifindex);
+    my_bpf_printk("%d 1. packet received", ctx->ingress_ifindex);
     __u64 current_time_ns = bpf_ktime_get_tai_ns();
 
     struct ethhdr *eth = (void *)(long)ctx->data;
@@ -75,7 +75,7 @@ long vxlan_xdp_internal(struct xdp_md *ctx)
     if ((void *)(eth + 1) > (void *)(long)ctx->data_end)
         return XDP_DROP;
 
-    my_bpf_printk("XDP. INTERNAL %d 2. interface lookup done", ctx->ingress_ifindex);
+    my_bpf_printk("%d 2. interface lookup done", ctx->ingress_ifindex);
 
     return handle_packet_received_by_internal_iface(ctx, current_time_ns, eth);
 }
@@ -84,7 +84,7 @@ long vxlan_xdp_internal(struct xdp_md *ctx)
 
 static long __always_inline handle_packet_received_by_internal_iface(struct xdp_md *ctx, __u64 current_time_ns, struct ethhdr *eth)
 {
-    my_bpf_printk("XDP. INTERNAL %d 3. handle packet received by internal iface", ctx->ingress_ifindex);
+    my_bpf_printk("%d 3. handle packet received by internal iface", ctx->ingress_ifindex);
     // if packet has been received by an internal iface
     // it means this packet should have no outer headers.
     // we should:
@@ -96,27 +96,27 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
 
     learn_from_packet_received_by_internal_iface(ctx, current_time_ns, &src_mac);
 
-    my_bpf_printk("XDP. INTERNAL %d 4. learning from packet received by internal internal iface ", ctx->ingress_ifindex);
+    my_bpf_printk("%d 4. learning from packet received by internal internal iface ", ctx->ingress_ifindex);
 
     struct mac_address dst_mac;
     __builtin_memcpy(dst_mac.addr, eth->h_dest, ETH_ALEN);
 
     struct mac_table_entry *dst_mac_entry = bpf_map_lookup_elem(&mac_table, &dst_mac);
 
-    my_bpf_printk("XDP. INTERNAL %d 5. searching for dest mac of packet recieved by internal iface ", ctx->ingress_ifindex);
+    my_bpf_printk("%d 5. searching for dest mac of packet recieved by internal iface ", ctx->ingress_ifindex);
 
     if (dst_mac_entry != NULL)
     {
         // if we already know this dst mac in mac_table
 
-        my_bpf_printk("XDP. INTERNAL %d 6. found entry for dest mac of packet recieved by internal iface. check if next hop interface is internal or external", ctx->ingress_ifindex);
+        my_bpf_printk("%d 6. found entry for dest mac of packet recieved by internal iface. check if next hop interface is internal or external", ctx->ingress_ifindex);
 
         __u32 dst_mac_entry_ifindex = dst_mac_entry->ifindex;
         bool *ifindex_to_redirect_is_internal = bpf_map_lookup_elem(&ifindex_is_internal_map, &dst_mac_entry_ifindex);
 
         if (ifindex_to_redirect_is_internal == NULL)
         {
-            my_bpf_printk("XDP. INTERNAL %d 7. next hop not found. ABORT, %d", ctx->ingress_ifindex, dst_mac_entry_ifindex);
+            my_bpf_printk("%d 7. next hop not found. ABORT, %d", ctx->ingress_ifindex, dst_mac_entry_ifindex);
             return XDP_ABORTED;
         }
 
@@ -124,30 +124,32 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
 
         if (packet_to_be_redirected_to_an_internal_interface)
         {
-            my_bpf_printk("XDP. INTERNAL %d 8. next hop is internal. REDIRECT", ctx->ingress_ifindex);
+            my_bpf_printk("%d 8. next hop is internal. REDIRECT", ctx->ingress_ifindex);
             // if packet need to be forwarded to an internal interface
             return bpf_redirect(dst_mac_entry->ifindex, 0);
         }
         else
         {
 
-            my_bpf_printk("XDP. INTERNAL %d 8. next hop is external. Add header", ctx->ingress_ifindex);
+            my_bpf_printk("%d 8. next hop is external. Add header", ctx->ingress_ifindex);
             // if packet need to be forwarded to an external interface
-            enum vxlan_agent_processing_error error = add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(ctx, &dst_mac, dst_mac_entry);
+            enum vxlan_agent_processing_error error = add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(ctx, eth, &dst_mac, dst_mac_entry);
 
             if (error == AGENT_ERROR_ABORT)
                 return XDP_ABORTED;
             else if (error == AGENT_ERROR_DROP)
                 return XDP_DROP;
+            else if (error == AGENT_PASS)
+                return XDP_PASS;
 
-            my_bpf_printk("XDP. INTERNAL %d 15. adding header successful. REDIRECT", ctx->ingress_ifindex);
+            my_bpf_printk("%d 15. adding header successful. REDIRECT", ctx->ingress_ifindex);
 
             return bpf_redirect(dst_mac_entry->ifindex, 0);
         }
     }
     else
     {
-        my_bpf_printk("XDP. INTERNAL %d 6. no information found for dest mac of packet received by internal iface. send UP to unknown unicast flooding TC", ctx->ingress_ifindex);
+        my_bpf_printk("%d 6. no information found for dest mac of packet received by internal iface. send UP to unknown unicast flooding TC", ctx->ingress_ifindex);
 
         // if we don't know this dst mac in mac_table
         // no matter why we are here:
@@ -159,10 +161,79 @@ static long __always_inline handle_packet_received_by_internal_iface(struct xdp_
     }
 }
 
-static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct mac_address *dst_mac, struct mac_table_entry *dst_mac_entry)
+static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_internal_packet_before_forwarding_to_external_iface(struct xdp_md *ctx, struct ethhdr *eth, struct mac_address *dst_mac, struct mac_table_entry *dst_mac_entry)
 {
 
-    my_bpf_printk("XDP. INTERNAL %d 9. adding header before redirecting", ctx->ingress_ifindex);
+    __u16 h_proto = bpf_ntohs(eth->h_proto);
+
+    struct in_addr src_ip;
+
+    struct ipv4_lpm_key key = {.prefixlen = 32};
+
+    if (h_proto == ETH_P_ARP)
+    {
+        struct arphdr *arph = (void *)(eth + 1);
+
+        if ((void *)(arph + 1) > (void *)(long)ctx->data_end)
+            return AGENT_ERROR_ABORT;
+
+        struct arp_payload *arp_payload = (void *)(arph + 1);
+
+        if ((void *)(arp_payload + 1) > (void *)(long)ctx->data_end)
+            return AGENT_ERROR_ABORT;
+
+        __builtin_memcpy(key.data, arp_payload->ar_tip, sizeof(key.data));
+
+        create_in_addr_from_arp_ip(arp_payload->ar_sip, &src_ip);
+        my_bpf_printk("src_ip obtained by ARP. %u", src_ip.s_addr);
+
+        my_bpf_printk("Target IP: %d.%d.%d.%d\n",
+            key.data[0],
+            key.data[1],
+            key.data[2],
+            key.data[3]);
+    }
+    else if (h_proto == ETH_P_IP)
+    {
+        my_bpf_printk("---> FINDING IP HEADER");
+
+        struct iphdr *iph = (void *)(eth + 1);
+
+        // Ensure the inner IP header is valid
+        if ((void *)(iph + 1) > (void *)(long)ctx->data_end)
+            return AGENT_ERROR_ABORT;
+
+        src_ip.s_addr = bpf_ntohl(iph->saddr);
+        my_bpf_printk("src_ip obtained by IP. %u", src_ip.s_addr);
+
+        // Extract inner source and destination IP addresses
+        __builtin_memcpy(key.data, &(iph->daddr), sizeof(key.data));
+    }
+    else
+    {
+        return AGENT_ERROR_ABORT;
+    }
+
+    struct network_vni *dst_network_vni = bpf_map_lookup_elem(&networks_map, &key);
+    if (dst_network_vni == NULL)
+    {
+        my_bpf_printk("does not belong to internal network. pass it up");
+        return AGENT_PASS;
+    }
+
+    if (dst_network_vni->internal_ifindexes_size == 0 || dst_network_vni->border_ips_size == 0)
+    {
+        my_bpf_printk("invalid dst_network_vni");
+        return AGENT_ERROR_ABORT;
+    }
+
+    if (!is_ip_in_network(&(dst_network_vni->network), &src_ip))
+    {
+        my_bpf_printk("does not belong to internal network. pass it up");
+        return AGENT_PASS;
+    };
+
+    my_bpf_printk("%d 9. adding header before redirecting", ctx->ingress_ifindex);
     // if packet need to be forwarded to an external interface
     // we must add outer headers to the packet
     // and then forward it to the external interface
@@ -186,7 +257,7 @@ static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_in
     int old_len = data_end - data;
     int new_len = old_len + NEW_HDR_LEN;
 
-    my_bpf_printk("XDP. INTERNAL %d 10. trying to increase header size by bpf_xdp_adjust_head", ctx->ingress_ifindex);
+    my_bpf_printk("%d 10. trying to increase header size by bpf_xdp_adjust_head", ctx->ingress_ifindex);
 
     // Resize the packet buffer by increasing the headroom.
     // in packet memory model, the start of the packet which is the ethernet header,
@@ -195,7 +266,7 @@ static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_in
     long ret = bpf_xdp_adjust_head(ctx, -NEW_HDR_LEN);
     if (ret)
     {
-        my_bpf_printk("XDP. INTERNAL %d 11. failed to add header, error = %s", ctx->ingress_ifindex, ret);
+        my_bpf_printk("%d 11. failed to add header, error = %s", ctx->ingress_ifindex, ret);
         return AGENT_ERROR_ABORT;
     }
 
@@ -228,14 +299,14 @@ static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_in
     uint8_t octet4 = host_order_dst_border_ip & 0xFF;
 
     // Print the address
-    my_bpf_printk("XDP. INTERNAL IPv4 address: %d.%d.%d.%d\n", octet1, octet2, octet3, octet4);
+    my_bpf_printk("IPv4 address: %d.%d.%d.%d\n", octet1, octet2, octet3, octet4);
 
-    my_bpf_printk("XDP. INTERNAL %d 12. try to find route info", ctx->ingress_ifindex);
+    my_bpf_printk("%d 12. try to find route info", ctx->ingress_ifindex);
     struct external_route_info *route_info = bpf_map_lookup_elem(&border_ip_to_route_info_map, &host_order_dst_border_ip);
 
     if (route_info == NULL)
     {
-        my_bpf_printk("XDP. INTERNAL %d 13. unable to find route_info", ctx->ingress_ifindex);
+        my_bpf_printk("%d 13. unable to find route_info", ctx->ingress_ifindex);
         // we must have prepopulated route_info in border_ip_to_route_info_map before starting the xdp program.
         // if we don't have it, it means that something is fishy, and we must abort the packet.
 
@@ -270,11 +341,13 @@ static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_in
     outer_udph->check = 0;                                        // UDP checksum is optional in IPv4
 
     // for now we don't set VXLAN header
+    outer_vxh->vx_vni = bpf_htonl(dst_network_vni->vni);
+    outer_vxh->vx_flags = bpf_htonl(0x80000000);
 
     // Calculate ip checksum
     outer_iph->check = ~bpf_csum_diff(0, 0, (__u32 *)outer_iph, IP_HDR_LEN, 0);
 
-    my_bpf_printk("XDP. INTERNAL %d 14. sucessfuly set new header fields", ctx->ingress_ifindex);
+    my_bpf_printk("%d 14. sucessfuly set new header fields", ctx->ingress_ifindex);
 
     return AGENT_NO_ERROR;
 }
