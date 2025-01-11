@@ -192,6 +192,81 @@ static int mac_table_expiration_callback(void *map, struct mac_address *key, str
 //     return masked_src_ip == masked_network_address;
 // }
 
+static __always_inline uint32_t create_mask(uint32_t prefixlen)
+{
+    switch (prefixlen)
+    {
+    case 0:
+        return 0b00000000000000000000000000000000;
+    case 1:
+        return 0b00000000000000000000000000000001;
+    case 2:
+        return 0b00000000000000000000000000000011;
+    case 3:
+        return 0b00000000000000000000000000000111;
+    case 4:
+        return 0b00000000000000000000000000001111;
+    case 5:
+        return 0b00000000000000000000000000011111;
+    case 6:
+        return 0b00000000000000000000000000111111;
+    case 7:
+        return 0b00000000000000000000000001111111;
+    case 8:
+        return 0b00000000000000000000000011111111;
+    case 9:
+        return 0b00000000000000000000000111111111;
+    case 10:
+        return 0b00000000000000000000001111111111;
+    case 11:
+        return 0b00000000000000000000011111111111;
+    case 12:
+        return 0b00000000000000000000111111111111;
+    case 13:
+        return 0b00000000000000000001111111111111;
+    case 14:
+        return 0b00000000000000000011111111111111;
+    case 15:
+        return 0b00000000000000000111111111111111;
+    case 16:
+        return 0b00000000000000001111111111111111;
+    case 17:
+        return 0b00000000000000011111111111111111;
+    case 18:
+        return 0b00000000000000111111111111111111;
+    case 19:
+        return 0b00000000000001111111111111111111;
+    case 20:
+        return 0b00000000000011111111111111111111;
+    case 21:
+        return 0b00000000000111111111111111111111;
+    case 22:
+        return 0b00000000001111111111111111111111;
+    case 23:
+        return 0b00000000011111111111111111111111;
+    case 24:
+        return 0b00000000111111111111111111111111;
+    case 25:
+        return 0b00000001111111111111111111111111;
+    case 26:
+        return 0b00000011111111111111111111111111;
+    case 27:
+        return 0b00000111111111111111111111111111;
+    case 28:
+        return 0b00001111111111111111111111111111;
+    case 29:
+        return 0b00011111111111111111111111111111;
+    case 30:
+        return 0b00111111111111111111111111111111;
+    case 31:
+        return 0b01111111111111111111111111111111;
+    case 32:
+        return 0b11111111111111111111111111111111;
+    default:
+        return 0b00000000000000000000000000000000; // Invalid prefix length
+    }
+}
+
 bool __always_inline is_ip_in_network(const struct ipv4_lpm_key *key, const struct in_addr *src_ip_addr)
 {
     if (key == NULL || src_ip_addr == NULL)
@@ -219,7 +294,7 @@ bool __always_inline is_ip_in_network(const struct ipv4_lpm_key *key, const stru
         return false;
     }
 
-    uint32_t mask = (key_copy.prefixlen == 32) ? 0 : (~0U >> (32 - key_copy.prefixlen));
+    uint32_t mask = create_mask(key_copy.prefixlen);
 
     uint32_t mask_copy;
     __builtin_memcpy(&mask_copy, &mask, sizeof(mask_copy));
@@ -246,12 +321,12 @@ bool __always_inline is_ip_in_network(const struct ipv4_lpm_key *key, const stru
     // Print out the masked values for debugging
     my_bpf_printk("Masked Source IP: 0x%08x\n", src_masked);
     my_bpf_printk("Masked Source IP 2: 0x%08x\n", src_masked_2);
-    my_bpf_printk("Masked Network Address: 0x%08x\n", network_masked);
+    my_bpf_printk(" Masked Network Address: 0x%08x\n", network_masked);
 
     // Compare the masked source IP with the network address
     if (src_masked == network_masked || src_masked_2 == network_masked)
     {
-        my_bpf_printk("TRUEEEEEEEEEEEEEEE\n");
+        my_bpf_printk("TRUEEEEEEEEEEEEEEE \n");
     }
 
     return (src_masked == network_masked || src_masked_2 == network_masked);
