@@ -321,12 +321,12 @@ bool __always_inline is_ip_in_network(const struct ipv4_lpm_key *key, const stru
     // Print out the masked values for debugging
     my_bpf_printk("Masked Source IP: 0x%08x\n", src_masked);
     my_bpf_printk("Masked Source IP 2: 0x%08x\n", src_masked_2);
-    my_bpf_printk(" Masked Network Address: 0x%08x\n", network_masked);
+    my_bpf_printk(" Masked Network Address:  0x%08x\n", network_masked);
 
     // Compare the masked source IP with the network address
     if (src_masked == network_masked || src_masked_2 == network_masked)
     {
-        my_bpf_printk("TRUEEEEEEEEEEEEEEE \n");
+        my_bpf_printk("TRUEEEEEEEEEEEEEEE\n");
     }
 
     return (src_masked == network_masked || src_masked_2 == network_masked);
