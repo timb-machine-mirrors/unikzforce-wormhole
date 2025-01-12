@@ -51,7 +51,8 @@ static int __always_inline clone_external_packet_and_send_to_all_internal_ifaces
     my_bpf_printk("%d 5. start clone_external_packet_and_send_to_all_internal_ifaces", skb->ingress_ifindex);
     int i;
     __u32 *ifindex_ptr;
-    struct ipv4_lpm_key key = {.prefixlen = 32};
+    struct ipv4_lpm_key dst_key = {.prefixlen = 32};
+    struct ipv4_lpm_key src_key = {.prefixlen = 32};
     struct in_addr src_ip;
 
     void *data = (void *)(long)skb->data;
@@ -73,7 +74,6 @@ static int __always_inline clone_external_packet_and_send_to_all_internal_ifaces
 
     if (h_proto == ETH_P_ARP)
     {
-
         struct arphdr *inner_arph = (void *)(inner_eth + 1);
 
         // Ensure the inner ARP header is valid
@@ -87,10 +87,9 @@ static int __always_inline clone_external_packet_and_send_to_all_internal_ifaces
             return TC_ACT_SHOT;
 
         create_in_addr_from_arp_ip(inner_arp_payload->ar_sip, &src_ip);
-        src_ip.s_addr = src_ip.s_addr;
         my_bpf_printk("src_ip obtained by ARP. %u", src_ip.s_addr);
 
-        __builtin_memcpy(key.data, inner_arp_payload->ar_tip, sizeof(key.data));
+        __builtin_memcpy(dst_key.data, inner_arp_payload->ar_tip, sizeof(dst_key.data));
     }
     else if (h_proto == ETH_P_IP)
     {
@@ -103,11 +102,11 @@ static int __always_inline clone_external_packet_and_send_to_all_internal_ifaces
         // Extract inner source and destination IP addresses
         __u32 inner_dst_ip = inner_iph->daddr;
 
-        src_ip.s_addr = bpf_ntohl(inner_iph->saddr);
+        src_ip.s_addr = inner_iph->saddr;
         my_bpf_printk("src_ip obtained by IP. %u", src_ip.s_addr);
 
         // Check if packet really belongs to internal network
-        __builtin_memcpy(key.data, &inner_dst_ip, sizeof(key.data));
+        __builtin_memcpy(dst_key.data, &inner_dst_ip, sizeof(dst_key.data));
     }
     else
     {
@@ -115,7 +114,7 @@ static int __always_inline clone_external_packet_and_send_to_all_internal_ifaces
     }
 
     // if the packet is not for internal network do TC_ACT_OK here and
-    struct network_vni *dst_network_vni = bpf_map_lookup_elem(&networks_map, &key);
+    struct network_vni *dst_network_vni = bpf_map_lookup_elem(&networks_map, &dst_key);
     if (dst_network_vni == NULL)
     {
         my_bpf_printk("does not belong to internal network. pass it up");

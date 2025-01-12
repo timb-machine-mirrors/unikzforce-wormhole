@@ -203,7 +203,7 @@ static enum vxlan_agent_processing_error __always_inline add_outer_headers_to_in
         if ((void *)(iph + 1) > (void *)(long)ctx->data_end)
             return AGENT_ERROR_ABORT;
 
-        src_ip.s_addr = bpf_ntohl(iph->saddr);
+        src_ip.s_addr = iph->saddr;
         my_bpf_printk("src_ip obtained by IP. %u", src_ip.s_addr);
 
         // Extract inner source and destination IP addresses

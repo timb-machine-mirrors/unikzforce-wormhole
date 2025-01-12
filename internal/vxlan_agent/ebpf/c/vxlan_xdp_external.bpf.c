@@ -300,7 +300,7 @@ static long __always_inline handle_packet_received_by_external_iface__ip_packet(
     // Check if packet really belongs to internal network
     struct ipv4_lpm_key key = {.prefixlen = 24};
 
-    src_ip.s_addr = bpf_ntohl(inner_iph->saddr);
+    src_ip.s_addr = inner_iph->saddr;
 
     __builtin_memcpy(key.data, &inner_dst_ip, sizeof(key.data));
 
