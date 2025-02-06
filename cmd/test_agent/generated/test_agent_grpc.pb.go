@@ -20,10 +20,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TestAgentService_WaitUntilReady_FullMethodName     = "/generated.TestAgentService/WaitUntilReady"
-	TestAgentService_Ping_FullMethodName               = "/generated.TestAgentService/Ping"
-	TestAgentService_EnableSwitchAgent_FullMethodName  = "/generated.TestAgentService/EnableSwitchAgent"
-	TestAgentService_DisableSwitchAgent_FullMethodName = "/generated.TestAgentService/DisableSwitchAgent"
+	TestAgentService_WaitUntilReady_FullMethodName      = "/generated.TestAgentService/WaitUntilReady"
+	TestAgentService_Ping_FullMethodName                = "/generated.TestAgentService/Ping"
+	TestAgentService_EnableSwitchAgent_FullMethodName   = "/generated.TestAgentService/EnableSwitchAgent"
+	TestAgentService_DisableSwitchAgent_FullMethodName  = "/generated.TestAgentService/DisableSwitchAgent"
+	TestAgentService_EnableVxlanAgent_FullMethodName    = "/generated.TestAgentService/EnableVxlanAgent"
+	TestAgentService_DisableVxlanAgent_FullMethodName   = "/generated.TestAgentService/DisableVxlanAgent"
+	TestAgentService_EnableDummyXdpAgent_FullMethodName = "/generated.TestAgentService/EnableDummyXdpAgent"
 )
 
 // TestAgentServiceClient is the client API for TestAgentService service.
@@ -34,6 +37,9 @@ type TestAgentServiceClient interface {
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	EnableSwitchAgent(ctx context.Context, in *EnableSwitchAgentRequest, opts ...grpc.CallOption) (*EnableSwitchAgentResponse, error)
 	DisableSwitchAgent(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	EnableVxlanAgent(ctx context.Context, in *EnableVxlanAgentRequest, opts ...grpc.CallOption) (*EnableVxlanAgentResponse, error)
+	DisableVxlanAgent(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	EnableDummyXdpAgent(ctx context.Context, in *EnableDummyXdpAgentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type testAgentServiceClient struct {
@@ -84,6 +90,36 @@ func (c *testAgentServiceClient) DisableSwitchAgent(ctx context.Context, in *emp
 	return out, nil
 }
 
+func (c *testAgentServiceClient) EnableVxlanAgent(ctx context.Context, in *EnableVxlanAgentRequest, opts ...grpc.CallOption) (*EnableVxlanAgentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EnableVxlanAgentResponse)
+	err := c.cc.Invoke(ctx, TestAgentService_EnableVxlanAgent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *testAgentServiceClient) DisableVxlanAgent(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, TestAgentService_DisableVxlanAgent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *testAgentServiceClient) EnableDummyXdpAgent(ctx context.Context, in *EnableDummyXdpAgentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, TestAgentService_EnableDummyXdpAgent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TestAgentServiceServer is the server API for TestAgentService service.
 // All implementations must embed UnimplementedTestAgentServiceServer
 // for forward compatibility.
@@ -92,6 +128,9 @@ type TestAgentServiceServer interface {
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	EnableSwitchAgent(context.Context, *EnableSwitchAgentRequest) (*EnableSwitchAgentResponse, error)
 	DisableSwitchAgent(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	EnableVxlanAgent(context.Context, *EnableVxlanAgentRequest) (*EnableVxlanAgentResponse, error)
+	DisableVxlanAgent(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	EnableDummyXdpAgent(context.Context, *EnableDummyXdpAgentRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedTestAgentServiceServer()
 }
 
@@ -113,6 +152,15 @@ func (UnimplementedTestAgentServiceServer) EnableSwitchAgent(context.Context, *E
 }
 func (UnimplementedTestAgentServiceServer) DisableSwitchAgent(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DisableSwitchAgent not implemented")
+}
+func (UnimplementedTestAgentServiceServer) EnableVxlanAgent(context.Context, *EnableVxlanAgentRequest) (*EnableVxlanAgentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EnableVxlanAgent not implemented")
+}
+func (UnimplementedTestAgentServiceServer) DisableVxlanAgent(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DisableVxlanAgent not implemented")
+}
+func (UnimplementedTestAgentServiceServer) EnableDummyXdpAgent(context.Context, *EnableDummyXdpAgentRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EnableDummyXdpAgent not implemented")
 }
 func (UnimplementedTestAgentServiceServer) mustEmbedUnimplementedTestAgentServiceServer() {}
 func (UnimplementedTestAgentServiceServer) testEmbeddedByValue()                          {}
@@ -207,6 +255,60 @@ func _TestAgentService_DisableSwitchAgent_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TestAgentService_EnableVxlanAgent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnableVxlanAgentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TestAgentServiceServer).EnableVxlanAgent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TestAgentService_EnableVxlanAgent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TestAgentServiceServer).EnableVxlanAgent(ctx, req.(*EnableVxlanAgentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TestAgentService_DisableVxlanAgent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TestAgentServiceServer).DisableVxlanAgent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TestAgentService_DisableVxlanAgent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TestAgentServiceServer).DisableVxlanAgent(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TestAgentService_EnableDummyXdpAgent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnableDummyXdpAgentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TestAgentServiceServer).EnableDummyXdpAgent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TestAgentService_EnableDummyXdpAgent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TestAgentServiceServer).EnableDummyXdpAgent(ctx, req.(*EnableDummyXdpAgentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TestAgentService_ServiceDesc is the grpc.ServiceDesc for TestAgentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -229,6 +331,18 @@ var TestAgentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DisableSwitchAgent",
 			Handler:    _TestAgentService_DisableSwitchAgent_Handler,
+		},
+		{
+			MethodName: "EnableVxlanAgent",
+			Handler:    _TestAgentService_EnableVxlanAgent_Handler,
+		},
+		{
+			MethodName: "DisableVxlanAgent",
+			Handler:    _TestAgentService_DisableVxlanAgent_Handler,
+		},
+		{
+			MethodName: "EnableDummyXdpAgent",
+			Handler:    _TestAgentService_EnableDummyXdpAgent_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

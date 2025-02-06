@@ -33,23 +33,28 @@ message EnableSwitchAgentResponse {
   string hostname = 4;
 }
 
-// message EnableVxlanAgentRequest {
-//   repeated string internalInterfaceNames = 1;
-//   repeated string externalInterfaceNames = 2;
-// }
+message EnableVxlanAgentRequest {
+  string config_yaml_content = 1;
+}
 
-// message EnableVxlanAgentResponse {
-//   string resp = 1;
-//   string command = 2;
-//   int32 pid = 3;
-//   string hostname = 4;
-// }
+message EnableVxlanAgentResponse {
+  string resp = 1;
+  string command = 2;
+  string output = 3;
+  int32 pid = 4;
+  string hostname = 5;
+}
+
+message EnableDummyXdpAgentRequest {
+  string interfaceName = 1;
+}
   
 service TestAgentService {
   rpc WaitUntilReady(google.protobuf.Empty) returns (WaitUntilReadyResponse) {}
   rpc Ping(PingRequest) returns (PingResponse) {}
   rpc EnableSwitchAgent(EnableSwitchAgentRequest) returns (EnableSwitchAgentResponse) {}
   rpc DisableSwitchAgent(google.protobuf.Empty) returns (google.protobuf.Empty) {}
-//  rpc EnableVxlanAgent(EnableVxlanAgentRequest) returns (EnableVxlanAgentResponse) {}
-//  rpc DisableVxlanAgent(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc EnableVxlanAgent(EnableVxlanAgentRequest) returns (EnableVxlanAgentResponse) {}
+  rpc DisableVxlanAgent(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc EnableDummyXdpAgent(EnableDummyXdpAgentRequest) returns (google.protobuf.Empty) {}
 }
