@@ -35,6 +35,12 @@ static volatile const struct
 
 #define my_bpf_printk(fmt, args...) bpf_printk("%s :: %s :: %s :::: " fmt, vxlan_agent_metadata.hostname, vxlan_agent_metadata.type, vxlan_agent_metadata.sub_type, ##args)
 
+struct vxlanhdr
+{
+    __be32 vx_flags;
+    __be32 vx_vni;
+};
+
 enum vxlan_agent_processing_error
 {
     AGENT_ERROR_ABORT = 0,
