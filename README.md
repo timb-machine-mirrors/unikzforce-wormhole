@@ -72,8 +72,12 @@ We have a topology in which there are 2 nodes, `src` and `dst` which are in the 
 
 to bring up this topology: (again, please do it inside the ***devcontainer***)
 
-1. `cd ./test/vxlan_agent/vxlan_agent/clab_topologies/`
-2. `clab deploy`
+1. Build the necessary images if not done already:
+    ```sh
+    ./scripts/build_images.sh
+    ```
+2. `cd ./test/vxlan_agent/vxlan_agent/clab_topologies/`
+3. `clab deploy`
 
 when you do this it will bring up several containers:
 - src
