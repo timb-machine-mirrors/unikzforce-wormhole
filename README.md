@@ -24,7 +24,7 @@ The project has devcontainer nature, so for development, one only needs:
 
 Just open up the project using vscode, and because project has a devcontainer nature (it has `.devcontainer` folder), vscode would automatically suggest you to re-open the project in a development container, proceed with that.
 
-## Running tests
+## Running e2e tests
 after opening up the project in a devcontainer:
 
 1. to build the necessary images:
@@ -112,7 +112,7 @@ whenever a packet reaches a network interface with an XDP program attached to it
 
 In this project, the packet forwarding mechanism is implemented using both XDP and TC layers of eBPF. The process is as follows:
 
-1. **MAC Address Lookup**: When a packet arrives at the VTEP (VXLAN Tunnel Endpoint), the system first checks the MAC address table.
+1. **MAC Address Lookup**: When a packet arrives at the VTEP, the system first checks the MAC address table.
     - **Entry Found**: If an entry for the destination MAC address is found in the MAC table, the packet is forwarded immediately using the XDP layer. This ensures low-latency forwarding.
     - **Entry Not Found**: If no entry is found for the destination MAC address, the packet is passed from the XDP layer up to the TC layer.
 
@@ -184,7 +184,85 @@ also when a packet from outside network (internet) reaches an external NIC and t
 so for all these operations we need to be able to adjust the packet headroom. there is a helper function `bpf_xdp_adjust_head()` to modify the packet headroom in XDP programs.
 
 
-### e2e tests
+## e2e tests
+
+to verify that this vxlan implementation is working correctly, we need to write some e2e tests.
+I have used `containerlab` to create a throwable testing environment. containerlab is similar to `testcontainers` but it is more focused on networking and it has better networking abstractions, like network cables and network interfaces.
+
+
+the scenarios that i'm currently testing in my automated test:
+
+1. if the VTEP software is not active in `border1` and `border2` then
+    - `source` and `destination` **SHOULD NOT** be able to ping each other
+2. if the VTEP software is enabled both in `border1` and `border2` then
+    - `source` and `destination` **SHOULD** be able to ping each other
 
 
 ![Alt text](./readme/vxlan_e2e_test.drawio.svg)
+
+the e2e tests for vxlan are written in `./test/vxlan_agent/vxlan_agent_test.go`.<br>
+the network topology used for this test is defined in `./test/vxlan_agent/vxlan_agent/clab_topologies/vxlan.clab.yml`.
+
+
+### Interactively testing the program via containerlab
+
+other than performing the e2e tests, there is also another option to test the program and it's by interactively up and runing a containerlab testing lab.
+
+to perform this:
+
+1. `cd ./test/vxlan_agent/vxlan_agent/clab_topologies/`
+2. `clab deploy`
+
+when you do this it will bring up several containers:
+- src
+- border1
+- border2
+- dst
+
+```
+╭────────────────────┬────────────────────────────┬─────────┬───────────────────╮
+│        Name        │         Kind/Image         │  State  │   IPv4/6 Address  │
+├────────────────────┼────────────────────────────┼─────────┼───────────────────┤
+│ clab-vxlan-border1 │ linux                      │ running │ 172.20.20.5       │
+│                    │ wormhole/test_agent:latest │         │ 3fff:172:20:20::5 │
+├────────────────────┼────────────────────────────┼─────────┼───────────────────┤
+│ clab-vxlan-border2 │ linux                      │ running │ 172.20.20.2       │
+│                    │ wormhole/test_agent:latest │         │ 3fff:172:20:20::2 │
+├────────────────────┼────────────────────────────┼─────────┼───────────────────┤
+│ clab-vxlan-dst     │ linux                      │ running │ 172.20.20.3       │
+│                    │ wormhole/test_agent:latest │         │ 3fff:172:20:20::3 │
+├────────────────────┼────────────────────────────┼─────────┼───────────────────┤
+│ clab-vxlan-src     │ linux                      │ running │ 172.20.20.4       │
+│                    │ wormhole/test_agent:latest │         │ 3fff:172:20:20::4 │
+╰────────────────────┴────────────────────────────┴─────────┴───────────────────╯
+```
+
+This topology is similar to this picture (which is used by the e2e test):
+
+![Alt text](./readme/vxlan_e2e_test.drawio.svg)
+
+
+now you need to open up several terminals
+
+1. a terminal to open **bash** in `border1`:
+    - `docker exec -it clab-vxlan-border1 /bin/bash `
+    - then execute the `vxlan_agent` in border1 by `/build/vxlan_agent --config /build/vxlan_agent.config.yaml`
+2. a terminal to open **bash** in `border2`:
+    - `docker exec -it clab-vxlan-border2 /bin/bash`
+    - then execute the `vxlan_agent` in border2 by `/build/vxlan_agent --config /build/vxlan_agent.config.yaml`
+3. a terminal to open **bash** in `src`:
+    - `docker exec -it clab-vxlan-src /bin/bash`
+    - then execute the `dummy_xdp` in src by `/build/dummy_xdp --interface-name eth1`
+4. a terminal to open **bash** in `dst`:
+    - `docker exec -it clab-vxlan-dst /bin/bash`
+    - then execute the `dummy_xdp` in dst by `/build/dummy_xdp --interface-name eth1`
+5. another terminal to open **bash** in `src`:
+    - `docker exec -it clab-vxlan-src /bin/bash`
+    - then **ping 192.168.1.11** in src
+6. another terminal to open **bash** in `dst`:
+    - `docker exec -it clab-vxlan-dst /bin/bash`
+    - then **ping 192.168.1.10** in dst
+
+in this case you can see if the **vxlan_agent** is active on border1 and border2, then src & dst can ping each other.
+
+please don't forget to bring down the testing lab by running **`clab destroy --all`**
