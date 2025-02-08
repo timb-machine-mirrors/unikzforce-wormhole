@@ -26,7 +26,8 @@ Just open up the project using vscode, and because project has a devcontainer na
 
 ## e2e tests
 
-to verify that this vxlan implementation is working correctly, we have some e2e tests. I have used `containerlab` to create a throwable testing environment.<br>
+to verify that this vxlan implementation is working correctly, we have some e2e tests. I have used `containerlab` to create a throwable testing environment.
+
 containerlab is kinda similar to `testcontainers` but it is more focused on networking and it has better networking abstractions, like network cables and network interfaces.
 
 the scenarios that i'm currently testing in my automated test:
