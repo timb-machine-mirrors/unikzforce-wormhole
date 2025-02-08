@@ -1,7 +1,7 @@
 # Wormhole Project
 
 This project tends be a toy implementation of the **VXLAN** protocol with __unknown unicast flooding__ technique using **eBPF XDP/TC**.
-Please note that I am not a network engineer, and some of my assumptions about the VXLAN protocol may be incorrect. This project is not intended to be fully compliant with the VXLAN protocol; rather, it aims to create a proof of concept for an eBPF-based VXLAN and demonstrate how VXLAN building blocks can be implemented using eBPF.
+Please note that I am not a network engineer, and some of my assumptions about the VXLAN protocol may be incorrect. This project is not intended to be fully compliant with the VXLAN protocol; rather, it aims to create a proof of concept for an eBPF-based VXLAN VTEP and demonstrate how VXLAN building blocks can be implemented using eBPF.
 
 using eBPF we can bypass linux kernel networking stack, so it will consume less cpu cycles + it's faster.
 
@@ -9,11 +9,27 @@ using eBPF we can bypass linux kernel networking stack, so it will consume less 
 - Golang/C
 - Cilium eBPF
 - bpf2go
-- Containerlab
-- go testing + Ginkgo library
+- Containerlab + go testing + Ginkgo library
 - Edge Shark
-- Devcontainer
-- docker in docker
+- Devcontainer + docker-in-docker
+
+
+## Devoplment Prerequisites
+The project can be developed in devcontainer, so for development, one only needs to install VSCode and Docker.
+
+- Linux kernel 6.5 or newer
+- Docker
+- VSCode ( or any IDE with devcontainer support )
+
+## Running tests
+1. Build the image:
+    ```sh
+    ./scripts/build_images.sh
+    ```
+2. Run the tests:
+    ```sh
+    ./script/vxlan_agent_run_tests.sh
+    ```
 
 ## Short explanation of VXLAN
 In a VXLAN environment, you want several geographically remote networks to form a single (or multiple) integrated network(s). For this purpose, you need special nodes named **VTEP**.
@@ -87,6 +103,31 @@ suppose `HOST_11` want to ping `HOST_21` (192.168.1.21), but it doesn't know the
 whenever a packet reaches a network interface with an XDP program attached to it, by looking at the source MAC address of the packet or inner packet ( in case the packet is encapsulated ) we can perform mac address learning. this can be done easily in XDP programs attached on each internal or external NIC.
 
 
+## Packet Life Cycle
+
+In this project, the packet forwarding mechanism is implemented using both XDP and TC layers of eBPF. The process is as follows:
+
+1. **MAC Address Lookup**: When a packet arrives at the VTEP (VXLAN Tunnel Endpoint), the system first checks the MAC address table.
+    - **Entry Found**: If an entry for the destination MAC address is found in the MAC table, the packet is forwarded immediately using the XDP layer. This ensures low-latency forwarding.
+    - **Entry Not Found**: If no entry is found for the destination MAC address, the packet is passed from the XDP layer up to the TC layer.
+
+2. **Unknown Unicast Flooding**: In the TC layer, the system performs unknown unicast flooding. This is necessary because the XDP layer does not support cloning a packet multiple times and redirecting it to multiple destinations. The TC layer handles this by cloning the packet and sending it to all possible destinations.
+
+
+
+This approach leverages the strengths of both XDP and TC layers to achieve efficient and scalable packet forwarding.
+
+So the life cycle of a packet is something similar to this:
+
+1. **Originating Node**: The packet originates from an internal host within the network.
+2. **Arrival at eBPF VXLAN VTEP**: The packet reaches the eBPF VXLAN Virtual Tunnel Endpoint (VTEP) where it is processed by the eBPF XDP/TC program.
+3. **MAC Table Lookup**: The VTEP checks its MAC table to determine the appropriate forwarding NIC.
+4. **Encapsulation**: The packet is encapsulated with an outer Ethernet header, outer IP header, outer UDP header, and outer VXLAN header.
+5. **Transmission**: The encapsulated packet is transmitted over the network to the remote eBPF VXLAN VTEP.
+6. **Ingress to Remote eBPF VXLAN VTEP**: The remote eBPF VXLAN VTEP receives the encapsulated packet.
+7. **Decapsulation**: The outer headers are removed, and the original packet is extracted.
+8. **Destination Node**: The decapsulated packet is forwarded to the destination host within the network.
+
 ## Types of ebpf programs needed for our VXLAN VTEP
 
 currently we have 4 types of ebpf programs to implement a VXLAN VTEP:
@@ -107,103 +148,27 @@ Also as I mentioned previously the `TC` programs are for the sake of packet clon
 ![Alt text](./readme/xdp_tc.drawio.svg)
 
 
+## technical considerations
 
-## Packet Forwarding Mechanism
+### Jumbo Frames
 
-In this project, the packet forwarding mechanism is implemented using both XDP and TC layers of eBPF. The process is as follows:
+Plain XDP (fragments disabled) has the limitation that every packet must fit within a single memory page (typically 4096 bytes),
+but in some cases it even cannot be more than 1500 bytes, this would create problems for Jumbo frames (packets larger than 1500 bytes), 
+so in this cases normal `xdp` cannot be used. Instead, a substitute XDP type named `xdp.frags` is used to handle these larger packets.
 
-1. **MAC Address Lookup**: When a packet arrives at the VTEP (VXLAN Tunnel Endpoint), the system first checks the MAC address table.
-    - **Entry Found**: If an entry for the destination MAC address is found in the MAC table, the packet is forwarded immediately using the XDP layer. This ensures low-latency forwarding.
-    - **Entry Not Found**: If no entry is found for the destination MAC address, the packet is passed from the XDP layer to the TC layer.
+in `xdp.frags` you may have access to first page of packet payload directly, but you cannot directly access next pages of data in the payload.
+as in our case we only need to access the headers of the packet so using `xdp.frags` would help us to support Jumbo frames in our system.
 
-2. **Unknown Unicast Flooding**: In the TC layer, the system performs unknown unicast flooding. This is necessary because the XDP layer does not support cloning a packet multiple times and redirecting it to multiple destinations. The TC layer handles this by cloning the packet and sending it to all possible destinations.
+### MAC Table entry expiration (TTL)
 
-3. **Jumbo Frames**: For Jumbo frames (packets larger than 1500 bytes), normal `xdp` cannot be used. Instead, a substitute XDP type named `xdp.frags` is used to handle these larger packets.
+Each element in the `mac_table` needs to have a 5-minute TTL (Time To Live). so after 5 minutes if a mac address is not seen, its entry in the mac table must be removed.
+To implement this we use an ebpf struct name `bpf_timer`. so in each element in our mac table, we embed a bpf_timer object, and also we define a callback function
+for this timer object.
+after the timer for an entry in the mac table is triggered, it will trigger the callback function, in which we can remove the element from the mac table.
 
-This approach leverages the strengths of both XDP and TC layers to achieve efficient and scalable packet forwarding.
-
-## Packet Lifecycle
-
-1. **Origin**: The packet starts from a node within an internal host.
-2. **Encapsulation**: When it reaches our eBPF VXLAN VTEP, it gets encapsulated within another packet.
-3. **Transmission**: The encapsulated packet is transmitted to a remote eBPF VXLAN VTEP.
-4. **Decapsulation**: At the remote VTEP, the packet is decapsulated.
-5. **Destination**: The packet reaches its final destination.
-
-## Network Packet Diagram
-
-
-Before running tests, we need to build an image by executing `./scripts/build_images.sh`.
-- **eBPF XDP/TC**: Utilizes eBPF XDP/TC for high-performance packet processing.
-- **Unknown Unicast Flooding**: Efficiently handles unknown unicast traffic within the VXLAN.
-
-## Network Packet Encapsulation
-
-Below is a diagram showing the network packet before and after encapsulation with outer Ethernet, outer IP, outer UDP, and outer VXLAN headers:
-
-```
-+-------------------+-------------------+-------------------+-------------------+-------------------+
-| Outer Ethernet Header | Outer IP Header | Outer UDP Header | Outer VXLAN Header | Original Packet |
-+-------------------+-------------------+-------------------+-------------------+-------------------+
-```
-
-## Getting Started
-To get started with the Wormhole project, follow the instructions below.
-
-## Prerequisites
-It is based on devcontainer, so for development, one only needs to install VSCode and Docker.
-- Linux kernel 6.5 or newer with eBPF support
-- Docker
-- VSCode
-
-## Running tests
-1. Build the image:
-    ```sh
-    ./scripts/build_images.sh
-    ```
-2. Run the tests:
-    ```sh
-    ./script/vxlan_agent_run_tests.sh
-    ```
-
-## Usage
-To run the Wormhole VXLAN implementation, use the following command:
-```sh
-sudo ./wormhole
-```
-
-## Contributing
-We welcome contributions to the Wormhole project. Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute.
-
-## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Acknowledgements
-Special thanks to the eBPF and Linux kernel communities for their invaluable support and contributions.
-## Technologies Used
-- **Golang/C**: The primary programming languages used in the project.
-- **Cilium eBPF**: Utilized for eBPF program management.
-- **bpf2go**: Used for generating Go bindings for eBPF programs.
-- **Containerlab**: Employed for automated end-to-end testing.
-- **Ginkgo Testing Library**: Used for writing and running tests.
-- **Edge Shark**: Utilized for network packet analysis.
-## Packet Life Cycle
-
-The life cycle of a packet in the Wormhole VXLAN implementation is as follows:
-
-1. **Originating Node**: The packet originates from an internal host within the network.
-2. **Ingress to eBPF VXLAN VTEP**: The packet reaches the eBPF VXLAN Virtual Tunnel Endpoint (VTEP) where it is processed by the eBPF XDP/TC program.
-3. **Encapsulation**: The packet is encapsulated with an outer Ethernet header, outer IP header, outer UDP header, and outer VXLAN header.
-4. **Transmission**: The encapsulated packet is transmitted over the network to the remote eBPF VXLAN VTEP.
-5. **Egress from Remote eBPF VXLAN VTEP**: The remote eBPF VXLAN VTEP receives the encapsulated packet.
-6. **Decapsulation**: The outer headers are removed, and the original packet is extracted.
-7. **Destination Node**: The decapsulated packet is forwarded to the destination host within the network.
-
-This process ensures efficient and scalable network virtualization using the VXLAN protocol.
-
-### MAC Table Management
-
-Each element in the `mac_table` needs to have a 5-minute TTL (Time To Live). To implement this, we use `bpf_timer` along with an eviction callback. The `bpf_timer` ensures that each entry is automatically removed after the TTL expires, maintaining the efficiency and accuracy of the MAC address table.
+so whenever we see a packet in our VXLAN VTEP, we check the source mac address of that packet:
+- if we currently don't have any entry for that mac address in the mac table, we will create a new entry for that mac address with a bpf_timer of 5 minutes.
+- if we currently have an existing entry for that mac address in the mac table, we will reset its bpf_timer object to 5-minutes.
 
 ### Packet Size Adjustment
 
@@ -212,17 +177,4 @@ In this project, when a packet passes through an internal XDP program on the VTE
 By increasing the headroom, we ensure there is enough space to insert these headers without fragmenting the packet, maintaining the integrity and performance of the packet forwarding mechanism.
 
 The `bpf_xdp_adjust_head` function is used as follows:
-
-```c
-int adjust_head(struct xdp_md *ctx) {
-    int headroom = sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr) + sizeof(struct vxlanhdr);
-    if (bpf_xdp_adjust_head(ctx, -headroom)) {
-        return XDP_DROP;
-    }
-    return XDP_PASS;
-}
-```
-
 Conversely, when a packet passes through an external XDP program on the VTEP and needs to enter the network, we use the same function to strip off the extra headers and decapsulate the internal packet. This ensures that the packet is correctly processed and forwarded to its final destination within the network.
-
-This code snippet demonstrates how we adjust the headroom to accommodate the additional headers during encapsulation and remove them during decapsulation, ensuring efficient packet processing and forwarding.
