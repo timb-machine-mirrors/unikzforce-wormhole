@@ -24,17 +24,102 @@ The project has devcontainer nature, so for development, one only needs:
 
 Just open up the project using vscode, and because project has a devcontainer nature (it has `.devcontainer` folder), vscode would automatically suggest you to re-open the project in a development container, proceed with that.
 
-## Running e2e tests
-after opening up the project in a devcontainer:
+## e2e tests
 
-1. to build the necessary images:
+to verify that this vxlan implementation is working correctly, we have some e2e tests. I have used `containerlab` to create a throwable testing environment.<br>
+containerlab is kinda similar to `testcontainers` but it is more focused on networking and it has better networking abstractions, like network cables and network interfaces.
+
+the scenarios that i'm currently testing in my automated test:
+
+1. if the VTEP software is not active in `border1` and `border2` then
+    - `src` and `dst` **SHOULD NOT** be able to ping each other
+2. if the VTEP software is enabled both in `border1` and `border2` then
+    - `src` and `dst` **SHOULD** be able to ping each other
+
+in the future I'll add some other scenarios to my e2e tests.
+
+
+![Alt text](./readme/vxlan_e2e_test.drawio.svg)
+
+the e2e tests for vxlan are written in `./test/vxlan_agent/vxlan_agent_test.go`.<br>
+the network topology used for this test is defined in `./test/vxlan_agent/vxlan_agent/clab_topologies/vxlan.clab.yml`.
+
+
+to run the tests, after opening up the project in a ***devcontainer***:
+
+1. Build the necessary images:
     ```sh
     ./scripts/build_images.sh
     ```
-2. to run the tests:
+2. Run the tests:
     ```sh
     ./script/vxlan_agent_run_tests.sh
     ```
+
+
+### Interactively testing the program via containerlab
+
+other than performing the e2e tests, there is also another option to test the program and it's by interactively up and runing a containerlab testing lab & checking if the vxlan_agent VTEP program is actually working or not.
+
+This topology is similar to this picture (which is used by the e2e test):
+
+![Alt text](./readme/vxlan_e2e_test.drawio.svg)
+
+We have a topology in which there are 2 nodes, `src` and `dst` which are in the same subnet, but they are not connected to each other. in order to connect them we need to activate our **vxlan_agent VTEP** program on both border1 & border2 and check if `src` and `dst` are able to see each other or not.
+
+to bring up this topology: (again, please do it inside the ***devcontainer***)
+
+1. `cd ./test/vxlan_agent/vxlan_agent/clab_topologies/`
+2. `clab deploy`
+
+when you do this it will bring up several containers:
+- src
+- border1
+- border2
+- dst
+
+```
+╭────────────────────┬────────────────────────────┬─────────┬───────────────────╮
+│        Name        │         Kind/Image         │  State  │   IPv4/6 Address  │
+├────────────────────┼────────────────────────────┼─────────┼───────────────────┤
+│ clab-vxlan-border1 │ linux                      │ running │ 172.20.20.5       │
+│                    │ wormhole/test_agent:latest │         │ 3fff:172:20:20::5 │
+├────────────────────┼────────────────────────────┼─────────┼───────────────────┤
+│ clab-vxlan-border2 │ linux                      │ running │ 172.20.20.2       │
+│                    │ wormhole/test_agent:latest │         │ 3fff:172:20:20::2 │
+├────────────────────┼────────────────────────────┼─────────┼───────────────────┤
+│ clab-vxlan-dst     │ linux                      │ running │ 172.20.20.3       │
+│                    │ wormhole/test_agent:latest │         │ 3fff:172:20:20::3 │
+├────────────────────┼────────────────────────────┼─────────┼───────────────────┤
+│ clab-vxlan-src     │ linux                      │ running │ 172.20.20.4       │
+│                    │ wormhole/test_agent:latest │         │ 3fff:172:20:20::4 │
+╰────────────────────┴────────────────────────────┴─────────┴───────────────────╯
+```
+
+now you need to open up several terminals
+
+1. a terminal in vscode to open **bash** in `border1` container:
+    - `docker exec -it clab-vxlan-border1 /bin/bash `
+    - then in that terminal execute the `vxlan_agent` in border1 by `/build/vxlan_agent --config /build/vxlan_agent.config.yaml`
+2. a terminal in vscode to open **bash** in `border2` container:
+    - `docker exec -it clab-vxlan-border2 /bin/bash`
+    - then in that terminal execute the `vxlan_agent` in border2 by `/build/vxlan_agent --config /build/vxlan_agent.config.yaml`
+3. a terminal in vscode to open **bash** in `src` container:
+    - `docker exec -it clab-vxlan-src /bin/bash`
+    - then in that terminal execute the `dummy_xdp` in src by `/build/dummy_xdp --interface-name eth1`
+4. a terminal in vscode to open **bash** in `dst` container:
+    - `docker exec -it clab-vxlan-dst /bin/bash`
+    - then in that terminal execute the `dummy_xdp` in dst by `/build/dummy_xdp --interface-name eth1`
+5. another terminal in vscode to open **bash** in `src` container:
+    - `docker exec -it clab-vxlan-src /bin/bash`
+    - then in that terminal **ping 192.168.1.11**
+6. another terminal in vscode to open **bash** in `dst` container:
+    - `docker exec -it clab-vxlan-dst /bin/bash`
+    - then in that terminal **ping 192.168.1.10**
+
+in this case you can see if the **vxlan_agent** is active on border1 and border2, then src & dst can ping each other.
+
+please don't forget to bring down the testing lab by running **`clab destroy --all`**
 
 ## Short explanation of VXLAN
 In a VXLAN environment, you want several geographically remote networks to form a single (or multiple) integrated network(s). For this purpose, you need special nodes named **VTEP**.
@@ -182,87 +267,3 @@ When a packet from internal network reaches an internal NIC and tends to pass th
 also when a packet from outside network (internet) reaches an external NIC and tends to pass through the VTEP towards the internal network, we need to decapsulate this packet.
 
 so for all these operations we need to be able to adjust the packet headroom. there is a helper function `bpf_xdp_adjust_head()` to modify the packet headroom in XDP programs.
-
-
-## e2e tests
-
-to verify that this vxlan implementation is working correctly, we need to write some e2e tests.
-I have used `containerlab` to create a throwable testing environment. containerlab is similar to `testcontainers` but it is more focused on networking and it has better networking abstractions, like network cables and network interfaces.
-
-
-the scenarios that i'm currently testing in my automated test:
-
-1. if the VTEP software is not active in `border1` and `border2` then
-    - `source` and `destination` **SHOULD NOT** be able to ping each other
-2. if the VTEP software is enabled both in `border1` and `border2` then
-    - `source` and `destination` **SHOULD** be able to ping each other
-
-
-![Alt text](./readme/vxlan_e2e_test.drawio.svg)
-
-the e2e tests for vxlan are written in `./test/vxlan_agent/vxlan_agent_test.go`.<br>
-the network topology used for this test is defined in `./test/vxlan_agent/vxlan_agent/clab_topologies/vxlan.clab.yml`.
-
-
-### Interactively testing the program via containerlab
-
-other than performing the e2e tests, there is also another option to test the program and it's by interactively up and runing a containerlab testing lab.
-
-to perform this:
-
-1. `cd ./test/vxlan_agent/vxlan_agent/clab_topologies/`
-2. `clab deploy`
-
-when you do this it will bring up several containers:
-- src
-- border1
-- border2
-- dst
-
-```
-╭────────────────────┬────────────────────────────┬─────────┬───────────────────╮
-│        Name        │         Kind/Image         │  State  │   IPv4/6 Address  │
-├────────────────────┼────────────────────────────┼─────────┼───────────────────┤
-│ clab-vxlan-border1 │ linux                      │ running │ 172.20.20.5       │
-│                    │ wormhole/test_agent:latest │         │ 3fff:172:20:20::5 │
-├────────────────────┼────────────────────────────┼─────────┼───────────────────┤
-│ clab-vxlan-border2 │ linux                      │ running │ 172.20.20.2       │
-│                    │ wormhole/test_agent:latest │         │ 3fff:172:20:20::2 │
-├────────────────────┼────────────────────────────┼─────────┼───────────────────┤
-│ clab-vxlan-dst     │ linux                      │ running │ 172.20.20.3       │
-│                    │ wormhole/test_agent:latest │         │ 3fff:172:20:20::3 │
-├────────────────────┼────────────────────────────┼─────────┼───────────────────┤
-│ clab-vxlan-src     │ linux                      │ running │ 172.20.20.4       │
-│                    │ wormhole/test_agent:latest │         │ 3fff:172:20:20::4 │
-╰────────────────────┴────────────────────────────┴─────────┴───────────────────╯
-```
-
-This topology is similar to this picture (which is used by the e2e test):
-
-![Alt text](./readme/vxlan_e2e_test.drawio.svg)
-
-
-now you need to open up several terminals
-
-1. a terminal to open **bash** in `border1`:
-    - `docker exec -it clab-vxlan-border1 /bin/bash `
-    - then execute the `vxlan_agent` in border1 by `/build/vxlan_agent --config /build/vxlan_agent.config.yaml`
-2. a terminal to open **bash** in `border2`:
-    - `docker exec -it clab-vxlan-border2 /bin/bash`
-    - then execute the `vxlan_agent` in border2 by `/build/vxlan_agent --config /build/vxlan_agent.config.yaml`
-3. a terminal to open **bash** in `src`:
-    - `docker exec -it clab-vxlan-src /bin/bash`
-    - then execute the `dummy_xdp` in src by `/build/dummy_xdp --interface-name eth1`
-4. a terminal to open **bash** in `dst`:
-    - `docker exec -it clab-vxlan-dst /bin/bash`
-    - then execute the `dummy_xdp` in dst by `/build/dummy_xdp --interface-name eth1`
-5. another terminal to open **bash** in `src`:
-    - `docker exec -it clab-vxlan-src /bin/bash`
-    - then **ping 192.168.1.11** in src
-6. another terminal to open **bash** in `dst`:
-    - `docker exec -it clab-vxlan-dst /bin/bash`
-    - then **ping 192.168.1.10** in dst
-
-in this case you can see if the **vxlan_agent** is active on border1 and border2, then src & dst can ping each other.
-
-please don't forget to bring down the testing lab by running **`clab destroy --all`**
