@@ -30,6 +30,8 @@ to verify that this vxlan implementation is working correctly, we have some e2e 
 
 containerlab is kinda similar to `testcontainers` but it is more focused on networking and it has better networking abstractions, like network cables and network interfaces.
 
+We have a topology in which there are 2 nodes, `src` and `dst` which are in the same subnet, but they are not connected to each other. in order to connect them we need to activate our **vxlan_agent VTEP** program on both border1 & border2 and check if `src` and `dst` are able to see each other or not.
+
 the scenarios that i'm currently testing in my automated test:
 
 1. if the VTEP software is not active in `border1` and `border2` then
