@@ -156,12 +156,17 @@ let's explain a simple scenario, suppose `HOST_11` **knows** the **mac address**
 
 ## vxlan building blocks using eBPF
 
-to implement a VTEP we need to perform several functionalities:
+to implement a basic VTEP we need to perform several functionalities:
 1. packet `redirection`
 2. packet `encapsulation`/`decapsulation`
 4. packet `cloning` --> in case we need packet flooding ---> unknown unicast flooding
 5. `mac address learning`
 
+all of these functionalities are implemented in codes in `./internal/vxlan_agent/ebpf/c/`:
+- **vxlan_xdp_internal.bpf.c**
+- **vxlan_tc_internal.bpf.c**
+- **vxlan_xdp_external.bpf.c**
+- **vxlan_tc_external.bpf.c**
 
 
 ### packet redirection
