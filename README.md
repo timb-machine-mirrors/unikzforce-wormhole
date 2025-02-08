@@ -28,7 +28,7 @@ Just open up the project using vscode, and because project has a devcontainer na
 
 to verify that this vxlan implementation is working correctly, we have some e2e tests. I have used `containerlab` to create a throwable testing environment.
 
-containerlab is kinda similar to `testcontainers` but it is more focused on networking and it has better networking abstractions, like network cables and network interfaces.
+[containerlab](https://containerlab.dev/) is kinda similar to `testcontainers` but it is more focused on networking and it has better networking abstractions, like network cables and network interfaces.
 
 We have a topology in which there are 2 nodes, `src` and `dst` which are in the same subnet, but they are not connected to each other. in order to connect them we need to activate our **vxlan_agent VTEP** program on both border1 & border2 and check if `src` and `dst` are able to see each other or not.
 
@@ -60,7 +60,7 @@ to run the tests, after opening up the project in a ***devcontainer***:
     ```
 
 
-### Interactively testing the program via containerlab
+## Interactively testing the program via containerlab
 
 other than performing the e2e tests, there is also another option to test the program and it's by interactively up and runing a containerlab testing lab & checking if the vxlan_agent VTEP program is actually working or not.
 
