@@ -76,11 +76,11 @@ to bring up this topology: (again, please do it inside the ***devcontainer***)
     ```sh
     ./scripts/build_images.sh
     ```
-2. move into the topology directory
+2. move into the topology directory:
     ```
     cd ./test/vxlan_agent/vxlan_agent/clab_topologies/
     ```
-3. deploy
+3. deploy the topology:
     ```
     clab deploy
     ```
