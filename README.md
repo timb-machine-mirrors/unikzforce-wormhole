@@ -219,7 +219,7 @@ In this project, the packet forwarding mechanism is implemented using both XDP a
     - **Entry Found**: If an entry for the destination MAC address is found in the MAC table, the packet is forwarded immediately using the XDP layer. This ensures low-latency forwarding.
     - **Entry Not Found**: If no entry is found for the destination MAC address, the packet is passed from the XDP layer up to the TC layer.
 
-2. **Unknown Unicast Flooding**: In the TC layer, the system performs unknown unicast flooding. This is necessary because the XDP layer does not support cloning a packet multiple times and redirecting it to multiple destinations. The TC layer handles this by cloning the packet and sending it to all possible destinations. (TODO: i should change the program to do unknow unicast flooding for only broadcast packets, not all uknown mac addresses of all packet types should be flooded)
+2. **Unknown Unicast Flooding**: In the TC layer, the system performs unknown unicast flooding. This is necessary because the XDP layer does not support cloning a packet multiple times and redirecting it to multiple destinations. The TC layer handles this by cloning the packet and sending it to all possible destinations. (TODO: I should change the program to do unknow unicast flooding for only broadcast packets, not all uknown mac addresses of all packet types should be flooded)
 
 
 
