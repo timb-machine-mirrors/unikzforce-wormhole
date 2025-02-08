@@ -70,7 +70,7 @@ This topology is similar to this picture (which is used by the e2e test):
 
 We have a topology in which there are 2 nodes, `src` and `dst` which are in the same subnet, but they are not connected to each other. in order to connect them we need to activate our **vxlan_agent VTEP** program on both border1 & border2 and check if `src` and `dst` are able to see each other or not.
 
-to bring up this topology: (again, please do it inside the ***devcontainer***)
+to bring up this topology: (again, please do it inside the ***devcontainer*** by opening project as devcontainer in vscode)
 
 1. Build the necessary images if not done already:
     ```sh
