@@ -229,7 +229,7 @@ So the life cycle of a packet is something similar to this:
 
 1. **Originating Node**: The packet originates from an internal host within the network.
 2. **Arrival at eBPF VXLAN VTEP**: The packet reaches the VTEP where it is processed by the eBPF XDP/TC program.
-3. **MAC Table Lookup**: The VTEP checks its MAC table to determine the appropriate forwarding NIC.
+3. **MAC Table Lookup**: in XDP program attached to the VTEP we checks the MAC table to determine the appropriate forwarding NIC.
 4. **Encapsulation**: The packet is encapsulated with an outer Ethernet header, outer IP header, outer UDP header, and outer VXLAN header.
 5. **Transmission**: The encapsulated packet is transmitted over the network to the remote eBPF VXLAN VTEP.
 6. **Ingress to Remote eBPF VXLAN VTEP**: The remote eBPF VXLAN VTEP receives the encapsulated packet.
