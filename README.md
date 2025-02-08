@@ -15,18 +15,23 @@ using eBPF we can bypass linux kernel networking stack, so it will consume less 
 
 
 ## Devoplment Prerequisites
-The project can be developed in devcontainer, so for development, one only needs to install VSCode and Docker.
+The project has devcontainer nature, so for development, one only needs:
 
 - Linux kernel 6.5 or newer
 - Docker
 - VSCode ( or any IDE with devcontainer support )
 
+
+Just open up the project using vscode, and because project has a devcontainer nature (it has `.devcontainer` folder), vscode would automatically suggest you to re-open the project in a development container, proceed with that.
+
 ## Running tests
-1. Build the image:
+after opening up the project in a devcontainer:
+
+1. to build the necessary images:
     ```sh
     ./scripts/build_images.sh
     ```
-2. Run the tests:
+2. to run the tests:
     ```sh
     ./script/vxlan_agent_run_tests.sh
     ```
@@ -142,7 +147,7 @@ as I previously mentioned upon each VTEP there are several NICs and some of thes
 upon each internal NIC we attach an `Internal XDP program` and an `Internal TC program`.
 upon each external NIC we attach an `External XDP program` and an `External TC program`.
 
-Also as I mentioned previously the `TC` programs are for the sake of packet cloning & it is only used in cases that we want to clone and forward a packet to multiple network interfaces. so when we need to perform unknown unicast flooding to a packet in a XDP program, first we'll perform an XDP_PASS on that packet so this network packet will be passed up to upper layer in the networking stack in linux. TC programs higher than XDP programs in the networking stack of linux kernel. TC programs also they have more capabilities. this more capability means packet cloning. although it comes with the cost of being on slower processing pass. when we handle a packet in the XDP layer we are handling it in the fast path, but when we pass the network packet up in the linux networking stack to be processed by a TC program, we are handling it an the slow pass. so unknown unicast flooding is slower than normal packet redirection happening in lower XDP layer.
+Also as I mentioned previously the `TC` programs are for the sake of packet cloning & it is only used in cases that we want to clone and forward a packet to multiple network interfaces. so when we need to perform unknown unicast flooding to a packet in a XDP program, first we'll perform an XDP_PASS on that packet so this network packet will be passed up to upper layer in the networking stack in linux. TC programs higher than XDP programs in the networking stack of linux kernel. TC programs also they have more capabilities. this more capability means packet cloning. although it comes with the cost of being on slower processing path. when we handle a packet in the XDP layer we are handling it in the fast path, but when we pass the network packet up in the linux networking stack to be processed by a TC program, we are handling it an the slow pass. so unknown unicast flooding is slower than normal packet redirection happening in lower XDP layer.
 
 
 ![Alt text](./readme/xdp_tc.drawio.svg)
@@ -150,7 +155,7 @@ Also as I mentioned previously the `TC` programs are for the sake of packet clon
 
 ## technical considerations
 
-### Jumbo Frames
+### Jumbo Frames ( MTU > 1500 )
 
 Plain XDP (fragments disabled) has the limitation that every packet must fit within a single memory page (typically 4096 bytes),
 but in some cases it even cannot be more than 1500 bytes, this would create problems for Jumbo frames (packets larger than 1500 bytes), 
@@ -170,11 +175,15 @@ so whenever we see a packet in our VXLAN VTEP, we check the source mac address o
 - if we currently don't have any entry for that mac address in the mac table, we will create a new entry for that mac address with a bpf_timer of 5 minutes.
 - if we currently have an existing entry for that mac address in the mac table, we will reset its bpf_timer object to 5-minutes.
 
-### Packet Size Adjustment
+### Packet Size Adjustment (encapsulation/decapsulation)
 
-In this project, when a packet passes through an internal XDP program on the VTEP and needs to be forwarded to a remote destination, we use the `bpf_xdp_adjust_head` function to increase the headroom. This adjustment is essential for encapsulating the packet with additional headers such as outer Ethernet, IP, UDP, and VXLAN headers.
+When a packet from internal network reaches an internal NIC and tends to pass throught the VTEP towards the internet, we need to encapsulate this packet into another packet, containing outer Ethernet, IP, UDP, and VXLAN headers. to perform this encapsulation we first need tad add some headroom at the start of the packet.
 
-By increasing the headroom, we ensure there is enough space to insert these headers without fragmenting the packet, maintaining the integrity and performance of the packet forwarding mechanism.
+also when a packet from outside network (internet) reaches an external NIC and tends to pass through the VTEP towards the internal network, we need to decapsulate this packet.
 
-The `bpf_xdp_adjust_head` function is used as follows:
-Conversely, when a packet passes through an external XDP program on the VTEP and needs to enter the network, we use the same function to strip off the extra headers and decapsulate the internal packet. This ensures that the packet is correctly processed and forwarded to its final destination within the network.
+so for all these operations we need to be able to adjust the packet headroom. there is a helper function `bpf_xdp_adjust_head()` to modify the packet headroom in XDP programs.
+
+
+### e2e tests
+
+
