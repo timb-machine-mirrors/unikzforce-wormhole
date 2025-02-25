@@ -1,6 +1,6 @@
 # Wormhole Project
 
-This project tends be a toy implementation of the **VXLAN** protocol with __unknown unicast flooding__ technique using **eBPF XDP/TC**.
+This project tends be a simple implementation of the **VXLAN** protocol with __unknown unicast flooding__ technique using **eBPF XDP/TC**.
 Please note that I am not a network engineer, and some of my assumptions about the VXLAN protocol may be incorrect. This project is not intended to be fully compliant with the VXLAN protocol; rather, it aims to create a proof of concept for an eBPF-based VXLAN VTEP and demonstrate how VXLAN & its' building blocks can be implemented using eBPF.
 
 using eBPF we can bypass linux kernel networking stack, so it will consume less cpu cycles + it's faster.
